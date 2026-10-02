@@ -1,0 +1,144 @@
+npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "ms_build_id". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "build_from_source". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "timeout". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> code-oss-dev@1.140.0 gulp
+> node --experimental-strip-types --max-old-space-size=8192 ./node_modules/gulp/bin/gulp.js vscode-darwin-arm64-min
+
+[16:15:44] Using gulpfile ~/orbit-ide/gulpfile.mjs
+[16:15:44] Starting 'vscode-darwin-arm64-min'...
+[16:15:44] Starting [36mcopy-codicons[39m ...
+[16:15:44] Finished [36mcopy-codicons[39m after [35m2 ms[39m
+[16:15:44] Starting [36mclean-extensions-build[39m ...
+[16:15:44] Finished [36mclean-extensions-build[39m after [35m127 ms[39m
+[16:15:44] Starting [36mbundle-marketplace-extensions-build[39m ...
+[16:15:44] [extensions] ms-vscode.js-debug-companion@1.1.3 up to date [32m✔︎[39m
+[16:15:44] [extensions] ms-vscode.js-debug@1.140.0 up to date [32m✔︎[39m
+[16:15:44] [extensions] ms-vscode.vscode-js-profile-table@1.0.11 up to date [32m✔︎[39m
+[16:15:44] Finished [36mbundle-marketplace-extensions-build[39m after [35m80 ms[39m
+[16:15:44] Starting [36mbundle-non-native-extensions-build[39m ...
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/configuration-editing/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/css-language-features/client/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/css-language-features/server/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/debug-auto-launch/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/debug-server-ready/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/emmet/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/extension-editing/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/git-base/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/github-authentication/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/github/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/grunt/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/gulp/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/html-language-features/client/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/html-language-features/server/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/ipynb/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/jake/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/json-language-features/client/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/json-language-features/server/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/markdown-language-features/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/markdown-math/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/media-preview/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/merge-conflict/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/mermaid-markdown-features/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/npm/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/orbit/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/php-language-features/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/references-view/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/search-result/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/simple-browser/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/terminal-suggest/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/tunnel-forwarding/tsconfig.json with 0 errors.
+[16:15:46] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/typescript-language-features/tsconfig.json with 0 errors.
+[16:15:46] Bundled extension: [33mtypescript-language-features/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mtunnel-forwarding/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mterminal-suggest/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33msimple-browser/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33msearch-result/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mreferences-view/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mphp-language-features/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33morbit/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mnpm/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mmermaid-markdown-features/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mmerge-conflict/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mmedia-preview/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mmarkdown-math/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mjson-language-features/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mjake/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mipynb/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mhtml-language-features/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mgulp/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mgrunt/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mgithub/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mgithub-authentication/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mgit-base/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mextension-editing/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33memmet/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mdebug-server-ready/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mdebug-auto-launch/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mcss-language-features/esbuild.mts[39m with 0 errors.
+[16:15:46] Bundled extension: [33mconfiguration-editing/esbuild.mts[39m with 0 errors.
+[16:15:48] Bundled extension: [33mmarkdown-language-features/esbuild.mts[39m with 0 errors.
+[16:15:52] Finished [36mbundle-non-native-extensions-build[39m after [35m8031 ms[39m
+[16:15:52] Starting [36mcompile-non-native-extensions-build[39m ...
+[16:15:52] Finished [36mcompile-non-native-extensions-build[39m after [35m0 ms[39m
+[16:15:52] Starting [36mcompile-copilot-extension-build[39m ...
+[16:15:52] Finished [36mcompile-copilot-extension-build[39m after [35m1 ms[39m
+[16:15:52] Starting [36mcompile-extension-media-build[39m ...
+[16:15:52] Finished [32mtypechecking extension media (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/markdown-language-features/notebook/tsconfig.json with 0 errors.
+[16:15:52] Finished [32mesbuilding extension media[39m /Users/jahidsayad/orbit-ide/extensions/markdown-language-features/esbuild.webview.mts with 0 errors.
+[16:15:52] Finished [32mtypechecking extension media (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/ipynb/notebook-src/tsconfig.json with 0 errors.
+[16:15:52] Finished [32mtypechecking extension media (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/simple-browser/preview-src/tsconfig.json with 0 errors.
+[16:15:52] Finished [32mtypechecking extension media (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/markdown-language-features/preview-src/tsconfig.json with 0 errors.
+[16:15:52] Finished [32mesbuilding extension media[39m /Users/jahidsayad/orbit-ide/extensions/markdown-language-features/esbuild.notebook.mts with 0 errors.
+[16:15:52] Finished [32mtypechecking extension media (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/markdown-math/notebook/tsconfig.json with 0 errors.
+[16:15:52] Finished [32mesbuilding extension media[39m /Users/jahidsayad/orbit-ide/extensions/simple-browser/esbuild.webview.mts with 0 errors.
+[16:15:52] Finished [32mtypechecking extension media (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/markdown-language-features/markdown-editor-src/tsconfig.json with 0 errors.
+[16:15:52] Finished [32mesbuilding extension media[39m /Users/jahidsayad/orbit-ide/extensions/ipynb/esbuild.notebook.mts with 0 errors.
+[16:15:52] Finished [32mtypechecking extension media (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/mermaid-markdown-features/preview-src/tsconfig.json with 0 errors.
+[16:15:52] Finished [32mtypechecking extension media (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/notebook-renderers/tsconfig.json with 0 errors.
+[16:15:52] Finished [32mesbuilding extension media[39m /Users/jahidsayad/orbit-ide/extensions/markdown-math/esbuild.notebook.mts with 0 errors.
+[16:15:52] Finished [32mesbuilding extension media[39m /Users/jahidsayad/orbit-ide/extensions/notebook-renderers/esbuild.notebook.mts with 0 errors.
+[16:15:53] Finished [32mesbuilding extension media[39m /Users/jahidsayad/orbit-ide/extensions/mermaid-markdown-features/esbuild.webview.mts with 0 errors.
+[16:15:54] Finished [32mesbuilding extension media[39m /Users/jahidsayad/orbit-ide/extensions/markdown-language-features/esbuild.markdownEditor.mts with 0 errors.
+[16:15:54] Finished [36mcompile-extension-media-build[39m after [35m2597 ms[39m
+[16:15:54] Starting [36mbuild-date-file[39m ...
+[16:15:54] Finished [36mbuild-date-file[39m after [35m21 ms[39m
+[16:15:54] Starting [36mesbuild-bundle-darwin-arm64-min[39m ...
+[clean] out-vscode-min
+[bundle] src → out-vscode-min (target: desktop) (minify) (nls) (mangle-privates)
+[nls] Extracted 26149 messages from 2088 modules
+[bundle] Syntax check passed for 17 post-processed JS files
+[mangle-privates] vs/sessions/sessions.desktop.main.js: 11 classes, 83 fields, 451 edits, 2116ms
+[mangle-privates] vs/workbench/workbench.desktop.main.js: 15 classes, 98 fields, 517 edits, 1941ms
+[mangle-privates] Total: 26 classes, 181 fields, 968 edits, 4057ms
+[resources] Copying to /Users/jahidsayad/orbit-ide/out-vscode-min for target 'desktop'...
+[resources] Copied 242 files
+[standalone] Compiling 3 standalone files...
+[standalone] Done
+[svg] 52 files: 1755758 -> 1371417 bytes
+[bundle] Done in 77875ms (25 bundles)
+
+✓ Total: 77877ms
+[16:17:13] Finished [36mesbuild-bundle-darwin-arm64-min[39m after [35m78612 ms[39m
+[16:17:13] Starting [36mcompile-native-extensions-build[39m ...
+[16:17:14] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/git/tsconfig.json with 0 errors.
+[16:17:14] Finished [32mtypechecking extension (tsgo)[39m /Users/jahidsayad/orbit-ide/extensions/microsoft-authentication/tsconfig.json with 0 errors.
+[16:17:14] Bundled extension: [33mmicrosoft-authentication/esbuild.mts[39m with 0 errors.
+[16:17:14] Bundled extension: [33mgit/esbuild.mts[39m with 0 errors.
+[16:17:14] Finished [36mcompile-native-extensions-build[39m after [35m742 ms[39m
+[16:17:14] Starting [36mclean-vscode-darwin-arm64[39m ...
+[16:17:14] Finished [36mclean-vscode-darwin-arm64[39m after [35m0 ms[39m
+[16:17:14] Starting [36mpackage-darwin-arm64[39m ...
+
+
+(node:74283) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[16:17:31] Finished [36mpackage-darwin-arm64[39m after [35m17585 ms[39m
+[16:17:31] Starting [36mvscode-darwin-arm64-min-ci[39m ...
+[16:17:31] Finished [36mvscode-darwin-arm64-min-ci[39m after [35m0 ms[39m
+[16:17:31] Starting [36mvscode-darwin-arm64-min[39m ...
+[16:17:31] Finished [36mvscode-darwin-arm64-min[39m after [35m0 ms[39m
+[16:17:31] Finished 'vscode-darwin-arm64-min' after 1.78 min

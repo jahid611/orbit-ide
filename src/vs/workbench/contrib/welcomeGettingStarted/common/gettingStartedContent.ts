@@ -113,6 +113,26 @@ type GettingStartedStartEntryContent = BuiltinGettingStartedStartEntry[];
 
 export const startEntries: GettingStartedStartEntryContent = [
 	{
+		id: 'orbit.startClaudeTerminal',
+		title: localize('gettingStarted.orbitClaude.title', "New Claude Terminal"),
+		description: localize('gettingStarted.orbitClaude.description', "Start Claude Code in a terminal, with or without a project"),
+		icon: Codicon.sparkle,
+		content: {
+			type: 'startEntry',
+			command: 'command:orbit.claude.new',
+		}
+	},
+	{
+		id: 'orbit.startBlankTerminal',
+		title: localize('gettingStarted.orbitTerminal.title', "Blank Terminal"),
+		description: localize('gettingStarted.orbitTerminal.description', "Open an empty shell in your home folder"),
+		icon: Codicon.terminal,
+		content: {
+			type: 'startEntry',
+			command: 'command:workbench.action.terminal.new',
+		}
+	},
+	{
 		id: 'welcome.showNewFileEntries',
 		title: localize('gettingStarted.newFile.title', "New File..."),
 		description: localize('gettingStarted.newFile.description', "Open a new untitled text file, notebook, or custom editor."),
