@@ -3063,8 +3063,10 @@ class LayoutStateModel extends Disposable {
 					return false;
 			}
 		})();
-		LayoutStateKeys.PANEL_SIZE.defaultValue = (this.stateCache.get(LayoutStateKeys.PANEL_POSITION.name) ?? isHorizontal(LayoutStateKeys.PANEL_POSITION.defaultValue)) ? mainContainerDimension.height / 3 : mainContainerDimension.width / 4;
 		LayoutStateKeys.PANEL_POSITION.defaultValue = positionFromString(this.configurationService.getValue(WorkbenchLayoutSettings.PANEL_POSITION) ?? 'bottom');
+		// Orbit: size the panel for where it will actually be; a side panel hosts Claude terminals, so give it room.
+		const initialPanelPosition = this.stateCache.get(LayoutStateKeys.PANEL_POSITION.name) as Position | undefined ?? LayoutStateKeys.PANEL_POSITION.defaultValue;
+		LayoutStateKeys.PANEL_SIZE.defaultValue = isHorizontal(initialPanelPosition) ? mainContainerDimension.height / 3 : mainContainerDimension.width * 0.38;
 
 		// Apply all defaults
 		for (key in LayoutStateKeys) {

@@ -384,6 +384,9 @@ import './contrib/inlayHints/browser/inlayHintsAccessibilty.js';
 // Themes
 import './contrib/themes/browser/themes.contribution.js';
 
+// Orbit UI engine
+import './contrib/orbit/browser/orbit.contribution.js';
+
 // Update
 import './contrib/update/browser/update.contribution.js';
 

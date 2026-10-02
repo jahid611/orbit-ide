@@ -1,0 +1,394 @@
+{
+  "name": "orbit",
+  "publisher": "vscode",
+  "displayName": "Orbit Agent",
+  "description": "Claude Code in real terminals, inline edits and a customization studio for Orbit.",
+  "version": "10.0.0",
+  "license": "MIT",
+  "icon": "media/orbit.png",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "AI",
+    "Themes",
+    "Other"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": false,
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "The agent can run commands, so it is disabled in untrusted workspaces."
+    }
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension",
+  "scripts": {
+    "compile": "gulp compile-extension:orbit",
+    "watch": "gulp watch-extension:orbit"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "orbit.claude.focus",
+        "title": "Focus Claude Terminal",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.claude.new",
+        "title": "New Claude Terminal",
+        "category": "Orbit",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "orbit.claude.split",
+        "title": "Split Claude Terminal",
+        "category": "Orbit",
+        "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "orbit.claude.inEditor",
+        "title": "Open Claude Terminal in Editor Area",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.claude.grid",
+        "title": "Claude Agent Grid…",
+        "category": "Orbit",
+        "icon": "$(layout)"
+      },
+      {
+        "command": "orbit.claude.worktree",
+        "title": "Claude in Isolated Git Worktree…",
+        "category": "Orbit",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "orbit.claude.withOptions",
+        "title": "New Claude Terminal with Model and Mode…",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.claude.resume",
+        "title": "Resume a Claude Conversation…",
+        "category": "Orbit",
+        "icon": "$(history)"
+      },
+      {
+        "command": "orbit.claude.continue",
+        "title": "Continue Last Claude Conversation",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.claude.sendSelection",
+        "title": "Send File or Selection to Claude",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.claude.broadcast",
+        "title": "Send Message to All Claude Terminals…",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.claude.switch",
+        "title": "Switch Claude Terminal…",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.inlineEdit",
+        "title": "Edit with Claude (Inline)",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.acceptInlineEdit",
+        "title": "Accept Inline Edit",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.rejectInlineEdit",
+        "title": "Reject Inline Edit",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.openStudio",
+        "title": "Open Customization Studio",
+        "category": "Orbit",
+        "icon": "$(paintcan)"
+      },
+      {
+        "command": "orbit.applyLayoutPreset",
+        "title": "Apply Layout Preset…",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.editRules",
+        "title": "Edit Project Rules for Claude (CLAUDE.md)",
+        "category": "Orbit"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "orbit.claude.new",
+          "when": "view == terminal",
+          "group": "navigation@0"
+        },
+        {
+          "command": "orbit.claude.grid",
+          "when": "view == terminal",
+          "group": "navigation@0"
+        }
+      ],
+      "terminal/title/context": [
+        {
+          "command": "orbit.claude.new",
+          "group": "0_orbit"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "orbit.inlineEdit",
+          "group": "0_orbit@1"
+        },
+        {
+          "command": "orbit.claude.sendSelection",
+          "group": "0_orbit@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "orbit.acceptInlineEdit",
+          "when": "orbit.inlineEditPending"
+        },
+        {
+          "command": "orbit.rejectInlineEdit",
+          "when": "orbit.inlineEditPending"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "orbit.claude.focus",
+        "key": "ctrl+l",
+        "mac": "cmd+l"
+      },
+      {
+        "command": "orbit.claude.new",
+        "key": "ctrl+alt+n",
+        "mac": "cmd+alt+n"
+      },
+      {
+        "command": "orbit.claude.split",
+        "key": "ctrl+alt+\\",
+        "mac": "cmd+alt+\\"
+      },
+      {
+        "command": "orbit.claude.switch",
+        "key": "ctrl+alt+a",
+        "mac": "cmd+alt+a"
+      },
+      {
+        "command": "orbit.claude.grid",
+        "key": "ctrl+alt+g",
+        "mac": "cmd+alt+g"
+      },
+      {
+        "command": "orbit.claude.sendSelection",
+        "key": "ctrl+shift+l",
+        "mac": "cmd+shift+l",
+        "when": "editorFocus"
+      },
+      {
+        "command": "orbit.inlineEdit",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "editorTextFocus && !orbit.inlineEditPending"
+      },
+      {
+        "command": "orbit.acceptInlineEdit",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && orbit.inlineEditPending"
+      },
+      {
+        "command": "orbit.rejectInlineEdit",
+        "key": "ctrl+backspace",
+        "mac": "cmd+backspace",
+        "when": "editorTextFocus && orbit.inlineEditPending"
+      },
+      {
+        "command": "orbit.openStudio",
+        "key": "ctrl+alt+,",
+        "mac": "cmd+alt+,"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Orbit",
+        "properties": {
+          "orbit.claude.path": {
+            "type": "string",
+            "default": "claude",
+            "description": "Path to the Claude Code CLI. The agent uses your logged-in Claude account (run `claude` once in a terminal to sign in)."
+          },
+          "orbit.claude.billing": {
+            "type": "string",
+            "default": "subscription",
+            "enum": [
+              "subscription",
+              "apiKey"
+            ],
+            "enumDescriptions": [
+              "Use your Claude subscription (Pro/Max) via your Claude Code login. ANTHROPIC_API_KEY is ignored so you are never billed pay-as-you-go by accident.",
+              "Use ANTHROPIC_API_KEY from the environment (pay-as-you-go API billing)."
+            ],
+            "description": "How the agent is billed."
+          },
+          "orbit.claude.autoStart": {
+            "type": "boolean",
+            "default": true,
+            "description": "Open a terminal with Claude running when a project opens."
+          },
+          "orbit.claude.model": {
+            "type": "string",
+            "default": "",
+            "enum": [
+              "",
+              "opus",
+              "sonnet",
+              "haiku",
+              "claude-fable-5-1"
+            ],
+            "enumItemLabels": [
+              "Claude Code default",
+              "Opus",
+              "Sonnet",
+              "Haiku",
+              "Fable 5.1"
+            ],
+            "description": "Model passed to new Claude terminals (--model)."
+          },
+          "orbit.claude.permissionMode": {
+            "type": "string",
+            "default": "",
+            "enum": [
+              "",
+              "acceptEdits",
+              "plan",
+              "auto"
+            ],
+            "enumItemLabels": [
+              "Claude Code default",
+              "Accept edits",
+              "Plan",
+              "Auto"
+            ],
+            "description": "Permission mode for new Claude terminals (--permission-mode)."
+          },
+          "orbit.claude.language": {
+            "type": "string",
+            "default": "",
+            "description": "Language Claude answers in (added to the system prompt). Empty keeps Claude Code's behaviour."
+          },
+          "orbit.claude.persona": {
+            "type": "string",
+            "default": "",
+            "editPresentation": "multilineText",
+            "description": "Extra instructions appended to Claude's system prompt in every terminal."
+          },
+          "orbit.claude.extraArgs": {
+            "type": "string",
+            "default": "",
+            "description": "Extra command-line flags for claude, e.g. --verbose."
+          },
+          "orbit.inlineEdit.model": {
+            "type": "string",
+            "default": "sonnet",
+            "enum": [
+              "opus",
+              "sonnet",
+              "haiku",
+              "claude-fable-5-1"
+            ],
+            "description": "Model used for inline edits (Cmd+K). A faster model feels snappier."
+          }
+        }
+      }
+    ],
+    "configurationDefaults": {
+      "workbench.colorTheme": "Orbit Midnight",
+      "workbench.activityBar.location": "top",
+      "window.commandCenter": true,
+      "editor.fontFamily": "'JetBrains Mono', 'SF Mono', Menlo, Monaco, monospace",
+      "editor.fontLigatures": true,
+      "editor.fontSize": 13,
+      "editor.lineHeight": 1.6,
+      "editor.cursorBlinking": "smooth",
+      "editor.cursorSmoothCaretAnimation": "on",
+      "editor.smoothScrolling": true,
+      "editor.minimap.enabled": false,
+      "editor.renderLineHighlight": "all",
+      "editor.bracketPairColorization.enabled": true,
+      "editor.guides.bracketPairs": "active",
+      "editor.padding.top": 8,
+      "workbench.list.smoothScrolling": true,
+      "terminal.integrated.smoothScrolling": true,
+      "terminal.integrated.cursorStyle": "line",
+      "workbench.tree.indent": 14,
+      "workbench.tree.renderIndentGuides": "onHover",
+      "workbench.iconTheme": "vs-seti",
+      "workbench.productIconTheme": "Default",
+      "workbench.panel.opensMaximized": "never",
+      "terminal.integrated.tabs.hideCondition": "singleTerminal",
+      "terminal.integrated.tabs.location": "right",
+      "terminal.integrated.tabs.showActions": "always",
+      "terminal.integrated.fontSize": 13,
+      "terminal.integrated.lineHeight": 1.15,
+      "terminal.integrated.cursorBlinking": true,
+      "terminal.integrated.enablePersistentSessions": true,
+      "terminal.integrated.gpuAcceleration": "on"
+    },
+    "themes": [
+      {
+        "label": "Orbit Midnight",
+        "uiTheme": "vs-dark",
+        "path": "./themes/orbit-midnight.json"
+      },
+      {
+        "label": "Orbit Aurora",
+        "uiTheme": "vs-dark",
+        "path": "./themes/orbit-aurora.json"
+      },
+      {
+        "label": "Orbit Ember",
+        "uiTheme": "vs-dark",
+        "path": "./themes/orbit-ember.json"
+      },
+      {
+        "label": "Orbit Void",
+        "uiTheme": "vs-dark",
+        "path": "./themes/orbit-void.json"
+      },
+      {
+        "label": "Orbit Paper",
+        "uiTheme": "vs",
+        "path": "./themes/orbit-paper.json"
+      }
+    ],
+    "terminal": {
+      "profiles": [
+        {
+          "id": "orbit.claude",
+          "title": "Claude",
+          "icon": "sparkle"
+        }
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/vscode.git"
+  }
+}
