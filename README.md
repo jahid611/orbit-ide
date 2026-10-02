@@ -1,3 +1,16 @@
+<p align="center"><img src="brand/orbit-icon-1024.png" width="160" alt="Orbit"></p>
+
+# Orbit
+
+**Orbit est un IDE basé sur VS Code (Code - OSS 1.140.0) où Claude Code tourne dans de vrais terminaux** : grille d'agents, worktrees, statut de chaque agent sur son onglet, vue discussion du même terminal, historique des discussions, thème spatial Orbit Cosmos et écran de chargement animé.
+
+- Contexte complet, architecture et installation : [`ORBIT.md`](ORBIT.md)
+- Lancer en dev : `nvm use 24.18.0 && npm ci && npm run compile && ./scripts/code.sh`
+
+---
+
+*Ci-dessous, le README d'origine de Visual Studio Code.*
+
 # Visual Studio Code - Open Source ("Code - OSS")
 [![Feature Requests](https://img.shields.io/github/issues/microsoft/vscode/feature-request.svg)](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
 [![Bugs](https://img.shields.io/github/issues/microsoft/vscode/bug.svg)](https://github.com/microsoft/vscode/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug)
