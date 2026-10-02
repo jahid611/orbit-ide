@@ -43,6 +43,12 @@
         "icon": "$(sparkle)"
       },
       {
+        "command": "orbit.claude.newProject",
+        "title": "New Project with Claude…",
+        "category": "Orbit",
+        "icon": "$(new-folder)"
+      },
+      {
         "command": "orbit.claude.split",
         "title": "Split Claude Terminal",
         "category": "Orbit",
@@ -313,6 +319,16 @@
               "claude-fable-5-1"
             ],
             "description": "Model used for inline edits (Cmd+K). A faster model feels snappier."
+          },
+          "orbit.claude.revealNewFiles": {
+            "type": "boolean",
+            "default": true,
+            "description": "Reveal files created in the project in the explorer and preview them, without leaving the terminal."
+          },
+          "orbit.claude.projectsFolder": {
+            "type": "string",
+            "default": "",
+            "description": "Where new Orbit projects are created. Empty uses ~/Orbit."
           }
         }
       }

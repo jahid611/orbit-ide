@@ -4,12 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { ClaudeLaunch, claudeCommandLine, claudeTerminalEnv, MODELS, PERMISSION_MODES, readConfig, workspaceRoot } from './config';
 
 const execFileAsync = promisify(execFile);
+
+const PENDING_LAUNCH_KEY = 'orbit.launchClaudeIn';
+const IGNORED_PATH = /[\\/](node_modules|\.git|dist|build|out|\.next|\.turbo|\.cache|coverage|\.venv|__pycache__)[\\/]/;
 
 const COLORS = ['terminal.ansiMagenta', 'terminal.ansiCyan', 'terminal.ansiGreen', 'terminal.ansiYellow', 'terminal.ansiBlue', 'terminal.ansiRed'];
 
@@ -32,7 +36,10 @@ export class ClaudeTerminals implements vscode.Disposable {
 	private readonly disposables: vscode.Disposable[] = [];
 	private readonly statusItem = vscode.window.createStatusBarItem('orbit.claudeTerminals', vscode.StatusBarAlignment.Right, 1000);
 
-	constructor() {
+	private revealTimer: NodeJS.Timeout | undefined;
+	private lastCreated: vscode.Uri | undefined;
+
+	constructor(private readonly state: vscode.Memento) {
 		// Terminals revived after a reload keep their name, so adopt them.
 		for (const t of vscode.window.terminals) {
 			this.adopt(t);
@@ -51,6 +58,7 @@ export class ClaudeTerminals implements vscode.Disposable {
 					this.lastActive = t;
 				}
 			}),
+			...this.watchNewFiles(),
 			vscode.window.registerTerminalProfileProvider('orbit.claude', {
 				provideTerminalProfile: () => new vscode.TerminalProfile(this.profileOptions()),
 			}),
@@ -75,13 +83,70 @@ export class ClaudeTerminals implements vscode.Disposable {
 		return terminal;
 	}
 
+	/**
+	 * Entry point for "New Claude Terminal": without an open project, Claude would write
+	 * files where the user can't see them, so offer to create or open one first.
+	 */
+	async start(): Promise<void> {
+		if (vscode.workspace.workspaceFolders?.length) {
+			this.create();
+			return;
+		}
+		const pick = await vscode.window.showQuickPick([
+			{ label: '$(new-folder) Nouveau projet', detail: `Crée un dossier dans ${readConfig().projectsFolder} et y lance Claude — tout apparaît dans l'explorateur`, id: 'new' },
+			{ label: '$(folder-opened) Ouvrir un dossier…', detail: 'Lance Claude dans un projet existant', id: 'open' },
+			{ label: '$(home) Sans projet', detail: 'Claude dans ton dossier personnel (rien ne s\'affiche dans l\'explorateur)', id: 'home' },
+		], { title: 'Démarrer Claude', placeHolder: 'Où Claude doit-il travailler ?' });
+		if (pick?.id === 'new') {
+			await this.newProject();
+		} else if (pick?.id === 'open') {
+			const folder = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Lancer Claude ici' });
+			if (folder?.[0]) {
+				await this.openAndLaunch(folder[0].fsPath);
+			}
+		} else if (pick?.id === 'home') {
+			this.create();
+		}
+	}
+
+	async newProject(): Promise<void> {
+		const name = await vscode.window.showInputBox({
+			title: 'Nouveau projet',
+			prompt: 'Nom du projet',
+			value: `projet-${new Date().toISOString().slice(0, 10)}`,
+			validateInput: v => v.trim() ? undefined : 'Donne un nom au projet',
+		});
+		if (!name) {
+			return;
+		}
+		const base = readConfig().projectsFolder;
+		const slug = name.trim().replace(/[^\w\s.-]/g, '').replace(/\s+/g, '-') || 'projet';
+		let dir = path.join(base, slug);
+		for (let i = 2; fs.existsSync(dir); i++) {
+			dir = path.join(base, `${slug}-${i}`);
+		}
+		await fs.promises.mkdir(dir, { recursive: true });
+		try {
+			await execFileAsync('git', ['init', '-q'], { cwd: dir });
+		} catch {
+			// git is optional
+		}
+		await this.openAndLaunch(dir);
+	}
+
+	/** Open a folder in this window; Claude starts there once the window has reloaded. */
+	private async openAndLaunch(dir: string): Promise<void> {
+		await this.state.update(PENDING_LAUNCH_KEY, dir);
+		await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(dir), { forceReuseWindow: true });
+	}
+
 	/** Focus the most recent Claude terminal, or start one. */
 	focus(): void {
 		const target = this.lastActive ?? [...this.terminals].pop();
 		if (target) {
 			target.show();
 		} else {
-			this.create();
+			this.start();
 		}
 	}
 
@@ -184,7 +249,8 @@ export class ClaudeTerminals implements vscode.Disposable {
 		}));
 		items.push(
 			{ label: '', kind: vscode.QuickPickItemKind.Separator },
-			{ label: '$(add) Nouveau terminal Claude', action: () => this.create() },
+			{ label: '$(add) Nouveau terminal Claude', action: () => this.start() },
+			{ label: '$(new-folder) Nouveau projet avec Claude…', action: () => this.newProject() },
 			{ label: '$(split-horizontal) Claude en split', action: () => this.split() },
 			{ label: '$(layout) Grille d\'agents…', action: () => this.grid() },
 			{ label: '$(git-branch) Claude dans un worktree…', action: () => this.worktree() },
@@ -201,7 +267,12 @@ export class ClaudeTerminals implements vscode.Disposable {
 
 	/** Open the first Claude terminal when a project opens, like a fresh Claude Code session. */
 	autoStart(): void {
-		if (!readConfig().autoStart || !vscode.workspace.workspaceFolders?.length) {
+		const pending = this.state.get<string>(PENDING_LAUNCH_KEY);
+		const requested = !!pending && pending === vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+		if (pending) {
+			this.state.update(PENDING_LAUNCH_KEY, undefined);
+		}
+		if (!requested && (!readConfig().autoStart || !vscode.workspace.workspaceFolders?.length)) {
 			return;
 		}
 		// Give revived terminals a moment to come back before deciding.
@@ -215,6 +286,29 @@ export class ClaudeTerminals implements vscode.Disposable {
 	dispose(): void {
 		this.disposables.forEach(d => d.dispose());
 		this.statusItem.dispose();
+	}
+
+	/** Surface files Claude creates: preview them so the explorer reveals them, keeping focus in the terminal. */
+	private watchNewFiles(): vscode.Disposable[] {
+		const watcher = vscode.workspace.createFileSystemWatcher('**/*', false, true, true);
+		return [watcher, watcher.onDidCreate(uri => {
+			if (!readConfig().revealNewFiles || !this.terminals.size || IGNORED_PATH.test(uri.fsPath) || path.basename(uri.fsPath).startsWith('.')) {
+				return;
+			}
+			this.lastCreated = uri;
+			clearTimeout(this.revealTimer);
+			this.revealTimer = setTimeout(async () => {
+				const target = this.lastCreated;
+				try {
+					if (!target || (await vscode.workspace.fs.stat(target)).type !== vscode.FileType.File) {
+						return;
+					}
+					await vscode.commands.executeCommand('vscode.open', target, { preview: true, preserveFocus: true, viewColumn: vscode.ViewColumn.One });
+				} catch {
+					// file vanished (temp file)
+				}
+			}, 500);
+		})];
 	}
 
 	private baseOptions(label?: string): vscode.TerminalOptions {

@@ -33,9 +33,13 @@ export function readConfig() {
 		persona: c.get<string>('claude.persona') ?? '',
 		extraArgs: c.get<string>('claude.extraArgs') ?? '',
 		autoStart: c.get<boolean>('claude.autoStart') ?? true,
+		revealNewFiles: c.get<boolean>('claude.revealNewFiles') ?? true,
+		projectsFolder: c.get<string>('claude.projectsFolder') || path.join(os.homedir(), 'Orbit'),
 		inlineModel: c.get<string>('inlineEdit.model') || 'sonnet',
 	};
 }
+
+const ORBIT_CONTEXT = 'You are running in a terminal inside Orbit, a desktop IDE. The user sees the project file tree and an editor right next to this terminal, and files you write open there live. Always produce real files and folders inside the current working directory (never hosted artifacts, pastebins or remote documents), and mention the relative path of each file you create.';
 
 export interface ClaudeLaunch {
 	model?: string;
@@ -56,10 +60,10 @@ export function claudeCommandLine(launch: ClaudeLaunch = {}): string {
 	if (mode) {
 		args.push('--permission-mode', mode);
 	}
-	const system = [config.language ? `Always answer in ${config.language}.` : '', config.persona.trim()].filter(Boolean).join('\n\n');
-	if (system) {
-		args.push('--append-system-prompt', system);
-	}
+	const system = [ORBIT_CONTEXT, config.language ? `Always answer in ${config.language}.` : '', config.persona.trim()].filter(Boolean).join('\n\n');
+	args.push('--append-system-prompt', system);
+	// Work lands on disk where the user can see it, never in hosted artifacts.
+	args.push('--disallowedTools', 'Artifact');
 	args.push(...(launch.flags ?? []));
 	const extra = config.extraArgs.trim();
 	return [shellQuote(config.claudePath), ...args.map(shellQuote), extra].filter(Boolean).join(' ');

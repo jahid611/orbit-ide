@@ -13,7 +13,7 @@ import { applyPreset, LAYOUT_PRESETS, StudioPanel } from './studio';
 const WELCOME_KEY = 'orbit.welcomed.v2';
 
 export function activate(context: vscode.ExtensionContext): void {
-	const claude = new ClaudeTerminals();
+	const claude = new ClaudeTerminals(context.globalState);
 	const studio = new StudioPanel(context.extensionUri);
 	const inline = new InlineEditController();
 
@@ -21,7 +21,8 @@ export function activate(context: vscode.ExtensionContext): void {
 		claude, studio, inline,
 
 		vscode.commands.registerCommand('orbit.claude.focus', () => claude.focus()),
-		vscode.commands.registerCommand('orbit.claude.new', () => claude.create()),
+		vscode.commands.registerCommand('orbit.claude.new', () => claude.start()),
+		vscode.commands.registerCommand('orbit.claude.newProject', () => claude.newProject()),
 		vscode.commands.registerCommand('orbit.claude.split', () => claude.split()),
 		vscode.commands.registerCommand('orbit.claude.inEditor', () => claude.inEditor()),
 		vscode.commands.registerCommand('orbit.claude.grid', () => claude.grid()),
