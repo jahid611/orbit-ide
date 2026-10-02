@@ -5,7 +5,10 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { AgentTracker } from './agentTracker';
+import { ChatViewProvider } from './chatView';
 import { ClaudeTerminals } from './claudeTerminals';
+import { SessionsView, SessionStore, timeAgo } from './sessions';
 import { workspaceRoot } from './config';
 import { InlineEditController } from './inlineEdit';
 import { applyPreset, LAYOUT_PRESETS, StudioPanel } from './studio';
@@ -14,11 +17,80 @@ const WELCOME_KEY = 'orbit.welcomed.v2';
 
 export function activate(context: vscode.ExtensionContext): void {
 	const claude = new ClaudeTerminals(context.globalState);
+	const tracker = new AgentTracker(pid => claude.byPid(pid)?.name, pid => claude.byPid(pid)?.show());
+	const store = new SessionStore(context.globalState);
+	const sessionsView = new SessionsView(store, tracker);
+	const chat = new ChatViewProvider(context.extensionUri, claude, tracker);
 	const studio = new StudioPanel(context.extensionUri);
 	const inline = new InlineEditController();
 
+	const renameSession = async (sessionId: string | undefined, terminal?: vscode.Terminal) => {
+		if (!sessionId) {
+			vscode.window.showInformationMessage('Cette discussion n\'a pas encore commencé : envoie un premier message à Claude.');
+			return;
+		}
+		const current = store.get(sessionId);
+		const name = await vscode.window.showInputBox({ title: 'Renommer la discussion', value: current?.title ?? '', prompt: 'Laisse vide pour revenir au titre automatique' });
+		if (name === undefined) {
+			return;
+		}
+		await store.rename(sessionId, name);
+		const live = terminal ?? (() => {
+			const state = tracker.findBySession(sessionId);
+			return state ? claude.byPid(state.pid) : undefined;
+		})();
+		if (live) {
+			await claude.rename(live, name.trim() ? `✦ ${name.trim()}` : 'Claude');
+		}
+		sessionsView.refreshSoon();
+	};
+	const sessionOfTerminal = (t: vscode.Terminal | undefined) => {
+		if (!t) {
+			return undefined;
+		}
+		const pid = claude.pidOf(t);
+		return tracker.get(pid)?.sessionId ?? claude.sessionIdFor(t);
+	};
+
 	context.subscriptions.push(
-		claude, studio, inline,
+		claude, tracker, sessionsView, chat, studio, inline,
+		claude.onDidClose(pid => tracker.forget(pid)),
+		vscode.window.registerTreeDataProvider('orbit.sessions', sessionsView),
+		vscode.window.registerWebviewViewProvider(ChatViewProvider.viewId, chat, { webviewOptions: { retainContextWhenHidden: true } }),
+
+		vscode.commands.registerCommand('orbit.chat.show', () => chat.show()),
+		vscode.commands.registerCommand('orbit.chat.showTerminal', () => chat.showTerminal()),
+		vscode.commands.registerCommand('orbit.chat.toggle', () => chat.toggle()),
+
+		vscode.commands.registerCommand('orbit.sessions.open', (id: string) => {
+			const state = tracker.findBySession(id);
+			claude.resume(id, store.get(id)?.customName, state ? claude.byPid(state.pid) : undefined);
+		}),
+		vscode.commands.registerCommand('orbit.sessions.rename', (node?: { session?: { id: string } }) => renameSession(node?.session?.id)),
+		vscode.commands.registerCommand('orbit.sessions.renameCurrent', () => {
+			const t = claude.current();
+			return renameSession(sessionOfTerminal(t), t);
+		}),
+		vscode.commands.registerCommand('orbit.sessions.refresh', () => sessionsView.refreshSoon()),
+		vscode.commands.registerCommand('orbit.sessions.search', async () => {
+			const sessions = store.list();
+			if (!sessions.length) {
+				vscode.window.showInformationMessage('Aucune discussion Claude dans ce projet pour l\'instant.');
+				return;
+			}
+			const pick = await vscode.window.showQuickPick(sessions.map(s => {
+				const live = tracker.findBySession(s.id);
+				return {
+					label: `${live ? '$(sparkle) ' : '$(comment-discussion) '}${s.title}`,
+					description: live ? 'ouverte' : timeAgo(s.modified),
+					detail: s.lastPrompt.slice(0, 160),
+					id: s.id,
+				};
+			}), { title: 'Discussions récentes', placeHolder: 'Rechercher une discussion (titre ou contenu)…', matchOnDescription: true, matchOnDetail: true });
+			if (pick) {
+				await vscode.commands.executeCommand('orbit.sessions.open', pick.id);
+			}
+		}),
 
 		vscode.commands.registerCommand('orbit.claude.focus', () => claude.focus()),
 		vscode.commands.registerCommand('orbit.claude.new', () => claude.start()),

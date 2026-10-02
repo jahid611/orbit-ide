@@ -12,6 +12,14 @@ import { IConfigurationService } from '../../../../platform/configuration/common
 import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from '../../../../platform/configuration/common/configurationRegistry.js';
 import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
 import { ILifecycleService, LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
+import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
+import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
+import { FileAccess } from '../../../../base/common/network.js';
+import { URI } from '../../../../base/common/uri.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
+import Severity from '../../../../base/common/severity.js';
+import { ITerminalService } from '../../terminal/browser/terminal.js';
 
 /**
  * Orbit UI engine: lets users reshape the workbench chrome (floating panels,
@@ -27,6 +35,7 @@ const SETTING_COMPACT = 'orbit.ui.compactTabs';
 const SETTING_HIDE_ICONS = 'orbit.ui.minimalChrome';
 const SETTING_CSS = 'orbit.ui.customCss';
 const SETTING_SPLASH = 'orbit.ui.splashScreen';
+const SETTING_WALLPAPER = 'orbit.ui.wallpaper';
 
 /** The launch animation's intro takes this long (ms since navigation start) to play out. */
 const SPLASH_MIN_MS = 3000;
@@ -79,6 +88,11 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).regis
 			type: 'boolean',
 			default: false,
 			description: nls.localize('orbit.minimalChrome', "Hide borders and separators for a distraction free look."),
+		},
+		[SETTING_WALLPAPER]: {
+			type: 'string',
+			default: 'cosmos',
+			markdownDescription: nls.localize('orbit.wallpaper', "Image painted behind the whole interface: `cosmos` for the Orbit space scene, `none`, or an absolute path to your own image. Visible through translucent themes such as Orbit Cosmos."),
 		},
 		[SETTING_SPLASH]: {
 			type: 'boolean',
@@ -186,6 +200,20 @@ class OrbitUiContribution extends Disposable implements IWorkbenchContribution {
 .monaco-workbench .pane-composite-part .split-view-view:not(:first-child) > .pane > .pane-header { border-top: none !important; }`);
 		}
 
+		const wallpaper = (get<string>(SETTING_WALLPAPER) ?? 'cosmos').trim();
+		if (wallpaper && wallpaper !== 'none') {
+			const url = wallpaper === 'cosmos'
+				? FileAccess.asBrowserUri('vs/workbench/contrib/orbit/browser/media/cosmos.jpg').toString(true)
+				: FileAccess.uriToBrowserUri(URI.file(wallpaper)).toString(true);
+			rules.push(`.monaco-workbench { background-image: url("${url.replace(/"/g, '%22')}") !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important; }`);
+			// Only each part keeps the theme's (translucent) colour; layers inside it would stack up and hide the wallpaper.
+			rules.push(`
+.monaco-workbench .monaco-grid-view, .monaco-workbench .part .pane, .monaco-workbench .part.editor > .content,
+.monaco-workbench .part.editor .editor-group-container, .monaco-workbench .part.editor .editor-group-container > .editor-container,
+.monaco-workbench .part.editor .monaco-editor, .monaco-workbench .part.editor .monaco-editor-background, .monaco-workbench .part.editor .monaco-editor .margin,
+.monaco-workbench .part.editor .gettingStartedContainer, .monaco-workbench .part.panel .terminal-wrapper, .monaco-workbench .part.panel .xterm .xterm-viewport { background-color: transparent !important; }`);
+		}
+
 		const custom = get<string>(SETTING_CSS) ?? '';
 		this.styleElement.textContent = rules.join('\n') + '\n/* user css */\n' + custom;
 	}
@@ -200,3 +228,40 @@ function sanitize(font: string): string {
 }
 
 registerWorkbenchContribution2(OrbitUiContribution.ID, OrbitUiContribution, WorkbenchPhase.BlockRestore);
+
+type OrbitAgentStatus = 'running' | 'waiting' | 'done' | 'idle';
+
+const AGENT_STATUS_ID = 'orbit.agent';
+const AGENT_STATUS: Record<OrbitAgentStatus, { icon: ThemeIcon; severity: Severity }> = {
+	running: { icon: ThemeIcon.modify(Codicon.loading, 'spin'), severity: Severity.Info },
+	waiting: { icon: Codicon.bellDot, severity: Severity.Warning },
+	done: { icon: Codicon.passFilled, severity: Severity.Info },
+	idle: { icon: Codicon.sparkle, severity: Severity.Ignore },
+};
+
+function findTerminal(accessor: ServicesAccessor, processId: unknown) {
+	return accessor.get(ITerminalService).instances.find(i => i.processId === processId);
+}
+
+/** Lets the Orbit extension show what each Claude agent is doing directly on its terminal tab. */
+CommandsRegistry.registerCommand('_orbit.setTerminalStatus', (accessor, processId: number, status: OrbitAgentStatus | undefined, tooltip?: string) => {
+	const instance = findTerminal(accessor, processId);
+	if (!instance) {
+		return false;
+	}
+	instance.statusList.remove(AGENT_STATUS_ID);
+	const spec = status && AGENT_STATUS[status];
+	if (spec) {
+		instance.statusList.add({ id: AGENT_STATUS_ID, icon: spec.icon, severity: spec.severity, tooltip });
+	}
+	return true;
+});
+
+CommandsRegistry.registerCommand('_orbit.renameTerminal', async (accessor, processId: number, title: string) => {
+	const instance = findTerminal(accessor, processId);
+	if (instance && title) {
+		await instance.rename(title);
+		return true;
+	}
+	return false;
+});

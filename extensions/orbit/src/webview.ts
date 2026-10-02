@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { randomBytes } from 'crypto';
 
-export function renderWebview(webview: vscode.Webview, extensionUri: vscode.Uri, page: 'studio'): string {
+export function renderWebview(webview: vscode.Webview, extensionUri: vscode.Uri, page: 'studio' | 'chat'): string {
 	const nonce = randomBytes(16).toString('base64');
 	const media = (file: string) => webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', file));
 	return `<!DOCTYPE html>

@@ -277,7 +277,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 				kittyKeyboard: config.enableKittyKeyboardProtocol,
 				win32InputMode: config.enableWin32InputMode,
 			},
-			allowTransparency: config.enableImages,
+			allowTransparency: true, // Orbit: lets translucent themes show the wallpaper behind terminals
 			windowOptions: {
 				getWinSizePixels: true,
 				getCellSizePixels: true,
@@ -613,7 +613,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 		this.raw.options.scrollbar = this._getScrollbarOptions();
 		this.raw.options.ignoreBracketedPasteMode = config.ignoreBracketedPasteMode;
 		this.raw.options.rescaleOverlappingGlyphs = config.rescaleOverlappingGlyphs;
-		this.raw.options.allowTransparency = config.enableImages;
+		this.raw.options.allowTransparency = true;
 		updateTerminalFontRendering(this.raw, config.fontRendering);
 		this.raw.options.vtExtensions = {
 			kittyKeyboard: config.enableKittyKeyboardProtocol,

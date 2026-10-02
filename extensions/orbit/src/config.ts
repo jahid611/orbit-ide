@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import * as os from 'os';
 import * as path from 'path';
+import { HOOK_SETTINGS } from './agentTracker';
 
 export const MODELS = [
 	{ id: '', label: 'Par défaut (Claude Code)' },
@@ -62,9 +63,11 @@ export function claudeCommandLine(launch: ClaudeLaunch = {}): string {
 	}
 	const system = [ORBIT_CONTEXT, config.language ? `Always answer in ${config.language}.` : '', config.persona.trim()].filter(Boolean).join('\n\n');
 	args.push('--append-system-prompt', system);
+	// Hooks report what the agent is doing to the IDE (tab status, notifications, chat view).
+	args.push('--settings', HOOK_SETTINGS);
+	args.push(...(launch.flags ?? []));
 	// Work lands on disk where the user can see it, never in hosted artifacts.
 	args.push('--disallowedTools', 'Artifact');
-	args.push(...(launch.flags ?? []));
 	const extra = config.extraArgs.trim();
 	return [shellQuote(config.claudePath), ...args.map(shellQuote), extra].filter(Boolean).join(' ');
 }

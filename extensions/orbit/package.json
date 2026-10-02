@@ -132,24 +132,109 @@
         "command": "orbit.editRules",
         "title": "Edit Project Rules for Claude (CLAUDE.md)",
         "category": "Orbit"
+      },
+      {
+        "command": "orbit.chat.show",
+        "title": "Vue discussion",
+        "category": "Orbit",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "orbit.chat.showTerminal",
+        "title": "Vue terminal",
+        "category": "Orbit",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "orbit.chat.toggle",
+        "title": "Basculer vue discussion / terminal",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.sessions.search",
+        "title": "Rechercher une discussion…",
+        "category": "Orbit",
+        "icon": "$(search)"
+      },
+      {
+        "command": "orbit.sessions.rename",
+        "title": "Renommer",
+        "category": "Orbit",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "orbit.sessions.renameCurrent",
+        "title": "Renommer la discussion actuelle…",
+        "category": "Orbit",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "orbit.sessions.refresh",
+        "title": "Actualiser",
+        "category": "Orbit",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "orbit.sessions.open",
+        "title": "Ouvrir la discussion",
+        "category": "Orbit"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "orbit.claude.new",
+          "command": "orbit.chat.show",
           "when": "view == terminal",
           "group": "navigation@0"
         },
         {
+          "command": "orbit.claude.new",
+          "when": "view == terminal",
+          "group": "navigation@1"
+        },
+        {
           "command": "orbit.claude.grid",
           "when": "view == terminal",
+          "group": "navigation@2"
+        },
+        {
+          "command": "orbit.chat.showTerminal",
+          "when": "view == orbit.chatView",
           "group": "navigation@0"
+        },
+        {
+          "command": "orbit.sessions.renameCurrent",
+          "when": "view == orbit.chatView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orbit.claude.new",
+          "when": "view == orbit.chatView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "orbit.sessions.search",
+          "when": "view == orbit.sessions",
+          "group": "navigation@0"
+        },
+        {
+          "command": "orbit.claude.new",
+          "when": "view == orbit.sessions",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orbit.sessions.refresh",
+          "when": "view == orbit.sessions",
+          "group": "navigation@2"
         }
       ],
       "terminal/title/context": [
         {
           "command": "orbit.claude.new",
+          "group": "0_orbit"
+        },
+        {
+          "command": "orbit.sessions.renameCurrent",
           "group": "0_orbit"
         }
       ],
@@ -171,6 +256,26 @@
         {
           "command": "orbit.rejectInlineEdit",
           "when": "orbit.inlineEditPending"
+        },
+        {
+          "command": "orbit.sessions.open",
+          "when": "false"
+        },
+        {
+          "command": "orbit.sessions.rename",
+          "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "orbit.sessions.rename",
+          "when": "view == orbit.sessions && viewItem =~ /^session/",
+          "group": "inline"
+        },
+        {
+          "command": "orbit.sessions.rename",
+          "when": "view == orbit.sessions && viewItem =~ /^session/",
+          "group": "1_edit"
         }
       ]
     },
@@ -228,6 +333,16 @@
         "command": "orbit.openStudio",
         "key": "ctrl+alt+,",
         "mac": "cmd+alt+,"
+      },
+      {
+        "command": "orbit.chat.toggle",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t"
+      },
+      {
+        "command": "orbit.sessions.search",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r"
       }
     ],
     "configuration": [
@@ -334,7 +449,7 @@
       }
     ],
     "configurationDefaults": {
-      "workbench.colorTheme": "Orbit Midnight",
+      "workbench.colorTheme": "Orbit Cosmos",
       "workbench.activityBar.location": "top",
       "window.commandCenter": true,
       "editor.fontFamily": "'JetBrains Mono', 'SF Mono', Menlo, Monaco, monospace",
@@ -367,6 +482,11 @@
       "terminal.integrated.gpuAcceleration": "on"
     },
     "themes": [
+      {
+        "label": "Orbit Cosmos",
+        "uiTheme": "vs-dark",
+        "path": "./themes/orbit-cosmos.json"
+      },
       {
         "label": "Orbit Midnight",
         "uiTheme": "vs-dark",
@@ -401,7 +521,46 @@
           "icon": "sparkle"
         }
       ]
-    }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "orbit-sessions",
+          "title": "Discussions Claude",
+          "icon": "media/orbit.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "orbit-chat",
+          "title": "Discussion",
+          "icon": "media/orbit.svg"
+        }
+      ]
+    },
+    "views": {
+      "orbit-sessions": [
+        {
+          "id": "orbit.sessions",
+          "name": "Discussions",
+          "icon": "media/orbit.svg"
+        }
+      ],
+      "orbit-chat": [
+        {
+          "type": "webview",
+          "id": "orbit.chatView",
+          "name": "Discussion",
+          "icon": "media/orbit.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "orbit.sessions",
+        "contents": "Aucune discussion Claude dans ce projet.\n[$(sparkle) Démarrer Claude](command:orbit.claude.new)"
+      }
+    ]
   },
   "repository": {
     "type": "git",

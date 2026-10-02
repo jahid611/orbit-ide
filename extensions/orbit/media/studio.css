@@ -50,6 +50,7 @@ textarea.css { width: 100%; padding: 12px; font-family: var(--mono); font-size: 
 .theme-card.selected { border-color: var(--accent); }
 .swatch { display: flex; height: 54px; border-radius: 8px; overflow: hidden; }
 .swatch i { flex: 1; }
+.sw-orbit-cosmos i:nth-child(1) { background: radial-gradient(circle at 18% 85%, #8b7bff 0 18%, transparent 19%), radial-gradient(circle at 85% 20%, #5eead4 0 7%, transparent 8%), #0a0918; flex: 2; } .sw-orbit-cosmos i:nth-child(2) { background: #8b7bff; } .sw-orbit-cosmos i:nth-child(3) { background: #5eead4; }
 .sw-orbit-midnight i:nth-child(1) { background: #0d0e1a; flex: 2; } .sw-orbit-midnight i:nth-child(2) { background: #8b7bff; } .sw-orbit-midnight i:nth-child(3) { background: #5eead4; }
 .sw-orbit-aurora i:nth-child(1) { background: #0a1416; flex: 2; } .sw-orbit-aurora i:nth-child(2) { background: #2dd4bf; } .sw-orbit-aurora i:nth-child(3) { background: #a3e635; }
 .sw-orbit-ember i:nth-child(1) { background: #17110e; flex: 2; } .sw-orbit-ember i:nth-child(2) { background: #fb923c; } .sw-orbit-ember i:nth-child(3) { background: #fbbf24; }

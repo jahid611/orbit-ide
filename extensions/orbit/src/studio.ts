@@ -9,7 +9,7 @@ import { renderWebview, webviewOptions } from './webview';
 
 /** Every setting the studio can edit, grouped as shown in the UI. */
 const STUDIO_KEYS = [
-	'workbench.colorTheme', 'workbench.iconTheme', 'window.zoomLevel',
+	'workbench.colorTheme', 'workbench.iconTheme', 'window.zoomLevel', 'orbit.ui.wallpaper',
 	'orbit.ui.floatingPanels', 'orbit.ui.panelGap', 'orbit.ui.cornerRadius', 'orbit.ui.fontFamily', 'orbit.ui.fontSize',
 	'orbit.ui.compactTabs', 'orbit.ui.minimalChrome', 'orbit.ui.customCss',
 	'workbench.activityBar.location', 'workbench.sideBar.location', 'workbench.statusBar.visible', 'window.commandCenter',

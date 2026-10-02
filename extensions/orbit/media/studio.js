@@ -27,7 +27,13 @@
 	 * @type {{ id: string, title: string, hint?: string, controls: any[] }[]}
 	 */
 	const SECTIONS = [
-		{ id: 'theme', title: 'Thème', hint: 'Choisis une ambiance. Les thèmes Orbit sont pensés pour le travail avec l\'agent.', controls: [{ type: 'themes' }] },
+		{
+			id: 'theme', title: 'Thème', hint: 'Choisis une ambiance. Orbit Cosmos laisse voir le fond spatial derrière l\'interface.', controls: [
+				{ type: 'themes' },
+				{ type: 'segmented', key: 'orbit.ui.wallpaper', label: 'Fond d\'écran', options: [['cosmos', 'Cosmos'], ['none', 'Aucun']] },
+				{ type: 'text', key: 'orbit.ui.wallpaper', label: 'Ou ta propre image', placeholder: '/chemin/vers/image.jpg' },
+			],
+		},
 		{ id: 'accent', title: 'Couleur d\'accent', hint: 'Appliquée aux boutons, focus, onglets et curseur.', controls: [{ type: 'accent' }] },
 		{ id: 'layout', title: 'Disposition', hint: 'Un clic pour une interface complète, puis affine.', controls: [{ type: 'presets' }] },
 		{

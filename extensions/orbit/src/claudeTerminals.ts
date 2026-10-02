@@ -8,6 +8,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { randomUUID } from 'crypto';
+import { projectSessionsDir } from './sessions';
 import { ClaudeLaunch, claudeCommandLine, claudeTerminalEnv, MODELS, PERMISSION_MODES, readConfig, workspaceRoot } from './config';
 
 const execFileAsync = promisify(execFile);
@@ -31,6 +33,14 @@ interface CreateOptions extends ClaudeLaunch {
 export class ClaudeTerminals implements vscode.Disposable {
 
 	private readonly terminals = new Set<vscode.Terminal>();
+	private readonly pids = new Map<vscode.Terminal, number>();
+	private readonly sessions = new Map<vscode.Terminal, { id: string; cwd: string }>();
+	private readonly _onDidChange = new vscode.EventEmitter<void>();
+	/** Fires when Claude terminals open, close or get renamed. */
+	readonly onDidChange = this._onDidChange.event;
+	private readonly _onDidClose = new vscode.EventEmitter<number>();
+	/** Fires with the shell pid of a Claude terminal that closed. */
+	readonly onDidClose = this._onDidClose.event;
 	private lastActive: vscode.Terminal | undefined;
 	private counter = 0;
 	private readonly disposables: vscode.Disposable[] = [];
@@ -47,7 +57,16 @@ export class ClaudeTerminals implements vscode.Disposable {
 		this.disposables.push(
 			vscode.window.onDidOpenTerminal(t => this.adopt(t)),
 			vscode.window.onDidCloseTerminal(t => {
-				this.terminals.delete(t);
+				const pid = this.pids.get(t);
+				if (pid !== undefined) {
+					this._onDidClose.fire(pid);
+				}
+				this.pids.delete(t);
+				this.sessions.delete(t);
+				const had = this.terminals.delete(t);
+				if (had) {
+					this._onDidChange.fire();
+				}
 				if (this.lastActive === t) {
 					this.lastActive = undefined;
 				}
@@ -71,13 +90,25 @@ export class ClaudeTerminals implements vscode.Disposable {
 
 	/** Open a terminal with `claude` already running in it. */
 	create(options: CreateOptions = {}): vscode.Terminal {
+		const cwd = options.cwd ?? workspaceRoot();
+		const flags = [...(options.flags ?? [])];
+		// Pin the session id so Orbit knows which transcript belongs to this terminal.
+		const resumeIndex = flags.indexOf('--resume');
+		let sessionId = resumeIndex >= 0 ? flags[resumeIndex + 1] : undefined;
+		if (!sessionId && !flags.includes('--continue') && resumeIndex < 0) {
+			sessionId = randomUUID();
+			flags.push('--session-id', sessionId);
+		}
 		const terminal = vscode.window.createTerminal({
 			...this.baseOptions(options.label),
-			cwd: options.cwd ?? workspaceRoot(),
+			cwd,
 			location: options.location ?? vscode.TerminalLocation.Panel,
 		});
+		if (sessionId) {
+			this.sessions.set(terminal, { id: sessionId, cwd });
+		}
 		this.adopt(terminal);
-		terminal.sendText(claudeCommandLine(options), true);
+		terminal.sendText(claudeCommandLine({ ...options, flags }), true);
 		terminal.show(options.preserveFocus);
 		this.lastActive = terminal;
 		return terminal;
@@ -254,7 +285,7 @@ export class ClaudeTerminals implements vscode.Disposable {
 			{ label: '$(split-horizontal) Claude en split', action: () => this.split() },
 			{ label: '$(layout) Grille d\'agents…', action: () => this.grid() },
 			{ label: '$(git-branch) Claude dans un worktree…', action: () => this.worktree() },
-			{ label: '$(history) Reprendre une conversation…', action: () => this.create({ flags: ['--resume'] }) },
+			{ label: '$(history) Discussions récentes…', action: () => vscode.commands.executeCommand('orbit.sessions.search') },
 			{ label: '$(broadcast) Envoyer un message à tous…', action: () => this.broadcast() },
 		);
 		const pick = await vscode.window.showQuickPick(items, { title: 'Terminaux Claude', placeHolder: 'Aller à un agent ou en lancer un' });
@@ -277,15 +308,20 @@ export class ClaudeTerminals implements vscode.Disposable {
 		}
 		// Give revived terminals a moment to come back before deciding.
 		setTimeout(() => {
+			for (const t of vscode.window.terminals) {
+				this.adopt(t);
+			}
 			if (!this.terminals.size) {
 				this.create();
 			}
-		}, 1200);
+		}, 2500);
 	}
 
 	dispose(): void {
 		this.disposables.forEach(d => d.dispose());
 		this.statusItem.dispose();
+		this._onDidChange.dispose();
+		this._onDidClose.dispose();
 	}
 
 	/** Surface files Claude creates: preview them so the explorer reveals them, keeping focus in the terminal. */
@@ -333,11 +369,72 @@ export class ClaudeTerminals implements vscode.Disposable {
 		};
 	}
 
-	private adopt(terminal: vscode.Terminal): void {
-		if (terminal.name.startsWith('Claude') && !this.terminals.has(terminal)) {
+	private adopt(terminal: vscode.Terminal, force = false): void {
+		if ((force || /^(Claude|✦)/.test(terminal.name) || /^(Claude|✦)/.test(terminal.creationOptions.name ?? '')) && !this.terminals.has(terminal)) {
 			this.terminals.add(terminal);
+			terminal.processId.then(pid => {
+				if (pid !== undefined) {
+					this.pids.set(terminal, pid);
+					this._onDidChange.fire();
+				}
+			});
 			this.updateStatus();
+			this._onDidChange.fire();
 		}
+	}
+
+	isClaude(terminal: vscode.Terminal): boolean {
+		return this.terminals.has(terminal);
+	}
+
+	list(): vscode.Terminal[] {
+		return [...this.terminals];
+	}
+
+	/** The Claude terminal the user is looking at, or the last one they used. */
+	current(): vscode.Terminal | undefined {
+		const active = vscode.window.activeTerminal;
+		return active && this.terminals.has(active) ? active : this.lastActive ?? [...this.terminals].pop();
+	}
+
+	pidOf(terminal: vscode.Terminal): number | undefined {
+		return this.pids.get(terminal);
+	}
+
+	byPid(pid: number): vscode.Terminal | undefined {
+		return [...this.pids].find(([, p]) => p === pid)?.[0];
+	}
+
+	/** Transcript of a terminal Orbit started, known before Claude reports it through hooks. */
+	sessionFileFor(terminal: vscode.Terminal): string | undefined {
+		const session = this.sessions.get(terminal);
+		return session && path.join(projectSessionsDir(session.cwd), `${session.id}.jsonl`);
+	}
+
+	sessionIdFor(terminal: vscode.Terminal): string | undefined {
+		return this.sessions.get(terminal)?.id;
+	}
+
+	async rename(terminal: vscode.Terminal, name: string): Promise<void> {
+		const pid = this.pids.get(terminal) ?? await terminal.processId;
+		if (pid !== undefined) {
+			await vscode.commands.executeCommand('_orbit.renameTerminal', pid, name);
+			this._onDidChange.fire();
+		}
+	}
+
+	/** Resume a saved conversation, or jump to the terminal where it is already open. */
+	resume(sessionId: string, name: string | undefined, isOpenIn?: vscode.Terminal): void {
+		if (isOpenIn) {
+			isOpenIn.show();
+			return;
+		}
+		const open = [...this.sessions].find(([, s]) => s.id === sessionId)?.[0];
+		if (open) {
+			open.show();
+			return;
+		}
+		this.create({ flags: ['--resume', sessionId], label: name ? `Claude · ${name}` : undefined });
 	}
 
 	private updateStatus(): void {
