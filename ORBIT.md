@@ -72,6 +72,16 @@ Particularités Windows gérées par l'extension :
 - Cœur (src/) : `npm run compile` puis **redémarrer complètement** la fenêtre (un simple Reload garde parfois l'ancien JS en cache).
 - Pour tester sans toucher au profil perso : `./scripts/code.sh ~/projet --user-data-dir ~/.orbit-shot/ud --extensions-dir ~/.orbit-shot/ext --remote-debugging-port=9447` (le chemin du profil doit rester court, sinon le socket IPC échoue ; éviter les ports déjà pris).
 
+### Publier une version
+
+1. Monter `orbitVersion` dans `product.json` (c'est la version d'Orbit ; `version` dans `package.json` reste celle de VS Code).
+2. Pousser, puis pousser l'étiquette `v<orbitVersion>` : `.github/workflows/orbit-release.yml` construit l'installateur Windows (`OrbitSetup-x64-<version>.exe`, Inno Setup, tâches `vscode-win32-x64-min` → `-inno-updater` → `-user-setup`) et l'archive macOS Apple Silicon (`Orbit-mac-arm64-<version>.zip`, signature ad hoc), et les attache à une version GitHub créée en **brouillon** avec le texte de `.github/orbit-release-notes.md`. La publier à la main une fois vérifiée.
+3. En local, mêmes tâches gulp ; l'installateur sort dans `.build/win32-x64/user-setup/OrbitSetup.exe` (≈ 250 Mo, 4 min de compression).
+
+Rien n'est signé (pas de certificat) : Windows affiche SmartScreen, macOS demande « Ouvrir quand même ». Les images de l'assistant d'installation (`resources/win32/inno-*.bmp`) sont faites depuis `brand/orbit-icon-1024.png`. Les automatisations GitHub héritées de Microsoft (tests sur leurs machines, Dependabot) ont été retirées le 9 octobre 2026.
+
+**Mises à jour** (`extensions/orbit/src/update.ts`) : pas de serveur de mise à jour ; Orbit lit la dernière version publiée sur GitHub (45 s après le démarrage puis toutes les 6 h, réglage `orbit.update.mode`, commande `orbit.update.check`), compare à `orbitVersion`, annonce une fois par version. Sous Windows « Mettre à jour » télécharge l'installateur, un petit guetteur PowerShell attend la fermeture d'Orbit, installe sans question et rouvre Orbit. Sous macOS et Linux la page de téléchargement s'ouvre. Lancé depuis les sources (`VSCODE_DEV`), rien n'est vérifié. **Jamais exercé de bout en bout** tant qu'une deuxième version n'a pas été publiée.
+
 ## 4. Architecture
 
 ### 4.1 Modifications du cœur (fork)

@@ -571,6 +571,11 @@
         "title": "Stripe : paiements du projet",
         "category": "Orbit",
         "icon": "$(credit-card)"
+      },
+      {
+        "command": "orbit.update.check",
+        "title": "Rechercher une mise à jour d'Orbit",
+        "category": "Orbit"
       }
     ],
     "menus": {
@@ -1417,6 +1422,19 @@
             "type": "boolean",
             "default": true,
             "description": "À l'ouverture d'un projet, reprendre sa dernière discussion au lieu d'en commencer une nouvelle. Les discussions restent de toute façon dans la vue « Discussions »."
+          },
+          "orbit.update.mode": {
+            "type": "string",
+            "enum": [
+              "notify",
+              "off"
+            ],
+            "enumDescriptions": [
+              "Prévenir quand une nouvelle version d'Orbit est sortie.",
+              "Ne rien vérifier : la commande « Rechercher une mise à jour d'Orbit » reste disponible."
+            ],
+            "default": "notify",
+            "description": "Mises à jour d'Orbit, publiées sur GitHub."
           }
         }
       }

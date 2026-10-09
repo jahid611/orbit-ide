@@ -1,6 +1,7 @@
 {
 	"nameShort": "Orbit",
 	"nameLong": "Orbit",
+	"orbitVersion": "1.0.0",
 	"applicationName": "orbit",
 	"dataFolderName": ".orbit",
 	"sharedDataFolderName": ".orbit-shared",
@@ -31,7 +32,7 @@
 	"linuxDesktopName": "com.orbit.ide",
 	"linuxIconName": "orbit",
 	"licenseFileName": "LICENSE.txt",
-	"reportIssueUrl": "https://github.com/orbit-ide/orbit/issues/new",
+	"reportIssueUrl": "https://github.com/jahid611/orbit-ide/issues/new",
 	"nodejsArtifactFeed": "",
 	"electronArtifactFeed": "",
 	"urlProtocol": "orbit",

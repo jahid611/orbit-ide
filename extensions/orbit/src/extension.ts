@@ -43,6 +43,7 @@ import { deliverToAgent } from './deliver';
 import { installHooks } from './agentTracker';
 import { registerDocumentViewers } from './documents';
 import { registerFontViewer } from './fonts';
+import { Updater } from './update';
 import { CodexTracker } from './codexTracker';
 import { installBranding } from './brand';
 import * as fs from 'fs';
@@ -233,6 +234,8 @@ export function activate(context: vscode.ExtensionContext): void {
 	});
 	context.subscriptions.push(...registerDocumentViewers(context, tellAgent));
 	context.subscriptions.push(registerFontViewer(context));
+	const updater = new Updater(context);
+	context.subscriptions.push(updater, vscode.commands.registerCommand('orbit.update.check', () => updater.check(true)));
 	context.subscriptions.push(envVars, board, visual, skills, figma, supabase, stripe, tools, vscode.workspace.onDidChangeConfiguration(e => e.affectsConfiguration('orbit.env.hideFromAgent') && installHooks()));
 
 	const pickModel = async () => {

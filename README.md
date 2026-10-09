@@ -1,89 +1,74 @@
-<p align="center"><img src="brand/orbit-icon-1024.png" width="160" alt="Orbit"></p>
+<p align="center"><img src="brand/orbit-icon-1024.png" width="140" alt="Orbit"></p>
 
-# Orbit
+<h1 align="center">Orbit</h1>
 
-**Orbit est un IDE basé sur VS Code (Code - OSS 1.140.0) où Claude Code tourne dans de vrais terminaux** : grille d'agents, worktrees, statut de chaque agent sur son onglet, vue discussion du même terminal, historique des discussions, thème spatial Orbit Cosmos et écran de chargement animé.
-
-- Contexte complet, architecture et installation : [`ORBIT.md`](ORBIT.md)
-- Lancer en dev : `nvm use 24.18.0 && npm ci && npm run compile && ./scripts/code.sh`
-
----
-
-*Ci-dessous, le README d'origine de Visual Studio Code.*
-
-# Visual Studio Code - Open Source ("Code - OSS")
-[![Feature Requests](https://img.shields.io/github/issues/microsoft/vscode/feature-request.svg)](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
-[![Bugs](https://img.shields.io/github/issues/microsoft/vscode/bug.svg)](https://github.com/microsoft/vscode/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug)
-
-## The Repository
-
-This repository ("`Code - OSS`") is where we (Microsoft) develop the [Visual Studio Code](https://code.visualstudio.com) product together with the community. Not only do we work on code and issues here, but we also publish our [roadmap](https://github.com/microsoft/vscode/wiki/Roadmap), [monthly iteration plans](https://github.com/microsoft/vscode/wiki/Iteration-Plans), and our [endgame plans](https://github.com/microsoft/vscode/wiki/Running-the-Endgame). This source code is available to everyone under the standard [MIT license](https://github.com/microsoft/vscode/blob/main/LICENSE.txt).
-
-## Visual Studio Code
+<p align="center"><b>L'IDE construit autour des agents de code.</b><br>
+Claude Code ou ChatGPT (Codex) dans de vrais terminaux, et un éditeur qui sait ce que fait chacun d'eux.</p>
 
 <p align="center">
-  <img alt="VS Code in action" src="https://github.com/user-attachments/assets/56af271c-949d-454c-a3ea-16188c063414">
+<a href="https://github.com/jahid611/orbit-ide/releases/latest"><img src="https://img.shields.io/badge/T%C3%A9l%C3%A9charger-Orbit-8b7bff?style=for-the-badge" alt="Télécharger Orbit"></a>
+&nbsp;
+<a href="https://github.com/jahid611/orbit-ide/releases/latest"><img src="https://img.shields.io/github/v/release/jahid611/orbit-ide?style=for-the-badge&label=version&color=5eead4" alt="Dernière version"></a>
 </p>
 
-[Visual Studio Code](https://code.visualstudio.com) is a distribution of the `Code - OSS` repository with Microsoft-specific customizations released under a traditional [Microsoft product license](https://code.visualstudio.com/License/).
+<p align="center"><img src="brand/promo/stills/final-planche.png" alt="Orbit en images : grille d'agents, vue Orbite, vue vivante, StarCapture, NovaGame"></p>
 
-[Visual Studio Code](https://code.visualstudio.com) combines the simplicity of a code editor with what developers need for their core edit-build-debug cycle. It provides comprehensive code editing, navigation, and understanding support along with lightweight debugging, a rich extensibility model, and lightweight integration with existing tools.
+Orbit est un fork de VS Code (Code - OSS 1.140). Ce n'est pas un chat greffé sur un éditeur : c'est le vrai programme de ton agent, avec ton propre abonnement, dans des terminaux qu'Orbit organise, surveille et relie au reste de l'éditeur.
 
-Visual Studio Code is updated monthly with new features and bug fixes. You can download it for Windows, macOS, and Linux on the [Visual Studio Code website](https://code.visualstudio.com/Download). To get the latest releases every day, install the [Insiders build](https://code.visualstudio.com/insiders).
+## Installer
 
-## Contributing
+| Système | Fichier | À savoir |
+|---|---|---|
+| **Windows 10 / 11 (x64)** | [`OrbitSetup-x64-….exe`](https://github.com/jahid611/orbit-ide/releases/latest) | L'installateur n'est pas signé : sur l'écran « Windows a protégé votre ordinateur », clique sur *Informations complémentaires* puis *Exécuter quand même*. |
+| **macOS (Apple Silicon)** | [`Orbit-mac-arm64-….zip`](https://github.com/jahid611/orbit-ide/releases/latest) | Glisse Orbit dans Applications. Au premier lancement : *Réglages Système › Confidentialité et sécurité › Ouvrir quand même*. |
+| **Linux** | depuis les sources | Voir [Construire Orbit](#construire-orbit). |
 
-There are many ways in which you can participate in this project, for example:
+Il te faut aussi **[Claude Code](https://claude.com/claude-code)** (ou **Codex** pour ChatGPT) installé et connecté : c'est lui qui travaille dans les terminaux d'Orbit. Orbit n'utilise jamais de clé d'API payée à l'usage, il retire même celles qui traînent dans l'environnement.
 
-* [Submit bugs and feature requests](https://github.com/microsoft/vscode/issues), and help us verify them as they are checked in
-* Review [source code changes](https://github.com/microsoft/vscode/pulls)
-* Review the [documentation](https://github.com/microsoft/vscode-docs) and make pull requests for anything from typos to new content.
+Orbit se met à jour tout seul : il prévient quand une version sort et l'installe à la fermeture (Windows), ou ouvre la page de téléchargement (macOS).
 
-If you are interested in fixing issues and contributing directly to the codebase, please see the document [How to Contribute](https://github.com/microsoft/vscode/wiki/How-to-Contribute), which covers the following:
+## Ce qu'Orbit fait
 
-* [How to build and run from source](https://github.com/microsoft/vscode/wiki/How-to-Contribute)
-* [The development workflow, including debugging and running tests](https://github.com/microsoft/vscode/wiki/How-to-Contribute#debugging)
-* [Coding guidelines](https://github.com/microsoft/vscode/wiki/Coding-Guidelines)
-* [Submitting pull requests](https://github.com/microsoft/vscode/wiki/How-to-Contribute#pull-requests)
-* [Finding an issue to work on](https://github.com/microsoft/vscode/wiki/How-to-Contribute#where-to-contribute)
-* [Contributing to translations](https://aka.ms/vscodeloc)
+**Des agents, pas un chat**
 
-## Feedback
+- **Terminaux d'agents** : onglets, splits, grille de 2 à 6 agents, un worktree git par agent.
+- **Statut en direct** sur chaque onglet (travaille, attend ton accord, a fini), notifications, y compris sur ton téléphone.
+- **Vue Orbite** : le projet au centre, chaque agent en planète, ses fichiers en lunes, les collisions en rouge.
+- **Radar de collision** : alerte dès que deux agents modifient le même fichier.
+- **Chef d'équipe** et **chef d'orchestre** : un agent découpe la tâche, crée les autres, puis les branches sont fusionnées.
+- **File de nuit** et **tableau de tâches** : empile le travail, retrouve un compte rendu par tâche.
+- **Discussions reliées au projet** : chaque dossier retrouve ses discussions, même déplacé ou renommé.
 
-* Ask a question on [Stack Overflow](https://stackoverflow.com/questions/tagged/vscode)
-* [Request a new feature](CONTRIBUTING.md)
-* Upvote [popular feature requests](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
-* [File an issue](https://github.com/microsoft/vscode/issues)
-* Connect with the extension author community on [GitHub Discussions](https://github.com/microsoft/vscode-discussions/discussions) or [Slack](https://aka.ms/vscode-dev-community)
-* Follow [@code](https://x.com/code) and let us know what you think!
+**Une boucle fermée**
 
-See our [wiki](https://github.com/microsoft/vscode/wiki/Feedback-Channels) for a description of each of these channels and information on some other available community-driven channels.
+- **Vérification automatique** : types, lint et tests relancés à la fin de chaque tour, les échecs renvoyés à l'agent.
+- **Relecture visuelle** : captures avant et après d'une page modifiée, que l'agent regarde lui-même.
+- **Machine à remonter le temps** : une photo du projet à chaque message, retour arrière par tour ou par fichier.
+- **Vue vivante** : ton site à côté du code, 14 appareils, un clic sur un élément remonte au fichier et à la ligne.
 
-## Related Projects
+**Des outils dans l'éditeur**
 
-Many of the core components and extensions to VS Code live in their own repositories on GitHub. For example, the [node debug adapter](https://github.com/microsoft/vscode-node-debug) and the [mono debug adapter](https://github.com/microsoft/vscode-mono-debug) repositories are separate from each other. For a complete list, please visit the [Related Projects](https://github.com/microsoft/vscode/wiki/Related-Projects) page on our [wiki](https://github.com/microsoft/vscode/wiki).
+- **StarCapture**, un éditeur vidéo complet (timeline, sous-titres mot par mot, coupe des silences, export rapide) que l'agent sait piloter.
+- **NovaGame**, l'atelier de jeux Unity : la scène, l'inspecteur et le jeu jouable dans Orbit.
+- **Vercel**, **Supabase**, **Stripe**, **Figma vers code**, **Higgsfield**, variables d'environnement cachées aux agents, base de données, magasin de connecteurs.
+- **Lecteurs** de PDF, de présentations PowerPoint et de polices.
+- **Studio** de personnalisation : six thèmes, fond d'écran, dispositions, CSS libre.
 
-## Bundled Extensions
+Le détail de chaque fonction, l'architecture et les pièges connus sont dans [`ORBIT.md`](ORBIT.md).
 
-VS Code includes a set of built-in extensions located in the [extensions](extensions) folder, including grammars and snippets for many languages. Extensions that provide rich language support (inline suggestions, Go to Definition) for a language have the suffix `language-features`. For example, the `json` extension provides coloring for `JSON` and the `json-language-features` extension provides rich language support for `JSON`.
+## Construire Orbit
 
-## Development Container
+```bash
+git clone https://github.com/jahid611/orbit-ide.git
+cd orbit-ide
+nvm install 24.18.0 && nvm use 24.18.0
+npm ci
+npm run compile
+./scripts/code.sh ~/un-projet        # Windows : .\scripts\code.bat C:\un-projet
+```
 
-This repository includes a Visual Studio Code Dev Containers / GitHub Codespaces development container.
+Prérequis : Git, Python 3, un compilateur C++ (Xcode Command Line Tools sur macOS ; Visual Studio Build Tools 2022 avec les bibliothèques « atténuation Spectre » sur Windows). L'application installable se construit avec `npm run gulp vscode-win32-x64-min` ou `vscode-darwin-arm64-min` ; les installateurs publiés sont fabriqués par [`.github/workflows/orbit-release.yml`](.github/workflows/orbit-release.yml).
 
-* For [Dev Containers](https://aka.ms/vscode-remote/download/containers), use the **Dev Containers: Clone Repository in Container Volume...** command, which creates a Docker volume for better disk I/O on macOS and Windows.
-  * If you already have VS Code and Docker installed, you can also click [here](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/microsoft/vscode) to get started. This will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
+## Licence
 
-* For Codespaces, install the [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension in VS Code, and use the **Codespaces: Create New Codespace** command.
-
-Docker / the Codespace should have at least **4 cores and 6 GB of RAM (8 GB recommended)** to run a full build. See the [development container README](.devcontainer/README.md) for more information.
-
-## Code of Conduct
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-## License
-
-Copyright (c) Microsoft Corporation. All rights reserved.
-
-Licensed under the [MIT](LICENSE.txt) license.
+Orbit est distribué sous licence [MIT](LICENSE.txt), comme Code - OSS dont il est issu (© Microsoft Corporation pour le code d'origine). Orbit n'est affilié ni à Microsoft, ni à Anthropic, ni à OpenAI ; « Visual Studio Code », « Claude » et « ChatGPT » sont des marques de leurs propriétaires respectifs.
