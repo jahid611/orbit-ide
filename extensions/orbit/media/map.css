@@ -1,0 +1,89 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body.page-map { background: transparent; overflow: hidden; }
+.page-map #app { display: flex; height: 100vh; }
+
+.map { position: relative; flex: 1; min-width: 0; }
+.space { width: 100%; height: 100%; display: block; }
+.space text { fill: var(--fg); font-family: var(--vscode-font-family); text-anchor: middle; pointer-events: none; }
+.space .project { font-size: 13px; font-weight: 600; letter-spacing: .3px; }
+.space .orbit { fill: none; stroke: color-mix(in srgb, var(--fg) 13%, transparent); stroke-width: 1; stroke-dasharray: 2 7; }
+
+.planet { cursor: pointer; }
+.planet .body { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--c) 65%, transparent)); }
+.planet .halo { fill: var(--c); opacity: .12; }
+.planet .ring { fill: none; stroke: var(--c); stroke-width: 1.5; opacity: 0; }
+.planet .name { font-size: 12px; font-weight: 600; }
+.planet .sub { font-size: 10.5px; fill: var(--muted); }
+.planet:hover .halo { opacity: .26; }
+
+.planet.running .ring { animation: pulse 1.6s ease-out infinite; }
+.planet.waiting .halo { fill: var(--warn); opacity: .22; }
+.planet.waiting .ring { stroke: var(--warn); animation: pulse 1s ease-out infinite; }
+.planet.waiting .sub { fill: var(--warn); }
+.planet.done .sub { fill: var(--ok); }
+.planet.idle .body { opacity: .78; }
+@keyframes pulse { from { r: 23px; opacity: .8; } to { r: 44px; opacity: 0; } }
+
+.moon { cursor: pointer; pointer-events: all; }
+.moon circle { stroke: var(--c); stroke-width: 1.4; fill: var(--vscode-editor-background, #0a0918); }
+.moon.write circle { fill: var(--c); }
+.moon text { font-size: 9.5px; text-anchor: start; fill: var(--muted); opacity: 0; transition: opacity .15s ease; pointer-events: none; }
+.planet:hover .moon text { opacity: 1; }
+
+.collision { stroke: var(--err); stroke-width: 1.6; stroke-dasharray: 5 5; animation: dash .7s linear infinite; }
+.collision-label { fill: var(--err) !important; font-size: 11px; font-weight: 600; }
+@keyframes dash { to { stroke-dashoffset: -10; } }
+
+.empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 0 12%; pointer-events: none; }
+.empty[hidden] { display: none; }
+.empty h2 { margin: 150px 0 0; font-size: 15px; font-weight: 600; }
+.empty p { margin: 0; color: var(--muted); max-width: 380px; line-height: 1.5; }
+.empty button { pointer-events: all; }
+
+.legend { position: absolute; left: 18px; bottom: 14px; display: flex; gap: 16px; color: var(--muted); font-size: 11px; }
+.legend span { display: flex; align-items: center; gap: 6px; }
+.legend .moon { width: 8px; height: 8px; border-radius: 50%; border: 1.4px solid var(--accent); cursor: default; }
+.legend .moon.write { background: var(--accent); }
+.legend .link { width: 18px; border-top: 2px dashed var(--err); }
+
+.side { width: 300px; flex: none; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 55%, transparent); }
+.side header { display: flex; align-items: baseline; gap: 10px; padding: 16px 16px 10px; }
+.side h1 { margin: 0; font-size: 15px; font-weight: 600; }
+.side .count { color: var(--muted); font-size: 11.5px; }
+.cards { flex: 1; overflow-y: auto; padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.alert { margin: 0 12px 8px; padding: 9px 11px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; line-height: 1.45;
+	color: var(--fg); background: color-mix(in srgb, var(--err) 14%, transparent); border: 1px solid color-mix(in srgb, var(--err) 45%, transparent); }
+.alert b { color: var(--err); margin-right: 4px; }
+.alert code { font-family: var(--mono); font-size: 11px; }
+
+.card { padding: 11px 12px; border-radius: var(--radius); cursor: pointer; background: var(--surface); border: 1px solid var(--line); transition: background-color .14s ease, border-color .14s ease; }
+.card:hover { background: var(--surface-2); border-color: color-mix(in srgb, var(--c) 55%, transparent); }
+.card .row { display: flex; align-items: center; gap: 8px; }
+.card .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); flex: none; }
+.card.waiting .dot { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+.card .state { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.waiting .state { color: var(--warn); }
+.card.done .state { color: var(--ok); }
+.card .role { margin: 6px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--fg); opacity: .85; }
+.card .prompt { margin: 7px 0 0; color: var(--muted); font-size: 11.5px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card .meta { display: flex; gap: 12px; margin-top: 8px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.card .meta .time { margin-left: auto; }
+.card .files { list-style: none; margin: 8px 0 0; padding: 8px 0 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
+.card .files li { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .files li:hover { color: var(--c); }
+.card .files i { width: 7px; height: 7px; border-radius: 50%; border: 1.3px solid var(--c); flex: none; }
+.card .files .write i { background: var(--c); }
+
+.side footer { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 12px; border-top: 1px solid var(--line); }
+.side footer button, .empty button { padding: 7px 8px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--line); font-size: 12px; transition: background-color .14s ease; }
+.side footer button:hover { background: var(--surface-2); }
+.side footer button.wide { grid-column: 1 / -1; }
+.empty button.primary { background: var(--accent); color: #fff; border-color: transparent; padding: 8px 18px; }
+
+@media (max-width: 640px) { .side { display: none; } }
+@media (prefers-reduced-motion: reduce) { .planet .ring, .collision { animation: none; } }

@@ -505,7 +505,21 @@ export abstract class AbstractExtensionsScannerService extends Disposable implem
 			!this.environmentService.isBuilt,
 			language,
 			translations,
+			await this.getOrbitAssistant(),
 		);
+	}
+
+	/**
+	 * Orbit: the AI the user works with (written by the Orbit extension in its global storage).
+	 * Part of the scanner input, so cached manifests are read again when the choice changes.
+	 */
+	private async getOrbitAssistant(): Promise<string | undefined> {
+		try {
+			const content = await this.fileService.readFile(joinPath(this.userDataProfilesService.defaultProfile.globalStorageHome, 'vscode.orbit', 'assistant'));
+			return content.value.toString().trim() || undefined;
+		} catch (err) {
+			return undefined; // never chosen: Claude
+		}
 	}
 
 	private async getMtime(location: URI): Promise<number | undefined> {
@@ -545,7 +559,8 @@ export class ExtensionScannerInput {
 		public readonly productCommit: string | undefined,
 		public readonly devMode: boolean,
 		public readonly language: string | undefined,
-		public readonly translations: Translations
+		public readonly translations: Translations,
+		public readonly orbitAssistant?: string
 	) {
 		// Keep empty!! (JSON.parse)
 	}
@@ -575,8 +590,37 @@ export class ExtensionScannerInput {
 			&& a.devMode === b.devMode
 			&& a.language === b.language
 			&& Translations.equals(a.translations, b.translations)
+			&& a.orbitAssistant === b.orbitAssistant
 		);
 	}
+}
+
+/** Orbit's own extensions: their commands, views and settings are worded for the AI the user chose. */
+const ORBIT_EXTENSIONS = new Set(['orbit', 'starcapture', 'novagame']);
+/** Manifest properties that hold text shown to the user (never ids, keys or paths). */
+const ORBIT_TEXT_KEYS = new Set(['title', 'shortTitle', 'description', 'markdownDescription', 'name', 'contents', 'label', 'displayName', 'enumItemLabels', 'enumDescriptions', 'markdownEnumDescriptions', 'icon', 'deprecationMessage']);
+
+function orbitRebrandText(text: string): string {
+	return text.split('$(orbit-claude)').join('$(orbit-openai)').replace(/Claude Code/g, 'Codex').replace(/Claude(?![.]md)/g, 'ChatGPT');
+}
+
+/** A copy of an Orbit manifest in which the texts name ChatGPT instead of Claude. */
+function orbitRebrand(value: unknown, key?: string): unknown {
+	if (typeof value === 'string') {
+		return key !== undefined && ORBIT_TEXT_KEYS.has(key) ? orbitRebrandText(value) : value;
+	}
+	if (Array.isArray(value)) {
+		return value.map(item => orbitRebrand(item, key));
+	}
+	if (value && typeof value === 'object') {
+		const out: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(value)) {
+			// The extension's own name and its views' ids are identifiers, not texts.
+			out[k] = k === 'name' && (key === undefined || typeof v !== 'string' || !/[ A-Z]/.test(v)) ? v : orbitRebrand(v, k);
+		}
+		return out;
+	}
+	return value;
 }
 
 type NlsConfiguration = {
@@ -624,7 +668,7 @@ class ExtensionsScanner extends Disposable {
 				if (input.type === ExtensionType.User && basename(c.resource).indexOf('.') === 0) {
 					return null;
 				}
-				const extensionScannerInput = new ExtensionScannerInput(c.resource, input.mtime, input.applicationExtensionslocation, input.applicationExtensionslocationMtime, input.profile, input.profileScanOptions, input.type, input.validate, input.productVersion, input.productDate, input.productCommit, input.devMode, input.language, input.translations);
+				const extensionScannerInput = new ExtensionScannerInput(c.resource, input.mtime, input.applicationExtensionslocation, input.applicationExtensionslocationMtime, input.profile, input.profileScanOptions, input.type, input.validate, input.productVersion, input.productDate, input.productCommit, input.devMode, input.language, input.translations, input.orbitAssistant);
 				return this.scanExtension(extensionScannerInput);
 			}));
 		return coalesce(extensions)
@@ -650,7 +694,7 @@ class ExtensionsScanner extends Disposable {
 		const extensions = await Promise.all<IRelaxedScannedExtension | null>(
 			scannedProfileExtensions.map(async extensionInfo => {
 				if (filter(extensionInfo)) {
-					const extensionScannerInput = new ExtensionScannerInput(extensionInfo.location, input.mtime, input.applicationExtensionslocation, input.applicationExtensionslocationMtime, input.profile, input.profileScanOptions, input.type, input.validate, input.productVersion, input.productDate, input.productCommit, input.devMode, input.language, input.translations);
+					const extensionScannerInput = new ExtensionScannerInput(extensionInfo.location, input.mtime, input.applicationExtensionslocation, input.applicationExtensionslocationMtime, input.profile, input.profileScanOptions, input.type, input.validate, input.productVersion, input.productDate, input.productCommit, input.devMode, input.language, input.translations, input.orbitAssistant);
 					return this.scanExtension(extensionScannerInput, extensionInfo);
 				}
 				return null;
@@ -727,6 +771,9 @@ class ExtensionsScanner extends Disposable {
 			manifest = await this.translateManifest(input.location, manifest, ExtensionScannerInput.createNlsConfiguration(input));
 		} catch (error) {
 			this.logService.warn('Failed to translate manifest', getErrorMessage(error));
+		}
+		if (input.orbitAssistant === 'chatgpt' && manifest.publisher === 'vscode' && ORBIT_EXTENSIONS.has(manifest.name)) {
+			manifest = orbitRebrand(manifest) as IExtensionManifest;
 		}
 		let extension: IRelaxedScannedExtension = {
 			type,

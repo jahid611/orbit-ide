@@ -4,8 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { assistantId } from './assistant';
+import { runCodex } from './headless';
 import { spawn } from 'child_process';
-import { claudeEnv, readConfig, workspaceRoot } from './config';
+import { claudeEnv, keys, readConfig, resolveClaudeExecutable, workspaceRoot } from './config';
 
 interface PendingEdit {
 	uri: vscode.Uri;
@@ -13,6 +15,8 @@ interface PendingEdit {
 	originalText: string;
 	originalDocument: string;
 	instruction: string;
+	/** Unique per edit, so its Diff never shows the original of an older one. */
+	id: string;
 }
 
 const SYSTEM_PROMPT = 'You are a code rewriting engine inside an IDE. You receive a code region and an instruction. Reply with ONLY the new code for that region: no explanations, no Markdown fences, keep the original indentation style. If the region is empty, reply with the code to insert at the cursor.';
@@ -34,7 +38,7 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 	private readonly workingDecoration = vscode.window.createTextEditorDecorationType({
 		backgroundColor: new vscode.ThemeColor('editor.wordHighlightBackground'),
 		isWholeLine: true,
-		after: { contentText: '  ✦ Claude écrit…', color: new vscode.ThemeColor('descriptionForeground'), fontStyle: 'italic' },
+		after: { contentText: '   Claude écrit…', color: new vscode.ThemeColor('descriptionForeground'), fontStyle: 'italic' },
 	});
 
 	constructor() {
@@ -53,8 +57,8 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 		}
 		const at = new vscode.Range(this.pending.range.start, this.pending.range.start);
 		return [
-			new vscode.CodeLens(at, { title: '$(check) Accepter ⌘⏎', command: 'orbit.acceptInlineEdit' }),
-			new vscode.CodeLens(at, { title: '$(close) Rejeter ⌘⌫', command: 'orbit.rejectInlineEdit' }),
+			new vscode.CodeLens(at, { title: `$(check) Accepter ${keys('⌘⏎', 'Ctrl+Entrée')}`, command: 'orbit.acceptInlineEdit' }),
+			new vscode.CodeLens(at, { title: `$(close) Rejeter ${keys('⌘⌫', 'Ctrl+Retour')}`, command: 'orbit.rejectInlineEdit' }),
 			new vscode.CodeLens(at, { title: '$(diff) Diff', command: 'orbit.inlineEditDiff' }),
 			new vscode.CodeLens(at, { title: '$(edit) Retoucher', command: 'orbit.inlineEditRefine' }),
 		];
@@ -69,7 +73,7 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 			await this.accept();
 		}
 		const instruction = presetInstruction ?? await vscode.window.showInputBox({
-			title: '✦ Modifier avec Claude',
+			title: 'Modifier avec Claude',
 			placeHolder: editor.selection.isEmpty ? 'Décris le code à générer ici…' : 'Que faut-il changer dans la sélection ?',
 			ignoreFocusOut: true,
 		});
@@ -85,7 +89,9 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 				: doc.lineAt(editor.selection.end.line).range.end);
 		const original = doc.getText(range);
 		const before = doc.getText(new vscode.Range(new vscode.Position(Math.max(0, range.start.line - 40), 0), range.start));
-		const after = doc.getText(new vscode.Range(range.end, new vscode.Position(Math.min(doc.lineCount - 1, range.end.line + 40), 0)));
+		// Near the end of the file, the context stops at its last character, never before the region.
+		const afterEnd = range.end.line + 40 < doc.lineCount ? new vscode.Position(range.end.line + 40, 0) : doc.lineAt(doc.lineCount - 1).range.end;
+		const after = doc.getText(new vscode.Range(range.end, afterEnd));
 
 		const prompt = [
 			`File: ${vscode.workspace.asRelativePath(doc.uri)} (${doc.languageId})`,
@@ -98,7 +104,7 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 		editor.setDecorations(this.workingDecoration, [range]);
 		let output: string;
 		try {
-			output = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: '✦ Claude écrit…', cancellable: false }, () => runClaude(prompt));
+			output = await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: '$(orbit-claude) Claude écrit…', cancellable: false }, () => runClaude(prompt));
 		} catch (err) {
 			vscode.window.showErrorMessage(`Orbit : ${String(err)}`);
 			return;
@@ -106,7 +112,8 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 			editor.setDecorations(this.workingDecoration, []);
 		}
 
-		const code = stripFences(output);
+		// The editor writes the document's own line endings: measure the code with them.
+		const code = stripFences(output).replace(/\r?\n/g, doc.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n');
 		const originalDocument = doc.getText();
 		const ok = await editor.edit(edit => edit.replace(range, code));
 		if (!ok) {
@@ -114,7 +121,7 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 		}
 		const startOffset = doc.offsetAt(range.start);
 		const newRange = new vscode.Range(range.start, doc.positionAt(startOffset + code.length));
-		this.pending = { uri: doc.uri, range: newRange, originalText: original, originalDocument, instruction };
+		this.pending = { uri: doc.uri, range: newRange, originalText: original, originalDocument, instruction, id: `${Date.now()}` };
 		this.setContext(true);
 		this.redecorate();
 	}
@@ -140,7 +147,7 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 		if (!pending || !editor) {
 			return;
 		}
-		const more = await vscode.window.showInputBox({ title: '✦ Retoucher', placeHolder: 'Qu\'est-ce qui ne va pas ?', ignoreFocusOut: true });
+		const more = await vscode.window.showInputBox({ title: 'Retoucher', placeHolder: 'Qu\'est-ce qui ne va pas ?', ignoreFocusOut: true });
 		if (!more) {
 			return;
 		}
@@ -151,7 +158,8 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 
 	async diff(): Promise<void> {
 		if (this.pending) {
-			const left = vscode.Uri.from({ scheme: 'orbit-inline', path: this.pending.uri.path });
+			// A new query per edit: the editor caches virtual documents by URI.
+			const left = vscode.Uri.from({ scheme: 'orbit-inline', path: this.pending.uri.path, query: this.pending.id });
 			await vscode.commands.executeCommand('vscode.diff', left, this.pending.uri, 'Édition Claude');
 		}
 	}
@@ -182,17 +190,21 @@ export class InlineEditController implements vscode.Disposable, vscode.CodeLensP
 	}
 }
 
-function runClaude(prompt: string): Promise<string> {
+/** One-shot `claude -p` without tools, billed like the terminals. Rejects with a message for the user. */
+export function runClaude(prompt: string, systemPrompt: string = SYSTEM_PROMPT, cwd: string = workspaceRoot()): Promise<string> {
+	if (assistantId() === 'chatgpt') {
+		return runCodex(prompt, systemPrompt, cwd);
+	}
 	const config = readConfig();
 	return new Promise((resolve, reject) => {
-		const proc = spawn(config.claudePath, [
+		const proc = spawn(resolveClaudeExecutable(), [
 			'-p', '--output-format', 'json',
 			'--model', config.inlineModel,
 			'--effort', 'low',
 			'--tools', '',
 			'--no-session-persistence',
-			'--system-prompt', SYSTEM_PROMPT,
-		], { cwd: workspaceRoot(), env: claudeEnv() });
+			'--system-prompt', systemPrompt,
+		], { cwd, env: claudeEnv() });
 		let out = '';
 		let err = '';
 		proc.stdout.on('data', d => out += d);
@@ -214,7 +226,7 @@ function runClaude(prompt: string): Promise<string> {
 	});
 }
 
-function stripFences(text: string): string {
+export function stripFences(text: string): string {
 	const trimmed = text.replace(/^\s*\n/, '').replace(/\s+$/, '');
 	const fence = trimmed.match(/^```[\w+-]*\n([\s\S]*?)\n```$/);
 	return fence ? fence[1] : trimmed;

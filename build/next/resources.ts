@@ -74,6 +74,8 @@ const desktopResourcePatterns = [
 	'vs/workbench/browser/parts/editor/media/*.png',
 	'vs/workbench/contrib/debug/browser/media/*.png',
 	'vs/workbench/contrib/orbit/browser/media/*.jpg',
+	'vs/workbench/contrib/orbit/browser/media/*.png',
+	'vs/workbench/contrib/orbit/browser/media/*.{mp4,webm}',
 
 	// Sessions - built-in prompts and skills
 	'vs/sessions/prompts/*.prompt.md',

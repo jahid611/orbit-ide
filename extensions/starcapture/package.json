@@ -1,0 +1,279 @@
+{
+  "name": "starcapture",
+  "displayName": "StarCapture",
+  "description": "L'éditeur vidéo d'Orbit : montage multipiste, textes, transitions, sous-titres, coupes automatiques et export, à la main ou avec Claude.",
+  "version": "10.0.0",
+  "publisher": "vscode",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "main": "./out/extension",
+  "extensionDependencies": [
+    "vscode.orbit"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCustomEditor:starcapture.editor"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "starcapture.editor",
+        "displayName": "StarCapture",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.{mp4,mov,m4v,webm,mkv,avi}"
+          },
+          {
+            "filenamePattern": "*.starcapture"
+          }
+        ]
+      }
+    ],
+    "languages": [
+      {
+        "id": "starcapture",
+        "aliases": [
+          "StarCapture"
+        ],
+        "extensions": [
+          ".starcapture"
+        ],
+        "icon": {
+          "light": "./media/logo.png",
+          "dark": "./media/logo.png"
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "starcapture.newProject",
+        "title": "Nouveau montage",
+        "category": "StarCapture",
+        "icon": "$(device-camera-video)"
+      },
+      {
+        "command": "starcapture.openWith",
+        "title": "Monter dans StarCapture",
+        "category": "StarCapture",
+        "icon": "$(device-camera-video)"
+      },
+      {
+        "command": "starcapture.export",
+        "title": "Exporter la vidéo…",
+        "category": "StarCapture",
+        "icon": "$(export)"
+      },
+      {
+        "command": "starcapture.askClaude",
+        "title": "Monter avec Claude",
+        "category": "StarCapture",
+        "icon": "$(orbit-claude)"
+      },
+      {
+        "command": "starcapture.open",
+        "title": "Ouvrir StarCapture",
+        "category": "StarCapture",
+        "icon": "$(device-camera-video)"
+      },
+      {
+        "command": "starcapture.openFile",
+        "title": "Ouvrir une vidéo ou un montage…",
+        "category": "StarCapture",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "starcapture.importMedia",
+        "title": "Importer des vidéos, sons, images…",
+        "category": "StarCapture",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "starcapture.addToMontage",
+        "title": "Ajouter au montage",
+        "category": "StarCapture",
+        "icon": "$(add)"
+      },
+      {
+        "command": "starcapture.refreshHome",
+        "title": "Actualiser",
+        "category": "StarCapture",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "starcapture.record",
+        "title": "Enregistrer l'écran (démarrer / arrêter)",
+        "category": "StarCapture",
+        "icon": "$(record)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "starcapture.openWith",
+          "when": "resourceExtname =~ /^\\.(mp4|mov|m4v|webm|mkv|avi|mp3|wav|m4a|png|jpe?g)$/i",
+          "group": "navigation@20"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "starcapture.openWith",
+          "when": "false"
+        },
+        {
+          "command": "starcapture.export",
+          "when": "activeCustomEditorId == starcapture.editor"
+        },
+        {
+          "command": "starcapture.askClaude",
+          "when": "activeCustomEditorId == starcapture.editor"
+        },
+        {
+          "command": "starcapture.addToMontage",
+          "when": "false"
+        },
+        {
+          "command": "starcapture.refreshHome",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "starcapture.newProject",
+          "when": "view == starcapture.home",
+          "group": "navigation@0"
+        },
+        {
+          "command": "starcapture.importMedia",
+          "when": "view == starcapture.home",
+          "group": "navigation@1"
+        },
+        {
+          "command": "starcapture.openFile",
+          "when": "view == starcapture.home",
+          "group": "navigation@2"
+        },
+        {
+          "command": "starcapture.refreshHome",
+          "when": "view == starcapture.home",
+          "group": "navigation@3"
+        },
+        {
+          "command": "starcapture.open",
+          "when": "view == terminal",
+          "group": "navigation@89"
+        },
+        {
+          "command": "starcapture.record",
+          "when": "view == starcapture.home",
+          "group": "navigation@4"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "starcapture.addToMontage",
+          "when": "view == starcapture.home && viewItem == media",
+          "group": "inline"
+        },
+        {
+          "command": "starcapture.openWith",
+          "when": "view == starcapture.home && viewItem == media",
+          "group": "1_sc@1"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "starcapture.export",
+        "key": "ctrl+e",
+        "mac": "cmd+e",
+        "when": "activeCustomEditorId == starcapture.editor"
+      },
+      {
+        "command": "starcapture.open",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
+      }
+    ],
+    "configuration": {
+      "title": "StarCapture",
+      "properties": {
+        "starcapture.ffmpegPath": {
+          "type": "string",
+          "default": "",
+          "description": "Chemin de ffmpeg. Vide : StarCapture le cherche (PATH, installation winget, Homebrew)."
+        },
+        "starcapture.exportFolder": {
+          "type": "string",
+          "default": "",
+          "description": "Dossier des exports. Vide : à côté du projet, dans « exports »."
+        },
+        "starcapture.hardwareEncoding": {
+          "type": "boolean",
+          "default": true,
+          "description": "Encoder avec la carte graphique (NVENC, VideoToolbox, QuickSync) quand elle est disponible : exports bien plus rapides."
+        },
+        "starcapture.transcriptionModel": {
+          "type": "string",
+          "enum": [
+            "base",
+            "small",
+            "medium"
+          ],
+          "default": "small",
+          "description": "Modèle Whisper des sous-titres automatiques (téléchargé une fois) : base est rapide, small un bon compromis, medium le plus juste."
+        },
+        "starcapture.recordFps": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 60,
+          "description": "Images par seconde de l'enregistrement d'écran."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "starcapture",
+          "title": "StarCapture",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "starcapture": [
+        {
+          "id": "starcapture.home",
+          "name": "StarCapture",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "configurationDefaults": {
+      "terminal.integrated.commandsToSkipShell": [
+        "starcapture.open"
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "gulp compile-extension:starcapture",
+    "watch": "gulp watch-extension:starcapture"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jahid611/orbit-ide.git"
+  }
+}

@@ -1,0 +1,17 @@
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const require = createRequire(import.meta.url);
+const { chromium } = require('../../node_modules/playwright-core');
+const here = import.meta.dirname;
+const sheet = path.join(here, '.logo.html');
+fs.writeFileSync(sheet, `<style>html,body{margin:0;background:transparent}img{display:block;width:1024px;height:1024px;clip-path:inset(9.6% 10% 10% 10% round 196px)}</style><img src="../orbit-logo-higgsfield.png">`);
+const browser = await chromium.launch({ channel: 'msedge' });
+const page = await browser.newPage({ viewport: { width: 1024, height: 1024 } });
+await page.goto(pathToFileURL(sheet).href);
+await page.waitForFunction(() => document.images[0].complete && document.images[0].naturalWidth > 0);
+await page.screenshot({ path: path.join(here, 'assets', 'orbit.png'), omitBackground: true, clip: { x: 102, y: 98, width: 820, height: 824 } });
+await browser.close();
+fs.rmSync(sheet);
+console.log('orbit.png');

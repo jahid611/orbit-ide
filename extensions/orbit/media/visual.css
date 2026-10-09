@@ -1,0 +1,57 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body.page-visual { overflow: hidden; background: var(--vscode-editor-background); --mint: #5eead4; }
+.page-visual #app { display: flex; flex-direction: column; height: 100vh; }
+.spacer { flex: 1; }
+.page-visual svg { width: 16px; height: 16px; flex: none; }
+.page-visual button { border-radius: var(--radius-sm); transition: background-color .14s ease, border-color .14s ease, color .14s ease, transform .14s ease, opacity .14s ease; }
+
+.top { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.top .mark { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 11px; color: #0a0918; background: linear-gradient(140deg, #ffd166, #ff8fab); }
+.top .mark svg { width: 21px; height: 21px; }
+.top .titles { min-width: 0; }
+.top h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+.top p { margin: 2px 0 0; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-visual .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: none; height: 32px; padding: 0 13px; font-size: 12.5px; font-weight: 600; color: var(--fg); background: var(--surface); border: 1px solid var(--line); }
+.page-visual .btn:hover:not(:disabled) { background: var(--surface-2); }
+.page-visual .btn:disabled { opacity: .4; cursor: default; }
+.page-visual .btn.small { height: 28px; font-size: 12px; }
+.page-visual .btn.accent { color: #fff; background: var(--accent); border-color: transparent; }
+.page-visual .btn.accent:hover:not(:disabled) { background: #9d8fff; }
+.claude-mark { display: inline-block; width: 15px; height: 15px; background: url("claude.svg") center / contain no-repeat; }
+.seg { display: flex; flex: none; padding: 2px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.seg button { height: 26px; padding: 0 11px; font-size: 12px; color: var(--muted); background: none; border-radius: 8px; }
+.seg button:hover { color: var(--fg); }
+.seg button.on { color: var(--fg); background: var(--surface-2); font-weight: 600; }
+
+#main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 20px; overflow: auto; }
+.tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: none; }
+.compare { position: relative; align-self: center; max-width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0, 0, 0, .45); cursor: ew-resize; user-select: none; line-height: 0; }
+.compare > img { display: block; max-width: 100%; max-height: calc(100vh - 170px); }
+.clip { position: absolute; inset: 0 auto 0 0; overflow: hidden; border-right: 2px solid #fff; }
+.clip img { display: block; max-width: none; }
+.handle { position: absolute; top: 0; bottom: 0; width: 0; pointer-events: none; }
+.handle i { position: absolute; top: 50%; left: -17px; width: 34px; height: 34px; margin-top: -17px; border-radius: 50%; background: #fff; box-shadow: 0 4px 16px rgba(0, 0, 0, .5); }
+.handle i::before, .handle i::after { content: ""; position: absolute; top: 12px; border: 5px solid transparent; }
+.handle i::before { left: 4px; border-right-color: #0a0918; }
+.handle i::after { right: 4px; border-left-color: #0a0918; }
+.tag { position: absolute; top: 12px; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; line-height: 1.5; color: #fff; background: rgba(0, 0, 0, .65); backdrop-filter: blur(6px); }
+.tag.left { left: 12px; } .tag.right { right: 12px; color: #0a0918; background: var(--mint); }
+.side { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.single { display: flex; justify-content: center; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+figcaption { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+figcaption.after { color: var(--mint); }
+figure img { display: block; max-width: 100%; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 14px 40px rgba(0, 0, 0, .35); }
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.empty .big { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 18px; color: #0a0918; background: linear-gradient(140deg, #ffd166, #ff8fab); }
+.empty .big svg { width: 28px; height: 28px; }
+.empty b { color: var(--fg); font-size: 16px; } .empty span { max-width: 480px; }
+
+@media (max-width: 900px) {
+	.top p { display: none; }
+	.side { grid-template-columns: 1fr; }
+}

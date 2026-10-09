@@ -1,0 +1,10 @@
+Use your image generation tool to create 4 app icon logos and save each as a 1024x1024 PNG in the current directory. Do not draw them with code or SVG: generate real images.
+
+Context: Orbit is a desktop IDE with a space identity (violet planet, mint moon, deep indigo). These are the logos of two modules. Style for all: premium app icon like the best Mac / iOS apps, glossy 3D, rich saturated colours everywhere (vivid multi-colour gradients, not a single hue), strong simple silhouette readable at 32 px, rounded-square icon shape filling the frame, soft glow, no text, no letters, no watermark.
+
+1. starcapture-a.png - StarCapture, the video editor: a bold glossy star fused with a camera lens / play button, rainbow-vivid gradient (yellow, orange, hot pink, violet, cyan), film or timeline hint.
+2. starcapture-b.png - StarCapture, a clearly different idea: a shooting star whose trail is a colourful film strip / video timeline, clapperboard or record-dot accent, same vivid multi-colour palette.
+3. novagame-a.png - NovaGame, the game studio: a glossy game controller with a bright exploding nova star above it, vivid multi-colour gradient (cyan, electric blue, violet, magenta, yellow), colourful buttons.
+4. novagame-b.png - NovaGame, a clearly different idea: a supernova burst shaped like a D-pad / joystick, or a planet-gamepad hybrid, same vivid multi-colour palette.
+
+When done, list the files you saved.

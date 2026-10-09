@@ -9,7 +9,7 @@ body.page-chat { --bg: var(--vscode-panel-background, var(--vscode-editor-backgr
 .muted { color: var(--muted); }
 
 .top { display: flex; align-items: center; gap: 8px; padding: 8px 12px; flex: none; }
-.term-select { appearance: none; -webkit-appearance: none; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; max-width: 55%; cursor: pointer; }
+.osel.term-select { height: 28px; padding: 0 10px 0 12px; border-radius: 999px; font-weight: 600; max-width: 55%; }
 .status { display: inline-flex; align-items: center; gap: 6px; font-size: .85em; color: var(--muted); }
 .status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
 .status.running .dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 1s ease-in-out infinite; }
@@ -65,6 +65,16 @@ body.page-chat { --bg: var(--vscode-panel-background, var(--vscode-editor-backgr
 @keyframes orbit { to { transform: rotateX(70deg) rotateZ(360deg); } }
 
 .composer-wrap { flex: none; padding: 6px 14px 12px; }
+.attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.attachments[hidden] { display: none; }
+.attachment { display: flex; align-items: center; gap: 7px; max-width: 220px; padding: 4px 4px 4px 4px; border-radius: 10px; font-size: 11.5px; background: var(--surface); border: 1px solid var(--line); animation: att-in .18s cubic-bezier(.2, .9, .3, 1.2) both; }
+.attachment img { width: 34px; height: 34px; object-fit: cover; border-radius: 7px; flex: none; }
+.att-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 7px; background: var(--surface-2); color: var(--muted); flex: none; }
+.att-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.att-remove { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; color: var(--muted); flex: none; }
+.att-remove:hover { background: var(--surface-2); color: var(--fg); }
+.att-remove .oi { width: 11px; height: 11px; }
+@keyframes att-in { from { opacity: 0; transform: scale(.9); } }
 .composer { display: flex; align-items: flex-end; gap: 8px; padding: 8px 8px 8px 14px; border-radius: 20px; border: 1px solid var(--vscode-input-border, var(--line)); background: var(--vscode-input-background); transition: border-color .15s, box-shadow .15s; }
 .composer:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
 .composer textarea { flex: 1; border: none; background: transparent; resize: none; outline: none !important; padding: 5px 0; line-height: 1.5; max-height: 220px; font-size: 13.5px; }

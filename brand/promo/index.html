@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Orbit — film de présentation</title>
+<link rel="stylesheet" href="node_modules/@fontsource-variable/inter/index.css">
+<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/500.css">
+<link rel="stylesheet" href="film.css">
+</head>
+<body>
+<div id="stage">
+	<div id="bg"><img src="assets/cosmos.jpg" alt=""><div class="veil"></div><div class="grain"></div></div>
+
+	<!-- 1. Ouverture -->
+	<section class="scene center" id="s1">
+		<div class="logo-wrap"><div class="halo"></div><img class="logo" src="assets/orbit.png" alt=""></div>
+		<div class="wordmark" data-split="chars">Orbit</div>
+		<div class="tagline"><span data-split="words">L'IDE construit autour de</span> <span class="claude"><img src="assets/claude.svg" alt="">Claude Code</span></div>
+	</section>
+
+	<!-- 2. De vrais terminaux -->
+	<section class="scene show" id="s2">
+		<div class="full"><img src="assets/hd/grille.png" alt=""></div>
+		<div class="scrim"></div>
+		<div class="intro"><div class="kicker">Le cœur</div><h1 data-split="words">Pas un chat greffé. <em>De vrais terminaux.</em></h1></div>
+		<div class="caption"><div class="kicker"><img src="assets/claude.svg" alt="">Six Claude Code, une seule fenêtre</div><h2>La grille d'agents</h2><p>Le vrai Claude Code dans de vrais terminaux, et un IDE qui sait ce que fait chacun.</p></div>
+	</section>
+
+	<!-- 3. Une équipe d'agents -->
+	<section class="scene show" id="s3">
+		<div class="full"><img src="assets/hd/orbite.png" alt=""></div>
+		<div class="scrim"></div>
+		<div class="intro"><div class="kicker">Multi-agents</div><h1 data-split="words">Une équipe d'agents. <em>Une seule orbite.</em></h1></div>
+		<div class="caption"><div class="kicker">Vue Orbite</div><h2>Chaque agent a sa planète</h2><p>Le chef d'équipe découpe le travail, crée les agents et te rapporte le résultat.</p></div>
+		<div class="glass note alert"><b class="dot red"></b><div><strong>Collision évitée</strong><span>Deux agents sur le même fichier : Orbit prévient</span></div></div>
+	</section>
+
+	<!-- 4. Vue vivante -->
+	<section class="scene show" id="s4">
+		<div class="full"><img src="assets/hd/vivante.png" alt=""></div>
+		<div class="scrim"></div>
+		<div class="intro"><div class="kicker">Vue vivante</div><h1 data-split="words">Clique un élément. <em>Claude sait où il vit.</em></h1></div>
+		<div class="caption"><div class="kicker">Vue vivante</div><h2>Ton site en direct, à côté du code</h2><p>14 appareils réels, et chaque clic remonte au fichier et à la ligne.</p></div>
+		<div class="win pip"><div class="winbar"><i></i><i></i><i></i><span>En accéléré : sélection, envoi à Claude, modification</span></div><canvas id="live" width="1280" height="720"></canvas></div>
+	</section>
+
+	<!-- 5. La boucle fermée -->
+	<section class="scene stack" id="s5">
+		<div class="copy wide">
+			<div class="kicker">La boucle fermée</div>
+			<h1 data-split="words">Claude écrit. Orbit vérifie. <em>Tu valides.</em></h1>
+		</div>
+		<div class="loop">
+			<div class="glass step st1"><div class="label"><img src="assets/claude.svg" alt="">Claude écrit</div>
+				<div class="code"><span class="cl a"></span><span class="cl b"></span><span class="cl c"></span><span class="cl d"></span><span class="cl e"></span></div></div>
+			<div class="link l1"><i></i></div>
+			<div class="glass step st2"><div class="label">Orbit vérifie</div>
+				<div class="check"><b></b>Types</div><div class="check"><b></b>Lint</div><div class="check"><b></b>Tests</div></div>
+			<div class="link l2"><i></i></div>
+			<div class="glass step st3"><div class="label">Résultat</div><div class="verified"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Vérifié</div><div class="small">Une erreur ? Elle repart chez Claude, toute seule.</div></div>
+		</div>
+		<div class="frise">
+			<div class="track"><i class="fill"></i></div>
+			<div class="pt" style="left:8%"><b></b><span>14:02 · pagination</span></div>
+			<div class="pt" style="left:36%"><b></b><span>14:09 · tests</span></div>
+			<div class="pt" style="left:64%"><b></b><span>14:15 · refonte</span></div>
+			<div class="pt" style="left:92%"><b></b><span>14:21 · maintenant</span></div>
+			<div class="rewind">Machine à remonter le temps · retour arrière en un clic</div>
+		</div>
+	</section>
+
+	<!-- 6. StarCapture -->
+	<section class="scene show" id="s6">
+		<div class="full"><img src="assets/hd/starcapture.png" alt=""></div>
+		<div class="scrim"></div>
+		<div class="intro"><img class="app" src="assets/starcapture.png" alt=""><div class="kicker pink">StarCapture</div><h1 data-split="words">Le montage vidéo, <em class="warm">dans ton IDE.</em></h1></div>
+		<div class="caption"><div class="kicker pink"><img class="round" src="assets/starcapture.png" alt="">StarCapture</div><h2>Claude monte pour toi</h2><ul class="chips"><li>Timeline multipiste</li><li>Sous-titres mot par mot</li><li>Coupe des silences</li><li>Export par la carte graphique</li></ul></div>
+	</section>
+
+	<!-- 7. NovaGame -->
+	<section class="scene show" id="s7">
+		<div class="full multi"><img src="assets/hd/ls-depot-hub.png" alt=""><img src="assets/hd/ls-avant.png" alt=""><img src="assets/hd/ls-allee.png" alt=""><img src="assets/hd/ls-assis-cote.png" alt=""><img src="assets/hd/ls-chaos.png" alt=""><img src="assets/hd/ls-fenetre.png" alt=""></div>
+		<div class="scrim"></div>
+		<div class="intro"><img class="app" src="assets/novagame.png" alt=""><div class="kicker blue">NovaGame</div><h1 data-split="words">Ton jeu Unity tourne <em class="cool">dans l'IDE.</em></h1></div>
+		<div class="caption"><div class="kicker blue"><img class="round" src="assets/novagame.png" alt="">NovaGame</div><h2>Tu joues sans quitter Orbit</h2><p>À l'image : Last Stop, un jeu co-op construit avec Claude.</p><div class="keys"><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd><kbd class="wide">Espace</kbd></div></div>
+		<em class="playing">EN JEU</em>
+	</section>
+
+	<!-- 8. Tout le reste -->
+	<section class="scene center" id="s8">
+		<div class="cards">
+			<div class="win card ca"><img src="assets/hd/commu.png" alt=""></div>
+			<img class="card cp" src="assets/hd/phone.png" alt="">
+			<div class="win card cb"><img src="assets/hd/menu.png" alt=""></div>
+		</div>
+		<div class="rows">
+			<div class="row r2"><span>Communauté de templates</span><span>Coller une capture</span><span>Worktrees</span><span>Studio de thèmes</span><span>Base de données</span><span>Communauté de templates</span><span>Coller une capture</span><span>Worktrees</span><span>Studio de thèmes</span><span>Base de données</span></div>
+			<div class="row r3"><span>Claude pilote l'IDE</span><span>Commit intelligent</span><span>Suivi des jetons</span><span>Recettes</span><span>Mode auto en un clic</span><span>Claude pilote l'IDE</span><span>Commit intelligent</span><span>Suivi des jetons</span><span>Recettes</span><span>Mode auto en un clic</span></div>
+		</div>
+		<div class="and" data-split="words">Et tout le reste.</div>
+	</section>
+
+	<!-- 9. Fin -->
+	<section class="scene center" id="s9">
+		<div class="logo-wrap"><div class="halo"></div><img class="logo" src="assets/orbit.png" alt=""></div>
+		<div class="wordmark" data-split="chars">Orbit</div>
+		<div class="tagline" data-split="words">Ton code. En orbite.</div>
+		<div class="foot"><img src="assets/claude.svg" alt="">Fait pour Claude Code · Windows, macOS, Linux</div>
+	</section>
+
+	<div id="flash"></div>
+</div>
+<script src="node_modules/gsap/dist/gsap.min.js"></script>
+<script src="film.js"></script>
+</body>
+</html>

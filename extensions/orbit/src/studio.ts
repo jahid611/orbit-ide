@@ -4,14 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { MODELS, PERMISSION_MODES } from './config';
+import { assistantId } from './assistant';
+import { models, modes } from './config';
+
+/** The model and extra arguments shown in the Studio are those of the assistant in use. */
+function realKey(key: string): string {
+	return assistantId() === 'chatgpt' && (key === 'orbit.claude.model' || key === 'orbit.claude.extraArgs') ? key.replace('.claude.', '.chatgpt.') : key;
+}
 import { renderWebview, webviewOptions } from './webview';
 
 /** Every setting the studio can edit, grouped as shown in the UI. */
 const STUDIO_KEYS = [
 	'workbench.colorTheme', 'workbench.iconTheme', 'window.zoomLevel', 'orbit.ui.wallpaper',
 	'orbit.ui.floatingPanels', 'orbit.ui.panelGap', 'orbit.ui.cornerRadius', 'orbit.ui.fontFamily', 'orbit.ui.fontSize',
-	'orbit.ui.compactTabs', 'orbit.ui.minimalChrome', 'orbit.ui.customCss',
+	'orbit.ui.compactTabs', 'orbit.ui.minimalChrome', 'orbit.ui.glass', 'orbit.ui.animations', 'orbit.ui.customCss',
 	'workbench.activityBar.location', 'workbench.sideBar.location', 'workbench.statusBar.visible', 'window.commandCenter',
 	'breadcrumbs.enabled', 'workbench.editor.showTabs', 'workbench.layoutControl.enabled',
 	'editor.fontFamily', 'editor.fontSize', 'editor.lineHeight', 'editor.fontLigatures', 'editor.cursorStyle',
@@ -98,11 +104,15 @@ export class StudioPanel implements vscode.Disposable {
 			this.panel.reveal();
 			return;
 		}
-		this.panel = vscode.window.createWebviewPanel('orbit.studio', '✦ Studio', vscode.ViewColumn.Active, { ...webviewOptions(this.extensionUri), retainContextWhenHidden: true });
+		this.panel = vscode.window.createWebviewPanel('orbit.studio', 'Studio', vscode.ViewColumn.Active, { ...webviewOptions(this.extensionUri), retainContextWhenHidden: true });
 		this.panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'media', 'orbit.svg');
 		this.panel.webview.html = renderWebview(this.panel.webview, this.extensionUri, 'studio');
-		this.panel.webview.onDidReceiveMessage(msg => this.onMessage(msg), undefined, this.disposables);
-		this.panel.onDidDispose(() => { this.panel = undefined; }, undefined, this.disposables);
+		// Listeners of this panel only, freed with it so reopening does not pile them up.
+		const listener = this.panel.webview.onDidReceiveMessage(msg => this.onMessage(msg));
+		this.panel.onDidDispose(() => {
+			listener.dispose();
+			this.panel = undefined;
+		});
 	}
 
 	dispose(): void {
@@ -119,12 +129,12 @@ export class StudioPanel implements vscode.Disposable {
 				break;
 			case 'set':
 				if (STUDIO_KEYS.includes(msg.key)) {
-					await config.update(msg.key, msg.value, vscode.ConfigurationTarget.Global);
+					await config.update(realKey(msg.key), msg.value, vscode.ConfigurationTarget.Global);
 				}
 				break;
 			case 'reset':
 				if (STUDIO_KEYS.includes(msg.key)) {
-					await config.update(msg.key, undefined, vscode.ConfigurationTarget.Global);
+					await config.update(realKey(msg.key), undefined, vscode.ConfigurationTarget.Global);
 				}
 				break;
 			case 'accent':
@@ -199,7 +209,7 @@ export class StudioPanel implements vscode.Disposable {
 		const config = vscode.workspace.getConfiguration();
 		const values: Record<string, unknown> = {};
 		for (const key of STUDIO_KEYS) {
-			values[key] = config.get(key);
+			values[key] = config.get(realKey(key));
 		}
 		const themes = vscode.extensions.all.flatMap(ext => {
 			const contributed = (ext.packageJSON?.contributes?.themes ?? []) as { label?: string; id?: string; uiTheme?: string }[];
@@ -212,8 +222,8 @@ export class StudioPanel implements vscode.Disposable {
 			accent,
 			themes,
 			presets: Object.entries(LAYOUT_PRESETS).map(([id, p]) => ({ id, label: p.label, detail: p.detail })),
-			models: MODELS,
-			modes: PERMISSION_MODES,
+			models: models(),
+			modes: modes(),
 		});
 	}
 }

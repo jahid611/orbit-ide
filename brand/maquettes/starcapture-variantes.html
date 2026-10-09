@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Maquettes StarCapture</title>
+<style>
+	* { box-sizing: border-box; }
+	html, body { margin: 0; height: 100%; overflow: hidden; font: 12.5px/1.4 "Segoe UI", "Inter", system-ui, sans-serif; }
+	svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+	.spacer { flex: 1; }
+	.mono { font-family: "Cascadia Mono", Consolas, monospace; }
+	.frame { position: relative; aspect-ratio: 16 / 9; background: #000 center / cover; overflow: hidden; }
+	.caption { position: absolute; left: 0; right: 0; bottom: 11%; text-align: center; font: 900 32px/1 "Segoe UI", sans-serif; color: #fff; -webkit-text-stroke: 7px #000; paint-order: stroke fill; }
+	.caption i { font-style: normal; color: #ffe14d; }
+	.lane { position: relative; }
+	.clip { position: absolute; top: 3px; bottom: 3px; overflow: hidden; }
+	.clip span { position: absolute; left: 7px; top: 3px; font-size: 10px; font-weight: 600; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+	.wave::after { content: ""; position: absolute; inset: 14px 0 3px; background: repeating-linear-gradient(90deg, var(--w) 0 2px, transparent 2px 4px); clip-path: polygon(0 60%, 2% 30%, 4% 55%, 6% 20%, 8% 50%, 10% 35%, 12% 60%, 14% 15%, 16% 48%, 18% 30%, 20% 58%, 22% 22%, 24% 52%, 26% 38%, 28% 62%, 30% 12%, 32% 46%, 34% 28%, 36% 56%, 38% 20%, 40% 50%, 42% 34%, 44% 60%, 46% 16%, 48% 48%, 50% 30%, 52% 58%, 54% 24%, 56% 52%, 58% 36%, 60% 62%, 62% 14%, 64% 46%, 66% 28%, 68% 56%, 70% 20%, 72% 50%, 74% 34%, 76% 60%, 78% 16%, 80% 48%, 82% 30%, 84% 58%, 86% 24%, 88% 52%, 90% 38%, 92% 62%, 94% 18%, 96% 48%, 98% 32%, 100% 55%, 100% 100%, 0 100%); opacity: .85; }
+
+	/* ============ B — « Studio » : la densité des logiciels de post-production (Resolve, Premiere) ============ */
+	body.b { background: #1a1a1c; color: #d6d6d8; --w: #58c08a; }
+	.b .app { display: grid; grid-template-rows: 34px minmax(0, 1fr) 360px 40px; height: 100vh; }
+	.b .top { display: flex; align-items: center; gap: 16px; padding: 0 12px; background: #232326; border-bottom: 1px solid #0c0c0d; font-size: 12px; color: #9a9aa0; }
+	.b .top b { color: #e9e9ec; font-size: 13px; }
+	.b .top .ws span { padding: 0 10px; } .b .top .ws .on { color: #e64b3d; }
+	.b .mid { display: grid; grid-template-columns: 300px minmax(0, 1fr) minmax(0, 1fr) 300px; background: #0c0c0d; gap: 1px; min-height: 0; }
+	.b .pane { background: #1f1f22; display: flex; flex-direction: column; min-height: 0; }
+	.b .ph { display: flex; align-items: center; gap: 10px; height: 28px; padding: 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #8a8a90; background: #26262a; border-bottom: 1px solid #0c0c0d; }
+	.b .ph .on { color: #e9e9ec; }
+	.b .bins { display: grid; grid-template-columns: 96px 1fr; flex: 1; min-height: 0; }
+	.b .bins ul { list-style: none; margin: 0; padding: 8px 0; border-right: 1px solid #0c0c0d; color: #9a9aa0; font-size: 11.5px; }
+	.b .bins li { padding: 4px 10px; } .b .bins li.on { color: #fff; background: #37373d; }
+	.b .list { padding: 6px; display: flex; flex-direction: column; gap: 2px; font-size: 11.5px; }
+	.b .item { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 3px; }
+	.b .item.on { background: #37373d; }
+	.b .item i { height: 26px; border-radius: 2px; background: #000 center / cover; }
+	.b .item em { font-style: normal; color: #77777d; font-family: "Cascadia Mono", Consolas, monospace; font-size: 10.5px; }
+	.b .view { flex: 1; display: grid; place-items: center; background: #0e0e10; padding: 10px; min-height: 0; }
+	.b .view .frame { height: 100%; max-width: 100%; }
+	.b .vbar { display: flex; align-items: center; gap: 12px; height: 34px; padding: 0 12px; background: #232326; border-top: 1px solid #0c0c0d; color: #9a9aa0; }
+	.b .vbar .tc { color: #e9e9ec; font: 12px "Cascadia Mono", Consolas, monospace; }
+	.b .vbar .c { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; color: #c9c9cd; }
+	.b .insp { padding: 8px 10px; display: flex; flex-direction: column; gap: 7px; font-size: 11.5px; }
+	.b .grp { display: flex; align-items: center; gap: 6px; padding: 5px 6px; background: #2a2a2e; border-radius: 3px; color: #e9e9ec; font-weight: 600; }
+	.b .grp i { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #e64b3d; }
+	.b .f { display: grid; grid-template-columns: 74px 1fr 46px; align-items: center; gap: 8px; color: #9a9aa0; padding: 0 6px; }
+	.b .f div { height: 2px; background: #3a3a40; position: relative; }
+	.b .f div b { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #c9c9cd; margin-left: -5px; }
+	.b .f span { text-align: right; color: #e9e9ec; font: 11px "Cascadia Mono", Consolas, monospace; }
+	.b .scope { margin: 4px 6px 0; height: 96px; border-radius: 3px; background: linear-gradient(#0000, #0000), repeating-linear-gradient(0deg, #ffffff10 0 1px, transparent 1px 24px), #0e0e10; position: relative; overflow: hidden; }
+	.b .scope::before { content: ""; position: absolute; inset: 14px 6px 8px; background: linear-gradient(90deg, #e64b3d99, #58c08a99, #4f8dff99); -webkit-mask: repeating-linear-gradient(90deg, #000 0 1px, transparent 1px 3px); clip-path: polygon(0 70%, 6% 40%, 12% 62%, 18% 22%, 24% 55%, 30% 30%, 36% 66%, 42% 18%, 48% 50%, 54% 34%, 60% 70%, 66% 24%, 72% 58%, 78% 36%, 84% 64%, 90% 28%, 96% 54%, 100% 40%, 100% 100%, 0 100%); }
+	.b .tl { background: #1a1a1c; display: grid; grid-template-rows: 30px 20px minmax(0, 1fr); border-top: 1px solid #0c0c0d; min-height: 0; }
+	.b .tb { display: flex; align-items: center; gap: 12px; padding: 0 10px; background: #232326; color: #9a9aa0; }
+	.b .tb .tc { color: #e9e9ec; font: 600 14px "Cascadia Mono", Consolas, monospace; margin-right: 10px; }
+	.b .tb .on { color: #e64b3d; }
+	.b .ruler { margin-left: 120px; position: relative; background: repeating-linear-gradient(90deg, transparent 0 119px, #45454b 119px 120px) 0 100% / 120px 8px repeat-x, repeating-linear-gradient(90deg, transparent 0 23px, #303035 23px 24px) 0 100% / 24px 4px repeat-x; border-bottom: 1px solid #0c0c0d; }
+	.b .ruler span { position: absolute; top: 2px; font: 10px "Cascadia Mono", Consolas, monospace; color: #77777d; }
+	.b .rows { position: relative; overflow: hidden; }
+	.b .row { display: grid; grid-template-columns: 120px minmax(0, 1fr); border-bottom: 1px solid #0c0c0d; }
+	.b .hd { display: flex; align-items: center; gap: 6px; padding: 0 8px; background: #26262a; color: #9a9aa0; font-size: 10.5px; border-right: 1px solid #0c0c0d; }
+	.b .hd b { width: 24px; height: 18px; display: grid; place-items: center; border-radius: 2px; background: #3a3a40; color: #fff; font-size: 10px; }
+	.b .hd s { margin-left: auto; text-decoration: none; display: flex; gap: 3px; } .b .hd s i { width: 15px; height: 15px; border-radius: 2px; background: #3a3a40; font-style: normal; font-size: 9px; display: grid; place-items: center; }
+	.b .lane { background: #17171a; }
+	.b .clip { border-radius: 2px; }
+	.b .v { background-color: #2f5f8f; background-size: auto 100%; background-blend-mode: luminosity; box-shadow: inset 0 0 0 1px #6fa8e0; }
+	.b .v.sel { box-shadow: inset 0 0 0 2px #e64b3d; }
+	.b .t { background: #8f6a2f; box-shadow: inset 0 0 0 1px #e0b56f; }
+	.b .o { background: #6a2f8f; box-shadow: inset 0 0 0 1px #b56fe0; }
+	.b .a { background: #2f6f4a; box-shadow: inset 0 0 0 1px #58c08a; }
+	.b .ph2 { position: absolute; top: -20px; bottom: 0; left: 884px; width: 1px; background: #e64b3d; z-index: 4; }
+	.b .ph2::before { content: ""; position: absolute; top: 0; left: -5px; border: 5px solid transparent; border-top: 8px solid #e64b3d; }
+	.b .pages { display: flex; align-items: center; justify-content: center; gap: 34px; background: #232326; border-top: 1px solid #0c0c0d; color: #77777d; font-size: 11.5px; }
+	.b .pages div { display: flex; align-items: center; gap: 7px; } .b .pages .on { color: #e9e9ec; } .b .pages .on svg { color: #e64b3d; }
+
+	/* ============ C — « Atelier » : clair et magnétique, façon Final Cut ============ */
+	body.c { background: #d9dade; color: #1d1d21; --w: #2f9e6b; }
+	.c .app { display: grid; grid-template-rows: 48px minmax(0, 1fr) 350px; height: 100vh; }
+	.c .top { display: flex; align-items: center; gap: 10px; padding: 0 14px; background: linear-gradient(#f4f4f6, #e6e7ea); border-bottom: 1px solid #b9bac0; }
+	.c .seg { display: flex; padding: 2px; border-radius: 8px; background: #d2d3d8; }
+	.c .seg span { display: grid; place-items: center; width: 34px; height: 26px; border-radius: 6px; color: #55565d; }
+	.c .seg .on { background: #fff; color: #1d1d21; box-shadow: 0 1px 2px #0002; }
+	.c .ttl { position: absolute; left: 50%; transform: translateX(-50%); font-weight: 600; font-size: 13px; }
+	.c .btn { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 13px; border-radius: 8px; font-weight: 600; background: #fff; box-shadow: 0 0 0 1px #c3c4ca, 0 1px 2px #0001; }
+	.c .btn.pri { color: #fff; background: #1e7cf2; box-shadow: 0 1px 3px #1e7cf266; }
+	.c .mid { display: grid; grid-template-columns: 500px minmax(0, 1fr) 300px; min-height: 0; border-bottom: 1px solid #b9bac0; }
+	.c .browser { display: grid; grid-template-columns: 150px 1fr; background: #ececef; border-right: 1px solid #b9bac0; min-height: 0; }
+	.c .side { padding: 12px 8px; background: #e2e3e7; border-right: 1px solid #c8c9cf; font-size: 12px; color: #55565d; }
+	.c .side small { display: block; margin: 10px 8px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8a8b92; letter-spacing: .05em; }
+	.c .side div { display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 6px; } .c .side .on { background: #1e7cf2; color: #fff; }
+	.c .strips { padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+	.c .strip { height: 54px; border-radius: 6px; background: #000 0 0 / auto 100% repeat-x; position: relative; box-shadow: 0 0 0 1px #0003; }
+	.c .strip.on { box-shadow: 0 0 0 3px #f6c33b; }
+	.c .strip b { position: absolute; left: 6px; bottom: 4px; font-size: 10px; color: #fff; text-shadow: 0 1px 2px #000; font-weight: 600; }
+	.c .viewer { display: grid; grid-template-rows: minmax(0, 1fr) 44px; background: #2a2a2e; min-height: 0; }
+	.c .viewer .v { display: grid; place-items: center; padding: 14px; min-height: 0; }
+	.c .viewer .frame { height: 100%; max-width: 100%; border-radius: 3px; box-shadow: 0 10px 40px #0008; }
+	.c .vb { display: flex; align-items: center; justify-content: center; gap: 18px; color: #c9c9cf; position: relative; }
+	.c .vb .tc { position: absolute; left: 14px; color: #fff; font: 600 13px "Cascadia Mono", Consolas, monospace; }
+	.c .vb .pl { width: 30px; height: 30px; border-radius: 50%; background: #fff; color: #2a2a2e; display: grid; place-items: center; } .c .vb .pl svg { fill: currentColor; stroke-width: 0; width: 12px; height: 12px; }
+	.c .insp { background: #ececef; border-left: 1px solid #b9bac0; padding: 12px; display: flex; flex-direction: column; gap: 10px; font-size: 12px; }
+	.c .card { background: #fff; border-radius: 10px; padding: 10px 12px; box-shadow: 0 0 0 1px #d0d1d7; display: flex; flex-direction: column; gap: 9px; }
+	.c .card h4 { margin: 0; font-size: 12px; display: flex; align-items: center; } .c .card h4 i { margin-left: auto; width: 26px; height: 15px; border-radius: 9px; background: #1e7cf2; position: relative; } .c .card h4 i::after { content: ""; position: absolute; right: 2px; top: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; }
+	.c .f { display: grid; grid-template-columns: 70px 1fr 44px; align-items: center; gap: 8px; color: #55565d; }
+	.c .f div { height: 4px; border-radius: 4px; background: #d6d7dc; position: relative; } .c .f div u { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: #1e7cf2; } .c .f div b { position: absolute; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #0005; margin-left: -7px; }
+	.c .f span { text-align: right; font: 11.5px "Cascadia Mono", Consolas, monospace; }
+	.c .tl { background: #c9cace; display: grid; grid-template-rows: 34px 22px minmax(0, 1fr); min-height: 0; }
+	.c .tb { display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #e2e3e7; border-bottom: 1px solid #b9bac0; color: #55565d; }
+	.c .tb .ai { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px #c3c4ca; font-size: 11.5px; color: #1d1d21; }
+	.c .ruler { position: relative; background: repeating-linear-gradient(90deg, transparent 0 119px, #9a9ba2 119px 120px) 0 100% / 120px 8px repeat-x, #d6d7dc; border-bottom: 1px solid #b9bac0; }
+	.c .ruler span { position: absolute; top: 3px; font: 10px "Cascadia Mono", Consolas, monospace; color: #6d6e75; }
+	.c .rows { position: relative; padding-top: 6px; overflow: hidden; }
+	.c .lane { height: 30px; margin-bottom: 4px; }
+	.c .lane.main { height: 86px; background: #b8b9be; }
+	.c .clip { border-radius: 7px; top: 0; bottom: 0; }
+	.c .clip.v { background-size: auto 62%; background-repeat: repeat-x; background-color: #3565a8; box-shadow: inset 0 0 0 1.5px #6ea3ee; }
+	.c .clip.v::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 38%; background: #24457a repeating-linear-gradient(90deg, #8fd0ff 0 2px, transparent 2px 4px); -webkit-mask: linear-gradient(#000, #000); clip-path: polygon(0 70%, 5% 30%, 10% 60%, 15% 20%, 20% 55%, 25% 35%, 30% 65%, 35% 15%, 40% 50%, 45% 30%, 50% 60%, 55% 20%, 60% 55%, 65% 35%, 70% 62%, 75% 18%, 80% 50%, 85% 32%, 90% 58%, 95% 25%, 100% 50%, 100% 100%, 0 100%); }
+	.c .clip.v.sel { box-shadow: inset 0 0 0 3px #f6c33b; }
+	.c .t { background: #8a5cd6; } .c .o { background: #d67a2c; }
+	.c .a { background: #2f9e6b; --w: #c8f5de; } .c .a.wave::after { inset: 12px 0 2px; }
+	.c .clip span { color: #fff; }
+	.c .ph2 { position: absolute; top: -22px; bottom: 0; left: 760px; width: 2px; background: #f33; z-index: 4; }
+	.c .ph2::before { content: ""; position: absolute; top: 0; left: -5px; width: 12px; height: 10px; border-radius: 2px 2px 6px 6px; background: #f33; }
+
+	/* ============ D — « Texte d'abord » : on monte en éditant la parole, l'IA au centre (façon Descript) ============ */
+	body.d { background: #0b0a14; color: #ecebf5; --w: #8b7bff; }
+	.d .app { display: grid; grid-template-rows: 52px minmax(0, 1fr) 190px; height: 100vh; gap: 10px; padding: 0 10px 10px; background: radial-gradient(900px 500px at 12% -10%, #8b7bff22, transparent 60%), radial-gradient(700px 400px at 100% 0, #2fd6c11a, transparent 60%); }
+	.d .glass { background: #ffffff0a; border: 1px solid #ffffff14; border-radius: 16px; backdrop-filter: blur(20px); overflow: hidden; }
+	.d .top { display: flex; align-items: center; gap: 12px; padding: 0 6px; }
+	.d .logo { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; }
+	.d .logo i { width: 26px; height: 26px; border-radius: 8px; background: conic-gradient(from 210deg, #8b7bff, #2fd6c1, #ffb84d, #ff6b9d, #8b7bff); }
+	.d .pill { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border-radius: 99px; background: #ffffff0f; border: 1px solid #ffffff14; font-weight: 600; }
+	.d .pill.pri { color: #0b0a14; background: linear-gradient(100deg, #a99cff, #5eead4); border: none; }
+	.d .ttl { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; padding: 3px; border-radius: 99px; background: #ffffff0a; border: 1px solid #ffffff14; }
+	.d .ttl span { padding: 5px 16px; border-radius: 99px; color: #9a98b3; } .d .ttl .on { color: #fff; background: #8b7bff; font-weight: 600; }
+	.d .mid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr) 330px; gap: 10px; min-height: 0; }
+	.d .script { padding: 22px 26px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+	.d .script h3 { margin: 0; font-size: 12px; font-weight: 600; color: #9a98b3; display: flex; align-items: center; gap: 8px; }
+	.d .script h3 b { color: #5eead4; font-weight: 600; }
+	.d .para { display: grid; grid-template-columns: 64px 1fr; gap: 14px; font-size: 16.5px; line-height: 1.75; }
+	.d .para time { font: 11px "Cascadia Mono", Consolas, monospace; color: #6f6d8a; padding-top: 7px; }
+	.d .para p { margin: 0; color: #d9d7ea; }
+	.d .cut { color: #6f6d8a; text-decoration: line-through; text-decoration-color: #ff6b9d; }
+	.d .now { background: #8b7bff55; border-radius: 4px; padding: 1px 2px; color: #fff; }
+	.d .sel { background: #5eead433; border-radius: 4px; padding: 1px 2px; box-shadow: 0 0 0 1px #5eead4; }
+	.d .gap { display: inline-block; padding: 0 7px; margin: 0 3px; border-radius: 99px; font-size: 10.5px; color: #ffb84d; background: #ffb84d1f; vertical-align: 2px; }
+	.d .float { align-self: flex-start; margin-left: 78px; display: flex; gap: 2px; padding: 4px; border-radius: 11px; background: #1b1930; border: 1px solid #ffffff1f; box-shadow: 0 14px 40px #000a; font-size: 12px; }
+	.d .float span { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; } .d .float .hot { background: #8b7bff; font-weight: 600; }
+	.d .stage { display: grid; grid-template-rows: minmax(0, 1fr) 56px; min-height: 0; }
+	.d .stage .v { display: grid; place-items: center; padding: 16px; min-height: 0; }
+	.d .stage .frame { height: 100%; max-width: 100%; border-radius: 12px; box-shadow: 0 30px 80px #000c; }
+	.d .ctl { display: flex; align-items: center; justify-content: center; gap: 18px; position: relative; color: #9a98b3; }
+	.d .ctl .tc { position: absolute; left: 18px; font: 600 13px "Cascadia Mono", Consolas, monospace; color: #fff; }
+	.d .ctl .pl { width: 38px; height: 38px; border-radius: 50%; background: #fff; color: #0b0a14; display: grid; place-items: center; } .d .ctl .pl svg { fill: currentColor; stroke-width: 0; width: 14px; height: 14px; }
+	.d .ai { display: grid; grid-template-rows: 44px minmax(0, 1fr) 62px; min-height: 0; }
+	.d .ai h3 { margin: 0; display: flex; align-items: center; gap: 9px; padding: 0 16px; font-size: 13px; border-bottom: 1px solid #ffffff14; } .d .ai h3 i { width: 16px; height: 16px; border-radius: 50%; background: #d97757; }
+	.d .chat { padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; overflow: hidden; }
+	.d .me { align-self: flex-end; max-width: 86%; padding: 8px 12px; border-radius: 14px 14px 4px 14px; background: #8b7bff; }
+	.d .bot { max-width: 92%; padding: 9px 12px; border-radius: 14px 14px 14px 4px; background: #ffffff0f; color: #d9d7ea; line-height: 1.5; }
+	.d .act { display: flex; flex-direction: column; gap: 5px; }
+	.d .act div { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 10px; background: #5eead414; border: 1px solid #5eead433; color: #b6f5ea; font-size: 12px; } .d .act svg { width: 13px; height: 13px; }
+	.d .chips { display: flex; flex-wrap: wrap; gap: 6px; } .d .chips span { padding: 5px 10px; border-radius: 99px; background: #ffffff0f; border: 1px solid #ffffff14; font-size: 11.5px; color: #c9c7e0; }
+	.d .ask { margin: 0 12px 12px; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 14px; border-radius: 14px; background: #ffffff0f; border: 1px solid #ffffff1f; color: #6f6d8a; }
+	.d .ask b { margin-left: auto; width: 30px; height: 30px; border-radius: 10px; background: #8b7bff; display: grid; place-items: center; color: #fff; }
+	.d .tl { display: grid; grid-template-rows: 30px minmax(0, 1fr); }
+	.d .tb { display: flex; align-items: center; gap: 12px; padding: 0 14px; color: #9a98b3; font-size: 11.5px; border-bottom: 1px solid #ffffff14; }
+	.d .rows { position: relative; padding: 8px 10px; overflow: hidden; }
+	.d .lane { height: 24px; margin-bottom: 5px; } .d .lane.main { height: 58px; }
+	.d .clip { border-radius: 8px; top: 0; bottom: 0; }
+	.d .clip.v { background-size: auto 100%; box-shadow: inset 0 0 0 1px #ffffff33; } .d .clip.v.sel { box-shadow: inset 0 0 0 2px #5eead4; }
+	.d .t { background: #ffb84d2e; box-shadow: inset 0 0 0 1px #ffb84d88; color: #ffd9a0; } .d .o { background: #ff6b9d2e; box-shadow: inset 0 0 0 1px #ff6b9d88; }
+	.d .a { background: #8b7bff26; box-shadow: inset 0 0 0 1px #8b7bff77; } .d .a.wave::after { inset: 4px 0 2px; }
+	.d .t span, .d .o span { top: 50%; transform: translateY(-50%); }
+	.d .ph2 { position: absolute; top: 0; bottom: 0; left: 770px; width: 2px; border-radius: 2px; background: #fff; z-index: 4; box-shadow: 0 0 12px #fff8; }
+</style>
+</head>
+<body>
+<script>
+	const variant = new URLSearchParams(location.search).get('v') || 'b';
+	document.body.className = variant;
+	const svg = d => `<svg viewBox="0 0 24 24"><path d="${d}"/></svg>`;
+	const I = { play: 'M7 4.5v15l12-7.5z', prev: 'M6 5v14M19 5l-9 7 9 7z', next: 'M18 5v14M5 5l9 7-9 7z', cut: 'M8.7 8.5 20 17M8.7 15.5 20 7M6.5 9.5a2.500 2.500 0 1 0 0-5 2.500 2.500 0 0 0 0 5Zm0 10a2.500 2.500 0 1 0 0-5 2.500 2.500 0 0 0 0 5Z', arrow: 'M5 4l13 7.5-5.500 1.500L11 19z', magnet: 'M7 4v7a5 5 0 0 0 10 0V4M7 8h3M14 8h3', text: 'M5 6V4.5h14V6M12 4.5v15M9 19.5h6', wave: 'M4 12h3l2-5 3 10 2.5-7 1.500 2h4', up: 'M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4', film: 'M4 6h16v12H4zM10 9.5v5l4.5-2.500z', music: 'M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm10-2a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z', color: 'M12 4a8 8 0 1 0 0 16c1.500 0 2-1 2-2s-.500-1.500-.500-2.500S14.500 14 16 14h1.500A2.500 2.500 0 0 0 20 11.500C20 7.400 16.400 4 12 4Z', star: 'M12 3l1.8 5.4L19 10l-5.200 1.600L12 17l-1.800-5.400L5 10l5.200-1.600z', full: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5', check: 'm5 12.5 4.500 4.500L19 7.500', send: 'M5 12h13m0 0-5-5m5 5-5 5' };
+	const clips = (px, labels = true) => `
+		<div class="clip v" style="left:${4 * px}px;width:${268 * px}px;background-image:url(f1.jpg)">${labels ? '<span>messi_wc2026_goals</span>' : ''}</div>
+		<div class="clip v" style="left:${274 * px}px;width:${84 * px}px;background-image:url(f4.jpg)">${labels ? '<span>1_ldc_2015</span>' : ''}</div>
+		<div class="clip v" style="left:${360 * px}px;width:${268 * px}px;background-image:url(f2.jpg)">${labels ? '<span>messi_wc2026_goals</span>' : ''}</div>
+		<div class="clip v sel" style="left:${630 * px}px;width:${288 * px}px;background-image:url(f3.jpg)">${labels ? '<span>messi_wc2026_goals</span>' : ''}</div>
+		<div class="clip v" style="left:${922 * px}px;width:${444 * px}px;background-image:url(f5.jpg)">${labels ? '<span>messi_wc2026_goals</span>' : ''}</div>
+		<div class="clip v" style="left:${1368 * px}px;width:${520 * px}px;background-image:url(f6.jpg)">${labels ? '<span>messi_wc2026_goals</span>' : ''}</div>`;
+	const texts = px => [[14, 230, 'LE MONDIAL DE MESSI'], [366, 150, 'But n° 1'], [640, 170, 'But n° 2'], [930, 200, 'But n° 3'], [1380, 210, 'But n° 4']].map(t => `<div class="clip t" style="left:${t[0] * px}px;width:${t[1] * px}px"><span>${t[2]}</span></div>`).join('');
+	const overlays = px => [[360, 268, 'bandeau_1'], [636, 282, 'bandeau_2'], [926, 440, 'bandeau_3'], [1374, 500, 'bandeau_4']].map(t => `<div class="clip o" style="left:${t[0] * px}px;width:${t[1] * px}px"><span>${t[2]}</span></div>`).join('');
+	const sound = px => [[4, 268], [360, 268], [630, 288], [922, 444], [1368, 520]].map(t => `<div class="clip a wave" style="left:${t[0] * px}px;width:${t[1] * px}px"></div>`).join('');
+	const ruler = (step, from = 0) => Array.from({ length: 9 }, (_, i) => `<span style="left:${i * step * 2 + 4}px">00:${String(from + i * 10).padStart(2, '0')}:00</span>`).join('');
+	const picture = (f = 'f3.jpg') => `<div class="frame" style="background-image:url(${f})"><div class="caption">LE <i>MONDIAL</i> DE MESSI</div></div>`;
+
+	const layouts = {
+		b: () => `<div class="app">
+			<header class="top"><b>StarCapture</b><span>Fichier</span><span>Édition</span><span>Montage</span><span>Clip</span><span>Affichage</span><span class="spacer"></span><span>messi_wc2026</span><span class="spacer"></span><div class="ws"><span>Espace de travail :</span><span class="on">Montage</span><span>Couleur</span><span>Audio</span></div></header>
+			<section class="mid">
+				<div class="pane"><div class="ph"><span class="on">Chutier</span><span>Effets</span><span>Transitions</span></div><div class="bins"><ul><li class="on">Projet</li><li>Rushes</li><li>Moments</li><li>Habillage</li><li>Musique</li><li>Exports</li></ul><div class="list">
+					${[['f1', 'messi_wc2026_goals', '01:40:21'], ['f2', 'defile_final', '00:34:24'], ['f4', '1_ldc_2015', '00:03:18'], ['f5', '6_mondial_2022', '00:03:12'], ['f6', '7_trophee', '00:04:18'], ['f3', '3_finale_2014', '00:03:24'], ['f1', '4_copa_2016', '00:03:06'], ['f2', '5_adieux_barca', '00:03:18']].map((m, i) => `<div class="item ${i === 0 ? 'on' : ''}"><i style="background-image:url(${m[0]}.jpg)"></i><span>${m[1]}</span><em>${m[2]}</em></div>`).join('')}
+				</div></div></div>
+				<div class="pane"><div class="ph"><span class="on">Source</span><span>messi_wc2026_goals</span></div><div class="view">${`<div class="frame" style="background-image:url(f1.jpg)"></div>`}</div><div class="vbar" style="position:relative"><span class="tc">00:00:47:12</span><div class="c">${svg(I.prev)}${svg(I.play)}${svg(I.next)}</div><span class="spacer"></span><span>Entrée 00:43 · Sortie 01:04</span></div></div>
+				<div class="pane"><div class="ph"><span class="on">Programme</span><span>Montage principal</span></div><div class="view">${picture()}</div><div class="vbar" style="position:relative"><span class="tc">00:00:26:14</span><div class="c">${svg(I.prev)}${svg(I.play)}${svg(I.next)}</div><span class="spacer"></span><span>Adapter</span>${svg(I.full)}</div></div>
+				<div class="pane"><div class="ph"><span class="on">Inspecteur</span><span>Vidéo</span><span>Audio</span></div><div class="insp">
+					<div class="grp">Transformation<i></i></div>
+					${[['Zoom', 58, '1.12'], ['Position X', 50, '0.0'], ['Position Y', 46, '-24.0'], ['Rotation', 50, '0.0'], ['Opacité', 100, '100']].map(f => `<div class="f">${f[0]}<div><b style="left:${f[1]}%"></b></div><span>${f[2]}</span></div>`).join('')}
+					<div class="grp">Étalonnage<i></i></div>
+					${[['Exposition', 54, '+0.20'], ['Contraste', 62, '1.15'], ['Saturation', 66, '1.30']].map(f => `<div class="f">${f[0]}<div><b style="left:${f[1]}%"></b></div><span>${f[2]}</span></div>`).join('')}
+					<div class="grp">Oscilloscope</div><div class="scope"></div>
+				</div></div>
+			</section>
+			<section class="tl">
+				<div class="tb"><span class="tc">00:00:26:14</span>${svg(I.arrow)}<span class="on">${svg(I.cut)}</span>${svg(I.magnet)}${svg(I.text)}<span class="spacer"></span>${svg(I.wave)}<span>Couper les silences</span><span>Sous-titres auto</span><span class="spacer"></span><span>Zoom 62 %</span></div>
+				<div class="ruler">${ruler(120)}</div>
+				<div class="rows">
+					${[['V3', 'Texte', 26, texts(1.18)], ['V2', 'Habillage', 26, overlays(1.18)], ['V1', 'Vidéo 1', 62, clips(1.18)], ['A1', 'Audio 1', 44, sound(1.18)], ['A2', 'Musique', 44, `<div class="clip a wave" style="left:4px;right:0"><span>faouzia_unethical.mp3</span></div>`]].map(r => `<div class="row" style="height:${r[2]}px"><div class="hd"><b>${r[0]}</b>${r[1]}<s><i>M</i><i>S</i></s></div><div class="lane">${r[3]}</div></div>`).join('')}
+					<div class="ph2"></div>
+				</div>
+			</section>
+			<footer class="pages"><div>${svg(I.film)}Médias</div><div class="on">${svg(I.cut)}Montage</div><div>${svg(I.star)}Effets</div><div>${svg(I.color)}Couleur</div><div>${svg(I.music)}Audio</div><div>${svg(I.up)}Export</div></footer>
+		</div>`,
+
+		c: () => `<div class="app">
+			<header class="top" style="position:relative"><div class="seg"><span class="on">${svg(I.film)}</span><span>${svg(I.music)}</span><span>${svg(I.text)}</span><span>${svg(I.star)}</span></div><div class="ttl">messi_wc2026</div><span class="spacer"></span><div class="btn"><span style="width:14px;height:14px;border-radius:50%;background:#d97757"></span>Monter avec Claude</div><div class="btn pri">${svg(I.up)}Partager</div></header>
+			<section class="mid">
+				<div class="browser"><div class="side"><small>Bibliothèque</small><div class="on">${svg(I.film)}Tous les plans</div><div>${svg(I.star)}Favoris</div><div>${svg(I.music)}Musique</div><small>Dossiers</small><div>Rushes</div><div>Moments</div><div>Habillage</div><div>Higgsfield</div></div>
+					<div class="strips">${[['f1', 'messi_wc2026_goals · 01:40'], ['f2', 'defile_final · 00:34'], ['f4', '1_ldc_2015 · 00:03'], ['f5', '6_mondial_2022 · 00:03'], ['f6', '7_trophee · 00:04'], ['f3', '3_finale_2014 · 00:03']].map((s, i) => `<div class="strip ${i === 0 ? 'on' : ''}" style="background-image:url(${s[0]}.jpg);width:${[100, 82, 46, 46, 56, 50][i]}%"><b>${s[1]}</b></div>`).join('')}</div></div>
+				<div class="viewer"><div class="v">${picture()}</div><div class="vb"><span class="tc">00:26:14</span>${svg(I.prev)}<div class="pl">${svg(I.play)}</div>${svg(I.next)}<span style="position:absolute;right:14px;display:flex;gap:12px">${svg(I.full)}</span></div></div>
+				<div class="insp">
+					<div class="card"><h4>Transformation<i></i></h4>${[['Échelle', 58, '112 %'], ['Position X', 50, '0'], ['Position Y', 46, '-24'], ['Rotation', 50, '0°']].map(f => `<div class="f">${f[0]}<div><u style="width:${f[1]}%"></u><b style="left:${f[1]}%"></b></div><span>${f[2]}</span></div>`).join('')}</div>
+					<div class="card"><h4>Couleur<i></i></h4>${[['Exposition', 54, '+0,2'], ['Saturation', 66, '130 %'], ['Chaleur', 44, '-6']].map(f => `<div class="f">${f[0]}<div><u style="width:${f[1]}%"></u><b style="left:${f[1]}%"></b></div><span>${f[2]}</span></div>`).join('')}</div>
+					<div class="card"><h4>Son<i></i></h4>${[['Volume', 72, '-3 dB']].map(f => `<div class="f">${f[0]}<div><u style="width:${f[1]}%"></u><b style="left:${f[1]}%"></b></div><span>${f[2]}</span></div>`).join('')}</div>
+				</div>
+			</section>
+			<section class="tl">
+				<div class="tb">${svg(I.arrow)}${svg(I.cut)}${svg(I.magnet)}<span class="spacer"></span><div class="ai">${svg(I.wave)}Couper les silences</div><div class="ai">${svg(I.text)}Sous-titres automatiques</div><span class="spacer"></span><span>Zoom</span></div>
+				<div class="ruler">${ruler(120)}</div>
+				<div class="rows">
+					<div class="lane">${texts(1.26)}</div>
+					<div class="lane">${overlays(1.26)}</div>
+					<div class="lane main">${clips(1.26)}</div>
+					<div class="lane" style="height:34px"><div class="clip a wave" style="left:4px;right:0"><span>faouzia_unethical.mp3</span></div></div>
+					<div class="ph2"></div>
+				</div>
+			</section>
+		</div>`,
+
+		d: () => `<div class="app">
+			<header class="top" style="position:relative"><div class="logo"><i></i>StarCapture</div><span style="color:#9a98b3">messi_wc2026</span><div class="ttl"><span class="on">Texte</span><span>Timeline</span><span>Couleur</span></div><span class="spacer"></span><div class="pill">${svg(I.full)}Aperçu</div><div class="pill pri">${svg(I.up)}Exporter</div></header>
+			<section class="mid">
+				<div class="glass script">
+					<h3>Transcription <b>· 4 passages coupés · 12 silences retirés</b></h3>
+					<div class="para"><time>00:00</time><p>Bienvenue, aujourd'hui on revient sur <span class="cut">euh, sur les</span> les huit buts de Messi pendant ce Mondial. <span class="gap">1,2 s</span> Et le premier, il arrive très tôt.</p></div>
+					<div class="para"><time>00:14</time><p>Regardez le contrôle, <span class="now">la feinte de corps</span> et la frappe enroulée <span class="cut">du coup voilà</span> dans le petit filet.</p></div>
+					<div class="para"><time>00:26</time><p><span class="sel">Le deuxième but, c'est le plus beau du tournoi.</span> <span class="gap">0,8 s</span> Une action collective de vingt passes.</p></div>
+					<div class="float"><span>${svg(I.cut)}Couper</span><span>${svg(I.text)}Sous-titrer</span><span>${svg(I.star)}Zoom</span><span class="hot"><i style="width:13px;height:13px;border-radius:50%;background:#d97757"></i>Demander à Claude</span></div>
+					<div class="para"><time>00:38</time><p>Ensuite le penalty, <span class="cut">bon bah</span> pris avec un sang-froid incroyable, à contre-pied du gardien.</p></div>
+					<div class="para"><time>00:57</time><p>Et puis il y a ce coup franc, des vingt-cinq mètres, au-dessus du mur.</p></div>
+				</div>
+				<div class="glass stage"><div class="v">${picture()}</div><div class="ctl"><span class="tc">00:26.14 <span style="color:#6f6d8a;font-weight:400">/ 01:47</span></span>${svg(I.prev)}<div class="pl">${svg(I.play)}</div>${svg(I.next)}</div></div>
+				<div class="glass ai">
+					<h3><i></i>Claude monte avec toi</h3>
+					<div class="chat">
+						<div class="me">Fais-moi un montage dynamique façon YouTube, coupe les blancs</div>
+						<div class="bot">C'est fait. J'ai resserré le rythme et posé les titres des buts. Regarde le résultat, tout est annulable.</div>
+						<div class="act"><div>${svg(I.check)}12 silences retirés (gain : 9 s)</div><div>${svg(I.check)}4 hésitations coupées</div><div>${svg(I.check)}8 titres « But n° » posés</div><div>${svg(I.check)}Zoom léger sur chaque frappe</div></div>
+						<div class="chips"><span>Ajoute les sous-titres</span><span>Version Shorts 9:16</span><span>Baisse la musique sous la voix</span></div>
+					</div>
+					<div class="ask">Demande un changement…<b>${svg(I.send)}</b></div>
+				</div>
+			</section>
+			<section class="glass tl">
+				<div class="tb"><span>Timeline</span>${svg(I.arrow)}${svg(I.cut)}${svg(I.magnet)}<span class="spacer"></span><span>01:47 · 25 clips</span></div>
+				<div class="rows">
+					<div class="lane">${texts(1.24)}</div>
+					<div class="lane main">${clips(1.24, false)}</div>
+					<div class="lane" style="height:30px"><div class="clip a wave" style="left:4px;right:0"></div></div>
+					<div class="ph2"></div>
+				</div>
+			</section>
+		</div>`,
+	};
+	document.body.insertAdjacentHTML('beforeend', layouts[variant]().replace(/(\d*\.\d)00(?=[^\d])/g, '$1'));
+</script>
+</body>
+</html>

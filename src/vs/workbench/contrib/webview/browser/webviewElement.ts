@@ -417,7 +417,8 @@ export class WebviewElement extends Disposable implements IWebviewElement, Webvi
 		element.className = `webview ${options.customClasses || ''}`;
 		element.sandbox.add('allow-scripts', 'allow-same-origin', 'allow-forms', 'allow-pointer-lock', 'allow-downloads');
 
-		const allowRules = ['cross-origin-isolated', 'autoplay', 'local-network-access'];
+		// Orbit: 'fullscreen' lets a page fill the screen for real (StarCapture's preview, the presentation viewer).
+		const allowRules = ['cross-origin-isolated', 'autoplay', 'local-network-access', 'fullscreen'];
 		if (!isFirefox) {
 			allowRules.push('clipboard-read', 'clipboard-write');
 		}

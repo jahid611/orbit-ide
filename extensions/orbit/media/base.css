@@ -115,3 +115,52 @@ a:hover { text-decoration: underline; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: transparent; border-radius: 10px; border: 3px solid transparent; background-clip: content-box; }
 :hover::-webkit-scrollbar-thumb { background-color: var(--vscode-scrollbarSlider-background); }
+
+/* Claude's mark (Simple Icons, CC0), next to everything Claude does. */
+.claude-mark { display: inline-block; flex: none; width: 16px; height: 16px; vertical-align: -3px; background: url(claude.svg) center / contain no-repeat; }
+.claude-mark.light { background-image: url(claude-light.svg); }
+
+/* Dropdowns (media/select.js): the native select stays hidden behind an Orbit menu. */
+select.osel-native { display: none !important; }
+.osel { display: inline-flex; align-items: center; gap: 7px; height: 28px; min-width: 0; max-width: 260px; padding: 0 8px 0 10px; border-radius: 8px; font-size: 12px; text-align: left; color: var(--fg);
+	background: var(--surface); border: 1px solid var(--line); transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease; }
+.osel:hover { background: var(--surface-2); }
+.osel:focus-visible, .osel.open { outline: none; border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft); }
+.osel:disabled { opacity: .5; cursor: default; }
+.osel[hidden] { display: none; }
+.osel-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.osel .osel-chevron { width: 12px; height: 12px; flex: none; opacity: .6; transition: transform .18s ease; }
+.osel.open .osel-chevron { transform: rotate(180deg); }
+.osel-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 14px; height: 14px; color: var(--fg); }
+.osel-icon .oi { width: 14px; height: 14px; }
+.osel-icon .brand { width: 13px; height: 13px; }
+.osel-icon .brand-samsung { width: 46px; height: 8px; }
+.osel-menu { position: fixed; z-index: 1000; overflow-y: auto; padding: 5px; border-radius: 12px; font-size: 12.5px; color: var(--fg);
+	background: color-mix(in srgb, var(--vscode-editorWidget-background, #14122a) 90%, transparent); backdrop-filter: blur(22px) saturate(1.3);
+	border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent); box-shadow: 0 18px 50px rgba(0, 0, 0, .5), 0 2px 8px rgba(0, 0, 0, .3);
+	animation: osel-in .16s cubic-bezier(.2, .9, .3, 1.2) both; }
+.osel-menu.up { animation-name: osel-in-up; }
+.osel-menu.closing { animation: osel-out .12s ease both; }
+@keyframes osel-in { from { opacity: 0; transform: translateY(-4px) scale(.97); } }
+@keyframes osel-in-up { from { opacity: 0; transform: translateY(4px) scale(.97); } }
+@keyframes osel-out { to { opacity: 0; transform: scale(.98); } }
+.osel-group { display: flex; align-items: center; gap: 8px; padding: 9px 10px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.osel-group:not(:first-child) { margin-top: 4px; border-top: 1px solid var(--line); padding-top: 10px; }
+.osel-group .osel-icon { color: var(--fg); opacity: .9; }
+.osel-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+.osel-item.active { background: var(--accent-soft); }
+.osel-item.selected { color: var(--fg); font-weight: 600; }
+.osel-item.disabled { opacity: .45; cursor: default; }
+.osel-text { flex: 1; }
+.osel-item .osel-check { width: 14px; height: 14px; color: var(--accent); flex: none; }
+
+/* Orbit line icons (media/icons.js) */
+.oi { display: inline-block; flex: none; width: 1.15em; height: 1.15em; vertical-align: -.2em; }
+button .oi { width: 15px; height: 15px; }
+.oi.sort { width: 11px; height: 11px; margin-left: 3px; opacity: .8; }
+.oi.sort.up { transform: rotate(180deg); }
+.page-logo { display: inline-grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; color: #5eead4; background: linear-gradient(145deg, rgba(94, 234, 212, .2), rgba(139, 123, 255, .16)); box-shadow: inset 0 0 0 1px rgba(94, 234, 212, .28), 0 4px 14px rgba(94, 234, 212, .14); }
+.page-logo .oi { width: 19px; height: 19px; }
+.page-logo.small { width: 24px; height: 24px; border-radius: 7px; }
+.page-logo.small .oi { width: 14px; height: 14px; }
+.status-dot { display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; vertical-align: 1px; }

@@ -260,6 +260,8 @@ export class CodeApplication extends Disposable {
 		const alwaysAllowedPermissions = new Set(['pointerLock', 'notifications']);
 
 		const allowedPermissionsInWebview = new Set([
+			// Orbit: a page may fill the screen (video preview, presentations).
+			'fullscreen',
 			...alwaysAllowedPermissions,
 			'clipboard-read',
 			'clipboard-sanitized-write',

@@ -616,6 +616,18 @@ export class EditorDropTarget extends Themable {
 			return;
 		}
 
+		// Orbit: StarCapture takes dropped files itself (its library, its timeline). Without this
+		// the split overlay covers it and the files open as tabs unless Shift is held, which
+		// nobody guesses. Dragged tabs still split the area as everywhere else.
+		const dropTarget = event.target as HTMLElement | null;
+		if (
+			dropTarget && this.findTargetGroupView(dropTarget)?.activeEditor?.editorId === 'starcapture.editor' &&
+			!this.editorTransfer.hasData(DraggedEditorIdentifier.prototype) &&
+			!this.groupTransfer.hasData(DraggedEditorGroupIdentifier.prototype)
+		) {
+			return;
+		}
+
 		this.counter++;
 
 		// Validate transfer

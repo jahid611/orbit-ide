@@ -93,6 +93,11 @@
         "category": "Orbit"
       },
       {
+        "command": "orbit.claude.paste",
+        "title": "Coller (texte, capture d'écran ou images) dans le terminal Claude",
+        "category": "Orbit"
+      },
+      {
         "command": "orbit.claude.broadcast",
         "title": "Send Message to All Claude Terminals…",
         "category": "Orbit"
@@ -178,40 +183,398 @@
         "command": "orbit.sessions.open",
         "title": "Ouvrir la discussion",
         "category": "Orbit"
+      },
+      {
+        "command": "orbit.claude.pickModel",
+        "title": "Changer de modèle…",
+        "category": "Orbit",
+        "icon": "$(chip)"
+      },
+      {
+        "command": "orbit.usage.show",
+        "title": "Utilisation de Claude",
+        "category": "Orbit",
+        "icon": "$(orbit-claude)"
+      },
+      {
+        "command": "orbit.map.show",
+        "title": "Vue Orbite : tour de contrôle des agents",
+        "category": "Orbit",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "orbit.tutorial",
+        "title": "Tutoriel : découvrir Orbit",
+        "category": "Orbit",
+        "icon": "$(mortar-board)"
+      },
+      {
+        "command": "orbit.time.rewind",
+        "title": "Revenir avant ce message",
+        "category": "Orbit",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "orbit.time.diff",
+        "title": "Voir le changement",
+        "category": "Orbit",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "orbit.time.refresh",
+        "title": "Actualiser la frise",
+        "category": "Orbit",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "orbit.time.snapshot",
+        "title": "Créer un point de sauvegarde",
+        "category": "Orbit",
+        "icon": "$(save)"
+      },
+      {
+        "command": "orbit.conductor.start",
+        "title": "Chef d'orchestre : découper une tâche entre plusieurs agents…",
+        "category": "Orbit",
+        "icon": "$(organization)"
+      },
+      {
+        "command": "orbit.conductor.merge",
+        "title": "Chef d'orchestre : fusionner le travail des agents…",
+        "category": "Orbit",
+        "icon": "$(git-merge)"
+      },
+      {
+        "command": "orbit.preview.show",
+        "title": "Vue vivante : voir et modifier l'interface en direct",
+        "category": "Orbit",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "orbit.database.show",
+        "title": "Base de données : explorer et modifier avec Claude",
+        "category": "Orbit",
+        "icon": "$(database)"
+      },
+      {
+        "command": "orbit.unity.show",
+        "title": "NovaGame : studio de jeu Unity",
+        "category": "Orbit",
+        "icon": "$(game)"
+      },
+      {
+        "command": "orbit.project.switch",
+        "title": "Changer de projet ou en créer un…",
+        "category": "Orbit",
+        "icon": "$(folder)"
+      },
+      {
+        "command": "orbit.team.start",
+        "title": "Chef d'équipe : un Claude qui pilote tous les autres",
+        "category": "Orbit",
+        "icon": "$(orbit-claude)"
+      },
+      {
+        "command": "orbit.team.show",
+        "title": "Aller à l'agent",
+        "category": "Orbit",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "orbit.team.message",
+        "title": "Écrire à l'agent…",
+        "category": "Orbit",
+        "icon": "$(comment)"
+      },
+      {
+        "command": "orbit.team.stop",
+        "title": "Interrompre l'agent",
+        "category": "Orbit",
+        "icon": "$(debug-pause)"
+      },
+      {
+        "command": "orbit.team.close",
+        "title": "Fermer l'agent",
+        "category": "Orbit",
+        "icon": "$(close)"
+      },
+      {
+        "command": "orbit.claude.quickProject",
+        "title": "Projet rapide : nouveau dossier et Claude, sans question",
+        "category": "Orbit",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "orbit.community.show",
+        "title": "Communauté : templates des autres utilisateurs d'Orbit",
+        "category": "Orbit",
+        "icon": "$(organization)"
+      },
+      {
+        "command": "orbit.community.share",
+        "title": "Partager ce projet dans la communauté…",
+        "category": "Orbit",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "orbit.claude.autoModeAll",
+        "title": "Passer tous les Claude en mode auto",
+        "category": "Orbit",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "orbit.git.smartCommit",
+        "title": "Rédiger le message de commit",
+        "category": "Orbit",
+        "icon": "$(orbit-claude)"
+      },
+      {
+        "command": "orbit.verify.run",
+        "title": "Vérifier le projet maintenant (types, lint, tests)",
+        "category": "Orbit",
+        "icon": "$(pass)"
+      },
+      {
+        "command": "orbit.verify.menu",
+        "title": "Vérification automatique : régler…",
+        "category": "Orbit",
+        "icon": "$(pass)"
+      },
+      {
+        "command": "orbit.verify.configure",
+        "title": "Choisir les contrôles du projet (.orbit/checks.json)",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.problems.fix",
+        "title": "Corriger avec Claude",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.problems.fixFile",
+        "title": "Faire corriger par Claude les problèmes de ce fichier",
+        "category": "Orbit",
+        "icon": "$(orbit-claude)"
+      },
+      {
+        "command": "orbit.problems.fixAll",
+        "title": "Faire corriger par Claude tous les problèmes du projet",
+        "category": "Orbit",
+        "icon": "$(orbit-claude)"
+      },
+      {
+        "command": "orbit.recipes.run",
+        "title": "Envoyer la recette à Claude",
+        "category": "Orbit",
+        "icon": "$(play)"
+      },
+      {
+        "command": "orbit.recipes.pick",
+        "title": "Recettes : envoyer une consigne prête à l'emploi…",
+        "category": "Orbit",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "orbit.recipes.add",
+        "title": "Nouvelle recette…",
+        "category": "Orbit",
+        "icon": "$(add)"
+      },
+      {
+        "command": "orbit.recipes.edit",
+        "title": "Modifier la recette",
+        "category": "Orbit",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "orbit.recipes.delete",
+        "title": "Supprimer la recette",
+        "category": "Orbit",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "orbit.recipes.saveSelection",
+        "title": "Enregistrer la sélection comme recette…",
+        "category": "Orbit",
+        "icon": "$(save)"
+      },
+      {
+        "command": "orbit.recipes.refresh",
+        "title": "Actualiser les recettes",
+        "category": "Orbit",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "orbit.time.revertFile",
+        "title": "Annuler ce fichier seulement",
+        "category": "Orbit",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "orbit.time.comment",
+        "title": "Commenter ce fichier pour Claude",
+        "category": "Orbit",
+        "icon": "$(comment)"
+      },
+      {
+        "command": "orbit.higgsfield.show",
+        "title": "Higgsfield : générer images, vidéos, 3D et sons dans le projet",
+        "category": "Orbit",
+        "icon": {
+          "light": "./media/higgsfield.png",
+          "dark": "./media/higgsfield.png"
+        }
+      },
+      {
+        "command": "orbit.higgsfield.animate",
+        "title": "Animer avec Higgsfield",
+        "category": "Orbit",
+        "icon": "$(play)"
+      },
+      {
+        "command": "orbit.higgsfield.vary",
+        "title": "Créer des variantes avec Higgsfield",
+        "category": "Orbit",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "orbit.assistant.choose",
+        "title": "Choisir l'IA avec laquelle travailler",
+        "category": "Orbit",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "orbit.queue.show",
+        "title": "File de nuit : enchaîner des tâches et lire le rapport",
+        "category": "Orbit",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "command": "orbit.queue.add",
+        "title": "Ajouter une tâche à la file de nuit",
+        "category": "Orbit",
+        "icon": "$(add)"
+      },
+      {
+        "command": "orbit.phone.setup",
+        "title": "Orbit sur ton téléphone : relier et régler les notifications",
+        "category": "Orbit",
+        "icon": "$(device-mobile)"
+      },
+      {
+        "command": "orbit.phone.test",
+        "title": "Envoyer une notification de test sur le téléphone",
+        "category": "Orbit",
+        "icon": "$(device-mobile)"
+      },
+      {
+        "command": "orbit.assistant.toggle",
+        "title": "Changer d'IA en un clic",
+        "category": "Orbit",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "orbit.vercel.show",
+        "title": "Vercel : mettre le projet en ligne",
+        "category": "Orbit",
+        "icon": {
+          "light": "./media/vercel-badge.svg",
+          "dark": "./media/vercel-badge.svg"
+        }
+      },
+      {
+        "command": "orbit.vercel.publish",
+        "title": "Vercel : publier maintenant",
+        "category": "Orbit",
+        "icon": {
+          "light": "./media/vercel-badge.svg",
+          "dark": "./media/vercel-badge.svg"
+        }
+      },
+      {
+        "command": "orbit.tour.start",
+        "title": "Circuit de découverte : visiter toutes les fonctions d'Orbit",
+        "category": "Orbit",
+        "icon": "$(compass)"
+      },
+      {
+        "command": "orbit.tour.next",
+        "title": "Circuit de découverte : étape suivante",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.tour.previous",
+        "title": "Circuit de découverte : étape précédente",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.tour.stop",
+        "title": "Circuit de découverte : quitter",
+        "category": "Orbit"
+      },
+      {
+        "command": "orbit.tools",
+        "title": "Outils du projet : tableau, variables, Vercel, Supabase, Stripe, Figma…",
+        "category": "Orbit",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "orbit.board.show",
+        "title": "Tableau de tâches : des cartes que les agents prennent et traitent",
+        "category": "Orbit",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "orbit.board.add",
+        "title": "Ajouter une tâche au tableau",
+        "category": "Orbit",
+        "icon": "$(add)"
+      },
+      {
+        "command": "orbit.env.show",
+        "title": "Variables d'environnement : fichiers .env masqués et synchronisés",
+        "category": "Orbit",
+        "icon": "$(key)"
+      },
+      {
+        "command": "orbit.visual.show",
+        "title": "Relecture visuelle : la page avant et après",
+        "category": "Orbit",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "orbit.visual.now",
+        "title": "Relecture visuelle : capturer la page maintenant",
+        "category": "Orbit",
+        "icon": "$(device-camera)"
+      },
+      {
+        "command": "orbit.store.show",
+        "title": "Magasin de compétences : connecteurs et recettes",
+        "category": "Orbit",
+        "icon": "$(extensions)"
+      },
+      {
+        "command": "orbit.figma.show",
+        "title": "Figma vers code : construire un écran à partir d'une maquette",
+        "category": "Orbit",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "orbit.supabase.show",
+        "title": "Supabase : base de données, comptes et stockage du projet",
+        "category": "Orbit",
+        "icon": "$(database)"
+      },
+      {
+        "command": "orbit.stripe.show",
+        "title": "Stripe : paiements du projet",
+        "category": "Orbit",
+        "icon": "$(credit-card)"
       }
     ],
     "menus": {
       "view/title": [
-        {
-          "command": "orbit.chat.show",
-          "when": "view == terminal",
-          "group": "navigation@0"
-        },
-        {
-          "command": "orbit.claude.new",
-          "when": "view == terminal",
-          "group": "navigation@1"
-        },
-        {
-          "command": "orbit.claude.grid",
-          "when": "view == terminal",
-          "group": "navigation@2"
-        },
-        {
-          "command": "orbit.chat.showTerminal",
-          "when": "view == orbit.chatView",
-          "group": "navigation@0"
-        },
-        {
-          "command": "orbit.sessions.renameCurrent",
-          "when": "view == orbit.chatView",
-          "group": "navigation@1"
-        },
-        {
-          "command": "orbit.claude.new",
-          "when": "view == orbit.chatView",
-          "group": "navigation@2"
-        },
         {
           "command": "orbit.sessions.search",
           "when": "view == orbit.sessions",
@@ -226,6 +589,201 @@
           "command": "orbit.sessions.refresh",
           "when": "view == orbit.sessions",
           "group": "navigation@2"
+        },
+        {
+          "command": "orbit.chat.show",
+          "when": "view == terminal",
+          "group": "navigation@90"
+        },
+        {
+          "command": "orbit.claude.pickModel",
+          "when": "view == terminal",
+          "group": "navigation@91"
+        },
+        {
+          "command": "orbit.usage.show",
+          "when": "view == terminal",
+          "group": "navigation@92"
+        },
+        {
+          "command": "orbit.claude.new",
+          "when": "view == terminal",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orbit.claude.grid",
+          "when": "view == terminal",
+          "group": "navigation@2"
+        },
+        {
+          "command": "orbit.chat.showTerminal",
+          "when": "view == orbit.chatView",
+          "group": "navigation@90"
+        },
+        {
+          "command": "orbit.claude.pickModel",
+          "when": "view == orbit.chatView",
+          "group": "navigation@91"
+        },
+        {
+          "command": "orbit.usage.show",
+          "when": "view == orbit.chatView",
+          "group": "navigation@92"
+        },
+        {
+          "command": "orbit.claude.new",
+          "when": "view == orbit.chatView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orbit.sessions.renameCurrent",
+          "when": "view == orbit.chatView",
+          "group": "1_orbit@1"
+        },
+        {
+          "command": "orbit.sessions.search",
+          "when": "view == orbit.chatView",
+          "group": "1_orbit@2"
+        },
+        {
+          "command": "orbit.claude.grid",
+          "when": "view == orbit.chatView",
+          "group": "1_orbit@3"
+        },
+        {
+          "command": "orbit.map.show",
+          "when": "view == terminal",
+          "group": "navigation@89"
+        },
+        {
+          "command": "orbit.map.show",
+          "when": "view == orbit.chatView",
+          "group": "navigation@89"
+        },
+        {
+          "command": "orbit.map.show",
+          "when": "view == orbit.sessions",
+          "group": "navigation@3"
+        },
+        {
+          "command": "orbit.time.snapshot",
+          "when": "view == orbit.timeline",
+          "group": "navigation@0"
+        },
+        {
+          "command": "orbit.time.refresh",
+          "when": "view == orbit.timeline",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orbit.conductor.start",
+          "when": "view == orbit.sessions",
+          "group": "navigation@4"
+        },
+        {
+          "command": "orbit.preview.show",
+          "when": "view == terminal",
+          "group": "navigation@88"
+        },
+        {
+          "command": "orbit.preview.show",
+          "when": "view == orbit.chatView",
+          "group": "navigation@88"
+        },
+        {
+          "command": "orbit.database.show",
+          "when": "view == orbit.sessions",
+          "group": "navigation@5"
+        },
+        {
+          "command": "orbit.unity.show",
+          "when": "view == orbit.sessions",
+          "group": "navigation@6"
+        },
+        {
+          "command": "orbit.project.switch",
+          "when": "view == workbench.explorer.fileView",
+          "group": "navigation@-1"
+        },
+        {
+          "command": "orbit.team.start",
+          "when": "view == orbit.team",
+          "group": "navigation@0"
+        },
+        {
+          "command": "orbit.map.show",
+          "when": "view == orbit.team",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orbit.community.show",
+          "when": "view == orbit.sessions",
+          "group": "navigation@7"
+        },
+        {
+          "command": "orbit.claude.autoModeAll",
+          "when": "view == terminal",
+          "group": "navigation@93"
+        },
+        {
+          "command": "orbit.claude.autoModeAll",
+          "when": "view == orbit.chatView",
+          "group": "navigation@93"
+        },
+        {
+          "command": "orbit.claude.autoModeAll",
+          "when": "view == orbit.team",
+          "group": "navigation@5"
+        },
+        {
+          "command": "orbit.recipes.add",
+          "when": "view == orbit.recipes",
+          "group": "navigation@0"
+        },
+        {
+          "command": "orbit.recipes.pick",
+          "when": "view == orbit.recipes",
+          "group": "navigation@1"
+        },
+        {
+          "command": "orbit.recipes.refresh",
+          "when": "view == orbit.recipes",
+          "group": "navigation@2"
+        },
+        {
+          "command": "orbit.recipes.saveSelection",
+          "when": "view == orbit.recipes",
+          "group": "1_recipes@1"
+        },
+        {
+          "command": "orbit.problems.fixAll",
+          "when": "view == workbench.panel.markers.view",
+          "group": "navigation@0"
+        },
+        {
+          "command": "orbit.higgsfield.show",
+          "when": "view == terminal",
+          "group": "navigation@88"
+        },
+        {
+          "command": "orbit.queue.show",
+          "when": "view == terminal",
+          "group": "navigation@87"
+        },
+        {
+          "command": "orbit.assistant.toggle",
+          "when": "view == terminal",
+          "group": "navigation@0"
+        },
+        {
+          "command": "orbit.vercel.show",
+          "when": "view == terminal",
+          "group": "navigation@86"
+        },
+        {
+          "command": "orbit.tools",
+          "when": "view == terminal",
+          "group": "navigation@85"
         }
       ],
       "terminal/title/context": [
@@ -246,6 +804,16 @@
         {
           "command": "orbit.claude.sendSelection",
           "group": "0_orbit@2"
+        },
+        {
+          "command": "orbit.recipes.saveSelection",
+          "when": "editorHasSelection",
+          "group": "0_orbit@3"
+        },
+        {
+          "command": "orbit.problems.fixFile",
+          "when": "resourceScheme == file",
+          "group": "0_orbit@4"
         }
       ],
       "commandPalette": [
@@ -264,6 +832,62 @@
         {
           "command": "orbit.sessions.rename",
           "when": "false"
+        },
+        {
+          "command": "orbit.time.rewind",
+          "when": "false"
+        },
+        {
+          "command": "orbit.time.diff",
+          "when": "false"
+        },
+        {
+          "command": "orbit.team.show",
+          "when": "false"
+        },
+        {
+          "command": "orbit.team.message",
+          "when": "false"
+        },
+        {
+          "command": "orbit.team.stop",
+          "when": "false"
+        },
+        {
+          "command": "orbit.team.close",
+          "when": "false"
+        },
+        {
+          "command": "orbit.recipes.run",
+          "when": "false"
+        },
+        {
+          "command": "orbit.recipes.saveSelection",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "orbit.problems.fix",
+          "when": "false"
+        },
+        {
+          "command": "orbit.time.revertFile",
+          "when": "false"
+        },
+        {
+          "command": "orbit.time.comment",
+          "when": "false"
+        },
+        {
+          "command": "orbit.higgsfield.animate",
+          "when": "false"
+        },
+        {
+          "command": "orbit.higgsfield.vary",
+          "when": "false"
+        },
+        {
+          "command": "orbit.phone.test",
+          "when": "false"
         }
       ],
       "view/item/context": [
@@ -276,10 +900,136 @@
           "command": "orbit.sessions.rename",
           "when": "view == orbit.sessions && viewItem =~ /^session/",
           "group": "1_edit"
+        },
+        {
+          "command": "orbit.time.rewind",
+          "when": "view == orbit.timeline && viewItem == turn",
+          "group": "inline"
+        },
+        {
+          "command": "orbit.time.rewind",
+          "when": "view == orbit.timeline && viewItem == turn",
+          "group": "1_time"
+        },
+        {
+          "command": "orbit.time.diff",
+          "when": "view == orbit.timeline && viewItem == file",
+          "group": "inline"
+        },
+        {
+          "command": "orbit.team.message",
+          "when": "view == orbit.team && viewItem =~ /^agent/",
+          "group": "inline@1"
+        },
+        {
+          "command": "orbit.team.stop",
+          "when": "view == orbit.team && viewItem == agent.running",
+          "group": "inline@2"
+        },
+        {
+          "command": "orbit.team.message",
+          "when": "view == orbit.team && viewItem =~ /^agent/",
+          "group": "1_team@1"
+        },
+        {
+          "command": "orbit.team.stop",
+          "when": "view == orbit.team && viewItem =~ /^agent/",
+          "group": "1_team@2"
+        },
+        {
+          "command": "orbit.team.close",
+          "when": "view == orbit.team && viewItem =~ /^agent/",
+          "group": "1_team@3"
+        },
+        {
+          "command": "orbit.recipes.edit",
+          "when": "view == orbit.recipes && viewItem =~ /^recipe\\./",
+          "group": "inline@1"
+        },
+        {
+          "command": "orbit.recipes.delete",
+          "when": "view == orbit.recipes && viewItem =~ /^recipe\\.(project|user)$/",
+          "group": "inline@2"
+        },
+        {
+          "command": "orbit.recipes.add",
+          "when": "view == orbit.recipes && viewItem =~ /^recipeGroup\\.(project|user)$/",
+          "group": "inline"
+        },
+        {
+          "command": "orbit.recipes.run",
+          "when": "view == orbit.recipes && viewItem =~ /^recipe\\./",
+          "group": "1_recipes@1"
+        },
+        {
+          "command": "orbit.recipes.edit",
+          "when": "view == orbit.recipes && viewItem =~ /^recipe\\./",
+          "group": "1_recipes@2"
+        },
+        {
+          "command": "orbit.recipes.delete",
+          "when": "view == orbit.recipes && viewItem =~ /^recipe\\.(project|user)$/",
+          "group": "1_recipes@3"
+        },
+        {
+          "command": "orbit.time.comment",
+          "when": "view == orbit.timeline && viewItem == file",
+          "group": "inline@1"
+        },
+        {
+          "command": "orbit.time.revertFile",
+          "when": "view == orbit.timeline && viewItem == file",
+          "group": "inline@2"
+        },
+        {
+          "command": "orbit.time.comment",
+          "when": "view == orbit.timeline && viewItem == file",
+          "group": "1_time@1"
+        },
+        {
+          "command": "orbit.time.revertFile",
+          "when": "view == orbit.timeline && viewItem == file",
+          "group": "1_time@2"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "orbit.preview.show",
+          "when": "resourceExtname =~ /\\.(html?|jsx|tsx|vue|svelte|astro|css)$/",
+          "group": "navigation@-10"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "orbit.git.smartCommit",
+          "when": "scmProvider == git",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "orbit.higgsfield.animate",
+          "when": "resourceExtname =~ /^\\.(png|jpe?g|webp)$/i",
+          "group": "navigation@21"
+        },
+        {
+          "command": "orbit.higgsfield.vary",
+          "when": "resourceExtname =~ /^\\.(png|jpe?g|webp)$/i",
+          "group": "navigation@22"
         }
       ]
     },
     "keybindings": [
+      {
+        "command": "orbit.claude.paste",
+        "key": "ctrl+v",
+        "when": "terminalFocus && !isMac"
+      },
+      {
+        "command": "orbit.claude.paste",
+        "key": "ctrl+shift+v",
+        "when": "terminalFocus && !isMac"
+      },
       {
         "command": "orbit.claude.focus",
         "key": "ctrl+l",
@@ -343,12 +1093,97 @@
         "command": "orbit.sessions.search",
         "key": "ctrl+alt+r",
         "mac": "cmd+alt+r"
+      },
+      {
+        "command": "orbit.map.show",
+        "key": "ctrl+alt+o",
+        "mac": "cmd+alt+o"
+      },
+      {
+        "command": "orbit.preview.show",
+        "key": "ctrl+alt+v",
+        "mac": "cmd+alt+v"
+      },
+      {
+        "command": "orbit.database.show",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d"
+      },
+      {
+        "command": "orbit.unity.show",
+        "key": "ctrl+alt+u",
+        "mac": "cmd+alt+u"
+      },
+      {
+        "command": "orbit.project.switch",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p"
+      },
+      {
+        "command": "orbit.team.start",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c"
+      },
+      {
+        "command": "orbit.recipes.pick",
+        "key": "ctrl+alt+j",
+        "mac": "cmd+alt+j"
+      },
+      {
+        "command": "orbit.git.smartCommit",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "orbit.higgsfield.show",
+        "key": "ctrl+alt+h",
+        "mac": "cmd+alt+h"
+      },
+      {
+        "command": "orbit.queue.show",
+        "key": "ctrl+alt+q",
+        "mac": "cmd+alt+q"
+      },
+      {
+        "command": "orbit.tools",
+        "key": "ctrl+alt+k",
+        "mac": "cmd+alt+k"
       }
     ],
     "configuration": [
       {
         "title": "Orbit",
         "properties": {
+          "orbit.assistant": {
+            "type": "string",
+            "enum": [
+              "claude",
+              "chatgpt"
+            ],
+            "enumItemLabels": [
+              "Claude (Claude Code)",
+              "ChatGPT (Codex)"
+            ],
+            "default": "claude",
+            "description": "L'IA avec laquelle Orbit travaille. Une seule à la fois : terminaux, modèles, logo, jauge d'utilisation et textes suivent ce choix."
+          },
+          "orbit.chatgpt.path": {
+            "type": "string",
+            "default": "codex",
+            "description": "Programme Codex lancé quand Orbit travaille avec ChatGPT."
+          },
+          "orbit.phone.topic": {
+            "type": "string",
+            "default": "",
+            "description": "Sujet ntfy privé des notifications sur le téléphone. Vide : désactivé. Se règle sur la page « Orbit sur ton téléphone »."
+          },
+          "orbit.queue.taskMinutes": {
+            "type": "number",
+            "default": 90,
+            "minimum": 5,
+            "description": "File de nuit : durée maximale d'une tâche, en minutes, avant de passer à la suivante."
+          },
           "orbit.claude.path": {
             "type": "string",
             "default": "claude",
@@ -444,6 +1279,144 @@
             "type": "string",
             "default": "",
             "description": "Where new Orbit projects are created. Empty uses ~/Orbit."
+          },
+          "orbit.timeMachine.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Take a save point of the project each time a message is sent to an agent, so it can be rewound. Save points live outside the project and never touch its git repository."
+          },
+          "orbit.claude.followAgent": {
+            "type": "boolean",
+            "default": true,
+            "description": "Follow the agent you are looking at: open each file it writes, reveal it in the explorer and light up the lines it changes as they land."
+          },
+          "orbit.claude.followFolder": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "ask",
+              "off"
+            ],
+            "enumDescriptions": [
+              "The explorer shows by itself the project Claude works in, without reloading the window",
+              "Ask before showing it",
+              "Never change the explorer"
+            ],
+            "default": "auto",
+            "description": "When Claude works in a folder the explorer does not show."
+          },
+          "orbit.verify.mode": {
+            "type": "string",
+            "enum": [
+              "notify",
+              "auto",
+              "off"
+            ],
+            "enumDescriptions": [
+              "Run the project checks after each turn in which Claude wrote files, and ask before sending failures back",
+              "Send failures back to Claude automatically (at most twice per message)",
+              "Never run checks automatically"
+            ],
+            "default": "notify",
+            "description": "Automatic verification of Claude's work (types, lint, tests)."
+          },
+          "orbit.verify.timeoutSeconds": {
+            "type": "number",
+            "default": 180,
+            "minimum": 10,
+            "description": "Longest time a single check may run before Orbit stops it."
+          },
+          "orbit.higgsfield.simulateDisconnected": {
+            "type": "boolean",
+            "default": false,
+            "description": "Mode test : le studio Higgsfield fait comme si le compte n'était pas relié, pour essayer le parcours de connexion d'un nouvel utilisateur."
+          },
+          "orbit.higgsfield.folder": {
+            "type": "string",
+            "default": "assets/higgsfield",
+            "description": "Dossier du projet où arrivent les fichiers générés avec Higgsfield."
+          },
+          "orbit.chatgpt.model": {
+            "type": "string",
+            "default": "",
+            "description": "Modèle des nouveaux terminaux quand Orbit travaille avec ChatGPT. Vide : celui de Codex."
+          },
+          "orbit.chatgpt.extraArgs": {
+            "type": "string",
+            "default": "",
+            "description": "Arguments ajoutés à la ligne de commande de Codex."
+          },
+          "orbit.phone.waiting": {
+            "type": "boolean",
+            "default": true,
+            "description": "Téléphone : prévenir quand un agent attend ton accord."
+          },
+          "orbit.phone.done": {
+            "type": "boolean",
+            "default": true,
+            "description": "Téléphone : prévenir quand un long travail est terminé et qu'Orbit n'est pas au premier plan."
+          },
+          "orbit.phone.queue": {
+            "type": "boolean",
+            "default": true,
+            "description": "Téléphone : prévenir à la fin de la file de nuit."
+          },
+          "orbit.env.hideFromAgent": {
+            "type": "boolean",
+            "default": true,
+            "description": "Interdit à Claude Code de lire les fichiers .env du projet (sauf .env.example). Les valeurs se gèrent dans la page « Variables d'environnement » ; l'agent n'en connaît que les noms. S'applique aux agents lancés ensuite."
+          },
+          "orbit.board.parallel": {
+            "type": "number",
+            "default": 2,
+            "minimum": 1,
+            "maximum": 6,
+            "description": "Tableau de tâches : nombre d'agents qui travaillent en même temps avec « Tout lancer »."
+          },
+          "orbit.visualCheck.mode": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "notify",
+              "off"
+            ],
+            "default": "auto",
+            "enumDescriptions": [
+              "L'agent reçoit les captures avant / après et se corrige tout seul (une fois par message).",
+              "Orbit prévient et propose de faire relire.",
+              "Aucune capture."
+            ],
+            "description": "Relecture visuelle : que faire quand un agent a modifié l'interface et que la page tourne en local."
+          },
+          "orbit.visualCheck.url": {
+            "type": "string",
+            "default": "",
+            "description": "Relecture visuelle : adresse de la page à photographier (par exemple http://localhost:3000/tarifs). Vide : le premier serveur local trouvé."
+          },
+          "orbit.higgsfield.enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Higgsfield dans Orbit. Désactivé (bouton de déconnexion du studio) : le studio est fermé et les agents lancés ensuite n'ont plus les outils Higgsfield, même si le compte reste relié à claude.ai."
+          },
+          "orbit.project.openIn": {
+            "type": "string",
+            "enum": [
+              "ask",
+              "newWindow",
+              "replace"
+            ],
+            "default": "ask",
+            "enumDescriptions": [
+              "Demander à chaque fois.",
+              "Toujours dans une nouvelle fenêtre : le projet en cours reste ouvert.",
+              "Toujours à la place du projet en cours."
+            ],
+            "description": "Où s'ouvre un autre projet quand la fenêtre en montre déjà un."
+          },
+          "orbit.claude.resumeOnOpen": {
+            "type": "boolean",
+            "default": true,
+            "description": "À l'ouverture d'un projet, reprendre sa dernière discussion au lieu d'en commencer une nouvelle. Les discussions restent de toute façon dans la vue « Discussions »."
           }
         }
       }
@@ -469,8 +1442,9 @@
       "terminal.integrated.cursorStyle": "line",
       "workbench.tree.indent": 14,
       "workbench.tree.renderIndentGuides": "onHover",
-      "workbench.iconTheme": "vs-seti",
+      "workbench.iconTheme": "orbit-icons",
       "workbench.productIconTheme": "Default",
+      "terminal.integrated.minimumContrastRatio": 1,
       "workbench.panel.opensMaximized": "never",
       "terminal.integrated.tabs.hideCondition": "singleTerminal",
       "terminal.integrated.tabs.location": "right",
@@ -479,8 +1453,43 @@
       "terminal.integrated.lineHeight": 1.15,
       "terminal.integrated.cursorBlinking": true,
       "terminal.integrated.enablePersistentSessions": true,
-      "terminal.integrated.gpuAcceleration": "on"
+      "terminal.integrated.gpuAcceleration": "on",
+      "terminal.integrated.commandsToSkipShell": [
+        "orbit.claude.paste",
+        "orbit.claude.focus",
+        "orbit.claude.new",
+        "orbit.claude.split",
+        "orbit.claude.switch",
+        "orbit.claude.grid",
+        "orbit.claude.sendSelection",
+        "orbit.inlineEdit",
+        "orbit.acceptInlineEdit",
+        "orbit.rejectInlineEdit",
+        "orbit.openStudio",
+        "orbit.chat.toggle",
+        "orbit.sessions.search",
+        "orbit.map.show",
+        "orbit.preview.show",
+        "orbit.database.show",
+        "orbit.unity.show",
+        "orbit.project.switch",
+        "orbit.team.start",
+        "orbit.recipes.pick",
+        "orbit.higgsfield.show",
+        "orbit.queue.show",
+        "orbit.vercel.show",
+        "orbit.tools"
+      ],
+      "zenMode.centerLayout": false,
+      "zenMode.showTabs": "none"
     },
+    "iconThemes": [
+      {
+        "id": "orbit-icons",
+        "label": "Orbit Icons",
+        "path": "./icons/orbit-icon-theme.json"
+      }
+    ],
     "themes": [
       {
         "label": "Orbit Cosmos",
@@ -541,9 +1550,25 @@
     "views": {
       "orbit-sessions": [
         {
+          "id": "orbit.team",
+          "name": "Équipe",
+          "icon": "media/orbit.svg"
+        },
+        {
           "id": "orbit.sessions",
           "name": "Discussions",
           "icon": "media/orbit.svg"
+        },
+        {
+          "id": "orbit.timeline",
+          "name": "Frise du projet",
+          "icon": "media/orbit.svg"
+        },
+        {
+          "id": "orbit.recipes",
+          "name": "Recettes",
+          "icon": "media/orbit.svg",
+          "visibility": "collapsed"
         }
       ],
       "orbit-chat": [
@@ -559,11 +1584,312 @@
       {
         "view": "orbit.sessions",
         "contents": "Aucune discussion Claude dans ce projet.\n[$(sparkle) Démarrer Claude](command:orbit.claude.new)"
+      },
+      {
+        "view": "orbit.timeline",
+        "contents": "Chaque message envoyé à un agent crée ici un point de sauvegarde du projet : tu verras ce qu'il a changé et tu pourras revenir avant.\n[$(save) Créer un point de sauvegarde](command:orbit.time.snapshot)"
+      },
+      {
+        "view": "orbit.team",
+        "contents": "Parle à un seul Claude : le Chef d'équipe crée les agents, leur donne un nom, un rôle et une icône, les fait travailler en parallèle et te rapporte les résultats.\n[$(orbit-claude) Démarrer le Chef d'équipe](command:orbit.team.start)"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "orbit.tour",
+        "title": "Découvrir Orbit",
+        "description": "Les fonctions importantes d'Orbit, et les pièges à connaître, en 15 étapes.",
+        "steps": [
+          {
+            "id": "terminaux",
+            "title": "Claude vit dans de vrais terminaux",
+            "description": "Orbit n'ajoute pas un chat à côté du code : c'est le vrai Claude Code, dans un terminal de l'IDE.\n[Nouveau terminal Claude](command:orbit.claude.new)",
+            "media": {
+              "markdown": "media/tutorial/terminaux.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.claude.new"
+            ]
+          },
+          {
+            "id": "vues",
+            "title": "Terminal ou discussion : le même Claude",
+            "description": "La vue discussion est un habillage du terminal : même session, même processus. Bascule quand tu veux.\n[Basculer de vue](command:orbit.chat.toggle)",
+            "media": {
+              "markdown": "media/tutorial/vues.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.chat.toggle"
+            ]
+          },
+          {
+            "id": "modele",
+            "title": "Changer de modèle en un clic",
+            "description": "Le bouton « puce » du panneau change le modèle du terminal Claude courant.\n[Changer de modèle](command:orbit.claude.pickModel)",
+            "media": {
+              "markdown": "media/tutorial/modele.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.claude.pickModel"
+            ]
+          },
+          {
+            "id": "utilisation",
+            "title": "Surveiller ton abonnement",
+            "description": "Les mêmes chiffres que /usage dans Claude Code, sans quitter ce que tu fais.\n[Voir l'utilisation](command:orbit.usage.show)",
+            "media": {
+              "markdown": "media/tutorial/utilisation.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.usage.show"
+            ]
+          },
+          {
+            "id": "agents",
+            "title": "Plusieurs agents en parallèle",
+            "description": "Split, grille de 2 à 6 agents, message à tous : Orbit est fait pour faire travailler plusieurs Claude à la fois.\n[Organiser les agents](command:orbit.claude.switch)",
+            "media": {
+              "markdown": "media/tutorial/agents.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.claude.switch"
+            ]
+          },
+          {
+            "id": "orbite",
+            "title": "La tour de contrôle : vue Orbite",
+            "description": "Tous tes agents sur une carte, les fichiers qu'ils touchent, et une alerte quand deux d'entre eux se marchent dessus.\n[Ouvrir la vue Orbite](command:orbit.map.show)",
+            "media": {
+              "markdown": "media/tutorial/orbite.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.map.show"
+            ]
+          },
+          {
+            "id": "orchestre",
+            "title": "Chef d'orchestre : une tâche, plusieurs agents",
+            "description": "Claude découpe une grosse tâche, un agent par morceau, chacun dans sa branche ; tu fusionnes à la fin.\n[Lancer le chef d'orchestre](command:orbit.conductor.start)",
+            "media": {
+              "markdown": "media/tutorial/orchestre.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.conductor.start"
+            ]
+          },
+          {
+            "id": "frise",
+            "title": "Machine à remonter le temps",
+            "description": "Chaque message est un point de sauvegarde du projet : vois ce qu'il a changé, reviens avant en un clic.\n[Créer un point de sauvegarde](command:orbit.time.snapshot)",
+            "media": {
+              "markdown": "media/tutorial/frise.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.time.snapshot",
+              "onView:orbit.timeline"
+            ]
+          },
+          {
+            "id": "vivante",
+            "title": "Vue vivante : cliquer l'interface pour la changer",
+            "description": "Clique un élément de ton application : demande un changement à Claude ou saute pile à son code.\n[Ouvrir la vue vivante](command:orbit.preview.show)",
+            "media": {
+              "markdown": "media/tutorial/vivante.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.preview.show"
+            ]
+          },
+          {
+            "id": "base",
+            "title": "Base de données visuelle",
+            "description": "Tables, schéma, modifications sûres et requêtes écrites par Claude, pour SQLite et PostgreSQL.\n[Ouvrir la base de données](command:orbit.database.show)",
+            "media": {
+              "markdown": "media/tutorial/base.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.database.show"
+            ]
+          },
+          {
+            "id": "unity",
+            "title": "Studio de jeu Unity : Claude construit ton jeu",
+            "description": "Vue du jeu en direct, hiérarchie, inspecteur, console, et Claude qui agit dans l'éditeur Unity.\n[Ouvrir le Studio de jeu](command:orbit.unity.show)",
+            "media": {
+              "markdown": "media/tutorial/unity.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.unity.show"
+            ]
+          },
+          {
+            "id": "boucle",
+            "title": "Orbit vérifie le travail de Claude",
+            "description": "Contrôles lancés après chaque tour, erreurs de la page en direct, problèmes de l'éditeur et revue fichier par fichier : ce qui ne va pas retourne à Claude en un clic.\n[Vérifier le projet maintenant](command:orbit.verify.run)",
+            "media": {
+              "markdown": "media/tutorial/boucle.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.verify.run",
+              "onCommand:orbit.verify.menu"
+            ]
+          },
+          {
+            "id": "recettes",
+            "title": "Recettes, commit et équipe",
+            "description": "Des consignes prêtes à l'emploi, un message de commit rédigé pour toi, un chef d'équipe qui pilote les agents.\n[Ouvrir les recettes](command:orbit.recipes.pick)",
+            "media": {
+              "markdown": "media/tutorial/recettes.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.recipes.pick",
+              "onCommand:orbit.team.start"
+            ]
+          },
+          {
+            "id": "starcapture",
+            "title": "Monter une vidéo avec StarCapture",
+            "description": "Un vrai logiciel de montage dans Orbit : timeline, textes, sous-titres automatiques, coupe des silences, export. À la main ou avec Claude.\n[Nouveau montage](command:starcapture.newProject)",
+            "media": {
+              "markdown": "media/tutorial/starcapture.md"
+            },
+            "completionEvents": [
+              "onCommand:starcapture.newProject"
+            ]
+          },
+          {
+            "id": "contexte",
+            "title": "Donner du code à Claude",
+            "description": "Envoie un fichier ou une sélection dans le prompt, ou fais réécrire un passage sur place.\n[Envoyer la sélection à Claude](command:orbit.claude.sendSelection)",
+            "media": {
+              "markdown": "media/tutorial/contexte.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.claude.sendSelection"
+            ]
+          },
+          {
+            "id": "discussions",
+            "title": "Retrouver et reprendre une discussion",
+            "description": "Toutes les discussions du projet sont gardées : reprends-en une là où elle s'était arrêtée.\n[Rechercher une discussion](command:orbit.sessions.search)",
+            "media": {
+              "markdown": "media/tutorial/discussions.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.sessions.search"
+            ]
+          },
+          {
+            "id": "regles",
+            "title": "Cadrer Claude : règles et autorisations",
+            "description": "Les règles du projet et le mode d'autorisation décident de ce que Claude fait sans te demander.\n[Écrire les règles du projet](command:orbit.editRules)",
+            "media": {
+              "markdown": "media/tutorial/regles.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.editRules"
+            ]
+          },
+          {
+            "id": "studio",
+            "title": "Personnaliser Orbit",
+            "description": "Thèmes, verre dépoli, dispositions, polices, CSS libre : tout se règle dans le Studio.\n[Ouvrir le Studio](command:orbit.openStudio)",
+            "media": {
+              "markdown": "media/tutorial/studio.md"
+            },
+            "completionEvents": [
+              "onCommand:orbit.openStudio"
+            ]
+          }
+        ]
+      }
+    ],
+    "icons": {
+      "orbit-claude": {
+        "description": "Claude",
+        "default": {
+          "fontPath": "./media/orbit-icons.woff",
+          "fontCharacter": "\\E001"
+        }
+      },
+      "orbit-openai": {
+        "description": "ChatGPT",
+        "default": {
+          "fontPath": "./media/orbit-icons.woff",
+          "fontCharacter": "\\E002"
+        }
+      },
+      "orbit-vercel": {
+        "description": "Vercel",
+        "default": {
+          "fontPath": "./media/orbit-icons.woff",
+          "fontCharacter": "\\E003"
+        }
+      }
+    },
+    "colors": [
+      {
+        "id": "orbit.claudeOrange",
+        "description": "Claude's brand orange, used wherever Claude is acting.",
+        "defaults": {
+          "dark": "#D97757",
+          "light": "#C15F3C",
+          "highContrast": "#D97757",
+          "highContrastLight": "#C15F3C"
+        }
+      },
+      {
+        "id": "orbit.chatgptMark",
+        "description": "Colour of the ChatGPT mark, used wherever ChatGPT is acting.",
+        "defaults": {
+          "dark": "#ECECF1",
+          "light": "#202123",
+          "highContrast": "#FFFFFF",
+          "highContrastLight": "#000000"
+        }
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "orbit.pdf",
+        "displayName": "Lecteur PDF d'Orbit",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.pdf"
+          }
+        ]
+      },
+      {
+        "viewType": "orbit.pptx",
+        "displayName": "Lecteur de présentations d'Orbit",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.{pptx,ppsx,potx}"
+          }
+        ]
+      },
+      {
+        "viewType": "orbit.font",
+        "displayName": "Lecteur de polices d'Orbit",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.{ttf,otf,ttc,woff,woff2}"
+          }
+        ]
       }
     ]
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
   }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "Orbit.Bridge.Editor",
+  "rootNamespace": "Orbit.Bridge",
+  "references": [
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [
+    {
+      "name": "com.unity.inputsystem",
+      "expression": "1.4.0",
+      "define": "ORBIT_INPUT_SYSTEM"
+    }
+  ],
+  "noEngineReferences": false
+}

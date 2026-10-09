@@ -54,3 +54,6 @@ dist
 .v[0-9]*/
 # Local agent validation evidence
 .agent-validation/
+
+# Journaux de fabrication des visuels (chemins de la machine)
+brand/**/*.log

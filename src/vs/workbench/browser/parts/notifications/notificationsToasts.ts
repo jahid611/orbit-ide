@@ -50,9 +50,10 @@ export class NotificationsToasts extends Themable implements INotificationsToast
 	private static readonly MAX_NOTIFICATIONS = 3;
 
 	private static readonly PURGE_TIMEOUT: { [severity: number]: number } = {
+		// Orbit: ten seconds for every notification, whatever it is about.
 		[Severity.Info]: 10000,
-		[Severity.Warning]: 12000,
-		[Severity.Error]: 15000
+		[Severity.Warning]: 10000,
+		[Severity.Error]: 10000
 	};
 
 	private static readonly SPAM_PROTECTION = {
@@ -376,31 +377,20 @@ export class NotificationsToasts extends Themable implements INotificationsToast
 
 		// Install Timers to Purge Notification
 		let purgeTimeoutHandle: Timeout;
-		let listener: IDisposable;
 
 		const hideAfterTimeout = () => {
 
 			purgeTimeoutHandle = setTimeout(() => {
 
-				// If the window does not have focus, we wait for the window to gain focus
-				// again before triggering the timeout again. This prevents an issue where
-				// focussing the window could immediately hide the notification because the
-				// timeout was triggered again.
-				if (!this.hostService.hasFocus) {
-					if (!listener) {
-						listener = this.hostService.onDidChangeFocus(focus => {
-							if (focus) {
-								hideAfterTimeout();
-							}
-						});
-						disposables.add(listener);
-					}
-				}
-
-				// Otherwise...
-				else if (
-					item.sticky ||								// never hide sticky notifications
-					notificationList.hasFocus() ||				// never hide notifications with focus
+				// Orbit: a notification never stays on screen for good. It used to wait for the
+				// window to have the focus, and to stay as long as it was « sticky » (an error
+				// with buttons, an urgent source): with several windows and agents reporting all
+				// day, toasts piled up. It now leaves after its ten seconds and stays in the
+				// notification centre, where the bell counts it. Only what is being worked on
+				// stays: a running progress, the toast under the pointer, the one with the focus.
+				if (
+					item.hasActiveProgress ||					// a running task keeps its toast
+					(this.hostService.hasFocus && notificationList.hasFocus()) ||	// never hide notifications with focus
 					isMouseOverToast							// never hide notifications under mouse
 				) {
 					hideAfterTimeout();

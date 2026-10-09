@@ -15,10 +15,21 @@ import { IWebview } from './webview.js';
  * event so it can handle editor element drag drop.
  */
 export class WebviewWindowDragMonitor extends Disposable {
-	constructor(targetWindow: CodeWindow, getWebview: () => IWebview | undefined) {
+	/**
+	 * @param takesDrops Orbit: the page handles dropped files itself (StarCapture). It is then only
+	 * put aside while a tab is being dragged, so that tabs can still split the editor area; files
+	 * dragged from the explorer or from the system reach the page without holding Shift.
+	 */
+	constructor(targetWindow: CodeWindow, getWebview: () => IWebview | undefined, takesDrops?: () => boolean) {
 		super();
 
+		let draggingTab = false;
+
 		const onDragStart = () => {
+			if (takesDrops?.() && !draggingTab) {
+				getWebview()?.windowDidDragEnd();
+				return;
+			}
 			getWebview()?.windowDidDragStart();
 		};
 
@@ -26,11 +37,15 @@ export class WebviewWindowDragMonitor extends Disposable {
 			getWebview()?.windowDidDragEnd();
 		};
 
-		this._register(DOM.addDisposableListener(targetWindow, DOM.EventType.DRAG_START, () => {
+		this._register(DOM.addDisposableListener(targetWindow, DOM.EventType.DRAG_START, event => {
+			draggingTab = DOM.isHTMLElement(event.target) && !!event.target.closest('.tabs-container, .editor-group-container > .title');
 			onDragStart();
 		}));
 
-		this._register(DOM.addDisposableListener(targetWindow, DOM.EventType.DRAG_END, onDragEnd));
+		this._register(DOM.addDisposableListener(targetWindow, DOM.EventType.DRAG_END, () => {
+			draggingTab = false;
+			onDragEnd();
+		}));
 
 		this._register(DOM.addDisposableListener(targetWindow, DOM.EventType.MOUSE_MOVE, currentEvent => {
 			if (currentEvent.buttons === 0) {

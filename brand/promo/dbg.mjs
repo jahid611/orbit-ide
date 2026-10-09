@@ -1,0 +1,13 @@
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const require = createRequire(import.meta.url);
+const { chromium } = require('../../node_modules/playwright-core');
+const browser = await chromium.launch({ channel: 'msedge' });
+const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+page.on('pageerror', e => console.log('ERREUR', e.message, (e.stack || '').split('\n').slice(0, 4).join(' | ')));
+page.on('console', m => console.log('console', m.text()));
+page.on('requestfailed', r => console.log('échec', r.url()));
+await page.goto(pathToFileURL(path.join(import.meta.dirname, 'index.html')).href + '?render=1');
+await page.waitForTimeout(1500);
+await browser.close();

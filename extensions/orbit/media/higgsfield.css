@@ -1,0 +1,160 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/* The page wears Higgsfield's own look (near-black, lime accent, a wall of creations and the
+   prompt bar docked at the bottom) whatever the Orbit theme: someone who knows higgsfield.ai
+   finds the same places here. */
+body.page-higgsfield {
+	--h-bg: #0a0a0a;
+	--h-panel: #171717;
+	--h-panel-2: #222;
+	--h-line: #2a2a2a;
+	--h-fg: #fafafa;
+	--h-muted: #9b9b9b;
+	--lime: #d1fe17;
+	--h-ink: #0a0a0a;
+	overflow: hidden;
+	color: var(--h-fg);
+	background: var(--h-bg);
+	font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+	font-size: 13px;
+}
+.page-higgsfield #app { display: flex; flex-direction: column; height: 100vh; }
+.muted { color: var(--h-muted); }
+.spacer { flex: 1; }
+.page-higgsfield button { border-radius: 10px; transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, color .15s ease, transform .15s ease, opacity .15s ease; }
+.page-higgsfield svg { width: 16px; height: 16px; flex: none; }
+
+/* Top navigation */
+.hnav { display: flex; align-items: center; gap: 8px; height: 56px; flex: none; padding: 0 18px; border-bottom: 1px solid var(--h-line); }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: 14px; }
+.brand .mark { width: 28px; height: 28px; flex: none; border-radius: 8px; background: url("higgsfield.png") center / cover no-repeat; }
+.brand b { font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
+.kinds { display: flex; gap: 2px; }
+.kinds button { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px; font-size: 13.5px; font-weight: 550; color: var(--h-muted); }
+.kinds button svg { width: 15px; height: 15px; }
+.kinds button:hover { color: var(--h-fg); background: var(--h-panel); }
+.kinds button.on { color: var(--h-fg); background: var(--h-panel-2); }
+.kinds button.on svg { color: var(--lime); }
+.status { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 13px; font-size: 12px; font-weight: 550; color: var(--h-muted); border: 1px solid var(--h-line); background: var(--h-panel); border-radius: 99px !important; }
+.status:hover { color: var(--h-fg); }
+.status i { width: 7px; height: 7px; border-radius: 50%; background: var(--h-muted); }
+.status.on i { background: var(--lime); box-shadow: 0 0 8px var(--lime); }
+.status.off i { background: #ff9f43; }
+.status.wait i { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+.credits { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; font-size: 12px; color: var(--h-ink); border-radius: 99px !important; background: var(--lime); font-weight: 600; }
+.credits[hidden] { display: none; }
+.credits b { font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.credits.low { background: #ff9f43; }
+.credits.loading svg { animation: pulse 1s ease-in-out infinite; }
+.credits:hover { transform: translateY(-1px); box-shadow: 0 6px 22px color-mix(in srgb, var(--lime) 35%, transparent); }
+
+/* Stage: the wall of creations, with the prompt bar floating over its bottom edge */
+.stage { position: relative; flex: 1; min-height: 0; }
+.gallery { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.pane-head { display: flex; align-items: center; gap: 8px; padding: 16px 20px 8px; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+.pane-head .muted { font-size: 12.5px; font-weight: 450; }
+.cards { flex: 1; overflow-y: auto; padding: 6px 20px 250px; columns: 250px; column-gap: 10px; }
+.card { position: relative; break-inside: avoid; margin: 0 0 10px; border-radius: 14px; overflow: hidden; background: var(--h-panel); transition: transform .18s ease, box-shadow .18s ease; }
+.card:hover { box-shadow: 0 0 0 1.5px var(--h-fg); }
+.card.fresh { animation: arrive .7s cubic-bezier(.2, .9, .2, 1.1); box-shadow: 0 0 0 2px var(--lime), 0 14px 40px color-mix(in srgb, var(--lime) 28%, transparent); }
+@keyframes arrive { from { opacity: 0; transform: scale(.88) translateY(14px); } }
+.shot { position: relative; min-height: 120px; background: #111; cursor: pointer; overflow: hidden; }
+.shot img, .shot video { width: 100%; height: auto; display: block; }
+.badge { position: absolute; left: 10px; top: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: #fff; background: rgba(0, 0, 0, .55); backdrop-filter: blur(6px); }
+.badge svg { width: 11px; height: 11px; }
+.sound, .solid { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--h-muted); background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--lime) 14%, transparent), transparent 70%); font-size: 12px; }
+.sound svg, .solid svg { width: 30px; height: 30px; color: var(--lime); }
+.sound audio { width: 88%; height: 30px; }
+.meta { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 2px; padding: 34px 12px 46px; min-width: 0; pointer-events: none; opacity: 0; background: linear-gradient(transparent, rgba(0, 0, 0, .88) 55%); transition: opacity .18s ease; }
+.meta b { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta span { font-size: 11.5px; color: #cfcfcf; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.actions { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; gap: 4px; opacity: 0; transform: translateY(4px); transition: opacity .18s ease, transform .18s ease; }
+.card:hover .meta, .card:hover .actions { opacity: 1; transform: none; }
+.actions button { display: grid; place-items: center; width: 30px; height: 30px; color: #fff; background: rgba(255, 255, 255, .14); backdrop-filter: blur(8px); border-radius: 9px; }
+.actions button:hover { color: var(--h-ink); background: var(--lime); }
+.actions button svg { width: 14px; height: 14px; }
+.claude-mark { display: inline-block; width: 15px; height: 15px; background: url("claude.svg") center / contain no-repeat; }
+.card.pending .shot { aspect-ratio: 4 / 3; cursor: default; }
+.card.pending .meta { opacity: 1; padding-bottom: 12px; }
+.shimmer { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--lime) 20%, transparent) 50%, transparent 70%), #141414; background-size: 220% 100%, auto; animation: sweep 1.5s linear infinite; }
+@keyframes sweep { from { background-position: 180% 0, 0 0; } to { background-position: -60% 0, 0 0; } }
+.working { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 600; }
+.working svg { color: var(--lime); }
+.empty { column-span: all; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 9vh 30px 0; text-align: center; color: var(--h-muted); font-size: 13.5px; line-height: 1.55; }
+.empty .big { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; color: var(--h-ink); background: var(--lime); }
+.empty .big svg { width: 28px; height: 28px; }
+.empty b { color: var(--h-fg); font-size: 20px; font-weight: 700; letter-spacing: -.02em; } .empty span { max-width: 460px; }
+
+/* Prompt bar */
+.composer { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(920px, calc(100% - 36px)); display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 22px; background: color-mix(in srgb, var(--h-panel) 92%, transparent); border: 1px solid #333; box-shadow: 0 24px 70px rgba(0, 0, 0, .7); backdrop-filter: blur(18px); z-index: 5; }
+.composer.locked { opacity: .35; pointer-events: none; filter: saturate(.4); }
+.ideas { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
+.ideas button { height: 26px; padding: 0 11px; font-size: 11.5px; font-weight: 500; border-radius: 99px; color: var(--h-muted); background: var(--h-panel-2); }
+.ideas button:hover { color: var(--h-fg); }
+.ideas button.on { color: var(--h-ink); background: var(--lime); font-weight: 650; }
+.box { display: flex; align-items: flex-start; gap: 10px; }
+.reference { flex: none; }
+.addref { display: grid; place-items: center; width: 54px; height: 54px; color: var(--h-muted); background: var(--h-panel-2); border: 1px dashed #444; border-radius: 12px !important; }
+.addref:hover { color: var(--lime); border-color: var(--lime); }
+.ref { position: relative; width: 54px; height: 54px; }
+.ref img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; border: 1px solid #444; }
+.ref .x { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 20px; height: 20px; color: var(--h-ink); background: var(--h-fg); border-radius: 50% !important; }
+.ref .x svg { width: 10px; height: 10px; }
+.page-higgsfield textarea { flex: 1; min-width: 0; resize: none; min-height: 54px; max-height: 160px; padding: 8px 4px; font: inherit; font-size: 14.5px; line-height: 1.45; color: var(--h-fg); background: none; border: none; outline: none; }
+.page-higgsfield textarea::placeholder { color: #6f6f6f; }
+.options { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.seg { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--h-panel-2); }
+.seg button { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; font-size: 12px; color: var(--h-muted); border-radius: 9px; }
+.seg button:hover { color: var(--h-fg); }
+.seg button.on { background: #383838; color: var(--h-fg); font-weight: 600; }
+.shape { display: inline-block; border: 1.5px solid currentColor; border-radius: 2.5px; width: 14px; height: 8px; }
+.shape.s1x1 { width: 10px; height: 10px; } .shape.s9x16 { width: 7px; height: 12px; } .shape.s4x3 { width: 12px; height: 9px; }
+.stepper { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 12px; background: var(--h-panel-2); }
+.stepper button { width: 30px; height: 30px; font-size: 15px; color: var(--h-muted); border-radius: 9px; } .stepper button:hover { color: var(--h-fg); background: #383838; }
+.stepper b { min-width: 30px; text-align: center; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.where { flex: 1; min-width: 0; margin: 0; padding: 0 6px; font-size: 11.5px; color: #6f6f6f; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.primary { display: flex; align-items: center; justify-content: center; gap: 8px; flex: none; height: 44px; padding: 0 22px; font-size: 14.5px; font-weight: 700; color: var(--h-ink); border-radius: 14px !important; background: var(--lime); }
+.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 34px color-mix(in srgb, var(--lime) 40%, transparent); }
+.primary kbd { padding: 2px 7px; font: 600 10.5px inherit; border-radius: 6px; background: rgba(0, 0, 0, .12); }
+.toast { position: fixed; left: 50%; top: 68px; transform: translateX(-50%); padding: 9px 16px; border-radius: 99px; font-size: 12.5px; font-weight: 600; color: var(--h-ink); background: var(--lime); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); z-index: 9; }
+.toast[hidden] { display: none; }
+
+/* First connection */
+.onboard { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 34px 30px 250px; overflow-y: auto; }
+.onboard[hidden], .gallery[hidden] { display: none; }
+.welcome { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; max-width: 520px; }
+.welcome .logo { width: 72px; height: 72px; border-radius: 20px; background: url("higgsfield.png") center / cover no-repeat; box-shadow: 0 18px 50px color-mix(in srgb, var(--lime) 30%, transparent); }
+.welcome h2 { margin: 8px 0 0; font-size: 24px; font-weight: 750; letter-spacing: -.03em; }
+.welcome p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--h-muted); }
+.welcome .sim { padding: 5px 12px; border-radius: 99px; font-size: 11.5px; color: #ff9f43; border: 1px solid color-mix(in srgb, #ff9f43 40%, transparent); }
+.steps { list-style: none; margin: 0; padding: 0; width: min(560px, 100%); display: flex; flex-direction: column; gap: 8px; }
+.steps li { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: var(--h-panel); border: 1px solid var(--h-line); }
+.steps li.now { border-color: var(--lime); }
+.steps li > i { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; font-style: normal; font-weight: 700; font-size: 13px; background: var(--h-panel-2); }
+.steps li.done > i { color: var(--h-ink); background: var(--lime); }
+.steps li div { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.steps li b { font-size: 13.5px; } .steps li span { font-size: 12px; color: var(--h-muted); line-height: 1.45; }
+.step { flex: none; height: 34px; padding: 0 16px; font-size: 12.5px; font-weight: 650; color: var(--h-fg); background: var(--h-panel-2); }
+.steps li.now .step { color: var(--h-ink); background: var(--lime); }
+.step:disabled { opacity: .45; cursor: default; }
+.onboard .foot { margin: 0; font-size: 12px; color: var(--h-muted); } .onboard a { color: var(--lime); }
+
+@media (max-width: 760px) {
+	.hnav { padding: 0 12px; }
+	.brand b, .kinds button span, .status span, .where { display: none; }
+	.cards { columns: 160px; padding: 6px 12px 290px; }
+	.options { flex-wrap: wrap; }
+	.primary { margin-left: auto; }
+}
+
+/* Signing out, and a connection step running in the background */
+.leave { display: grid; place-items: center; width: 32px; height: 32px; flex: none; color: var(--h-muted); border-radius: 99px !important; }
+.leave[hidden] { display: none; }
+.leave:hover { color: var(--h-fg); background: var(--h-panel-2); }
+.steps li > i.spin { background: none; color: var(--lime); }
+.steps li > i.spin svg { animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

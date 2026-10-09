@@ -1,0 +1,202 @@
+{
+  "name": "novagame",
+  "displayName": "NovaGame",
+  "description": "L'atelier de jeux d'Orbit : un bac à sable Unity prêt en un clic, tes jeux, et Claude qui construit dans l'éditeur. NovaGame installe et configure Unity s'il manque.",
+  "version": "10.0.0",
+  "publisher": "vscode",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension",
+  "extensionDependencies": [
+    "vscode.orbit"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "novagame.open",
+        "title": "Ouvrir NovaGame",
+        "category": "NovaGame",
+        "icon": "$(game)"
+      },
+      {
+        "command": "novagame.sandbox",
+        "title": "Ouvrir le bac à sable",
+        "category": "NovaGame",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "novagame.newGame",
+        "title": "Nouveau jeu…",
+        "category": "NovaGame",
+        "icon": "$(add)"
+      },
+      {
+        "command": "novagame.openGame",
+        "title": "Ouvrir un jeu Unity…",
+        "category": "NovaGame",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "novagame.setup",
+        "title": "Installer et configurer Unity",
+        "category": "NovaGame",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "novagame.launchUnity",
+        "title": "Lancer Unity sur ce jeu",
+        "category": "NovaGame",
+        "icon": "$(play)"
+      },
+      {
+        "command": "novagame.resetSandbox",
+        "title": "Remettre le bac à sable à zéro",
+        "category": "NovaGame",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "novagame.forget",
+        "title": "Retirer de la liste",
+        "category": "NovaGame",
+        "icon": "$(close)"
+      },
+      {
+        "command": "novagame.reveal",
+        "title": "Afficher dans l'explorateur de fichiers",
+        "category": "NovaGame",
+        "icon": "$(folder)"
+      },
+      {
+        "command": "novagame.refresh",
+        "title": "Actualiser",
+        "category": "NovaGame",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "novagame.forget",
+          "when": "false"
+        },
+        {
+          "command": "novagame.reveal",
+          "when": "false"
+        },
+        {
+          "command": "novagame.refresh",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "novagame.sandbox",
+          "when": "view == novagame.home",
+          "group": "navigation@0"
+        },
+        {
+          "command": "novagame.newGame",
+          "when": "view == novagame.home",
+          "group": "navigation@1"
+        },
+        {
+          "command": "novagame.openGame",
+          "when": "view == novagame.home",
+          "group": "navigation@2"
+        },
+        {
+          "command": "novagame.refresh",
+          "when": "view == novagame.home",
+          "group": "navigation@3"
+        },
+        {
+          "command": "novagame.resetSandbox",
+          "when": "view == novagame.home",
+          "group": "1_sandbox@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "novagame.reveal",
+          "when": "view == novagame.home && viewItem =~ /^game/",
+          "group": "1_game@1"
+        },
+        {
+          "command": "novagame.forget",
+          "when": "view == novagame.home && viewItem == game",
+          "group": "inline"
+        },
+        {
+          "command": "novagame.forget",
+          "when": "view == novagame.home && viewItem == game",
+          "group": "1_game@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "NovaGame",
+      "properties": {
+        "novagame.folder": {
+          "type": "string",
+          "default": "",
+          "description": "Dossier des jeux créés par NovaGame et du bac à sable. Vide : Orbit/NovaGame dans ton dossier personnel."
+        },
+        "novagame.unityPath": {
+          "type": "string",
+          "default": "",
+          "description": "Chemin de l'éditeur Unity (Unity.exe). Vide : NovaGame le trouve seul (Unity Hub, installations classiques)."
+        },
+        "novagame.launchUnity": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lancer Unity tout seul quand un jeu s'ouvre. Décoché : NovaGame prépare tout et te laisse lancer Unity."
+        },
+        "novagame.autoOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ouvrir la vue du jeu toute seule dès que Unity tourne sur le jeu ouvert."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "novagame",
+          "title": "NovaGame",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "novagame": [
+        {
+          "id": "novagame.home",
+          "name": "NovaGame",
+          "icon": "media/activity.svg"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "gulp compile-extension:novagame",
+    "watch": "gulp watch-extension:novagame"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jahid611/orbit-ide.git"
+  }
+}

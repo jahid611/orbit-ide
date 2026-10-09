@@ -67,7 +67,7 @@
       {
         "viewType": "vscode.videoPreview",
         "displayName": "%customEditor.videoPreview.displayName%",
-        "priority": "builtin",
+        "priority": "option",
         "selector": [
           {
             "filenamePattern": "*.{mp4,webm}"

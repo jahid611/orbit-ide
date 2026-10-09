@@ -927,7 +927,7 @@ export class GettingStartedPage extends EditorPane {
 
 		const header = $('.header', {},
 			$('h1.product-name.caption', {}, this.productService.nameLong),
-			$('p.subtitle.description', {}, localize({ key: 'gettingStarted.editingEvolved', comment: ['Shown as subtitle on the Welcome page.'] }, "Claude Code, in your terminals"))
+			$('p.subtitle.description', {}, localize({ key: 'gettingStarted.editingEvolved', comment: ['Shown as subtitle on the Welcome page.'] }, "Claude Code, in your terminals").replace('Claude Code', this.configurationService.getValue<string>('orbit.assistant') === 'chatgpt' ? 'Codex' : 'Claude Code'))
 		);
 
 		const leftColumn = $('.categories-column.categories-column-left', {},);
@@ -1161,7 +1161,7 @@ export class GettingStartedPage extends EditorPane {
 						title: entry.description + ' ' + this.getKeybindingLabel(entry.command),
 					},
 					this.iconWidgetFor(entry),
-					$('span', {}, entry.title)));
+					$('span', {}, this.configurationService.getValue<string>('orbit.assistant') === 'chatgpt' ? entry.title.replace('Claude Code', 'Codex').replace('Claude', 'ChatGPT') : entry.title)));
 
 		const startList = this.startList.value = new GettingStartedIndexList(
 			{

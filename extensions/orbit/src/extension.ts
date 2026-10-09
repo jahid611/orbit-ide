@@ -4,25 +4,256 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { execFile } from 'child_process';
 import * as path from 'path';
+import { AgentActivity } from './agentActivity';
 import { AgentTracker } from './agentTracker';
 import { ChatViewProvider } from './chatView';
 import { ClaudeTerminals } from './claudeTerminals';
+import { CommunityPanel } from './community';
+import { DatabasePanel } from './database';
+import { FollowAgent } from './followAgent';
+import { Conductor } from './conductor';
 import { SessionsView, SessionStore, timeAgo } from './sessions';
-import { workspaceRoot } from './config';
+import { keys, models, workspaceRoot } from './config';
 import { InlineEditController } from './inlineEdit';
+import { LivePreview } from './livePreview';
+import { MapPanel } from './mapPanel';
+import { OrbitControl } from './orbitControl';
+import { registerFixWithClaude } from './fixWithClaude';
+import { registerImagePaste } from './pasteImage';
+import { Recipes } from './recipes';
+import { registerSmartCommit } from './smartCommit';
+import { Verifier } from './verify';
 import { applyPreset, LAYOUT_PRESETS, StudioPanel } from './studio';
+import { Team } from './team';
+import { TimeMachine } from './timeMachine';
+import { GameStudio, setUnityExtensionPath } from './unity';
+import { HiggsfieldStudio } from './higgsfield';
+import { ASSISTANTS, assistant, assistantChosen, assistantId, chooseAssistant } from './assistant';
+import { Tour } from './tour';
+import { EnvVars } from './envVars';
+import { Board } from './board';
+import { VisualCheck } from './visualCheck';
+import { Store } from './store';
+import { Figma } from './figma';
+import { Supabase } from './supabase';
+import { Stripe } from './stripe';
+import { deliverToAgent } from './deliver';
+import { installHooks } from './agentTracker';
+import { registerDocumentViewers } from './documents';
+import { registerFontViewer } from './fonts';
+import { CodexTracker } from './codexTracker';
+import { installBranding } from './brand';
+import * as fs from 'fs';
+import { NightQueue } from './nightQueue';
+import { Phone } from './phone';
+import { VercelPublisher } from './vercel';
+import { UsageMonitor } from './usage';
 
-const WELCOME_KEY = 'orbit.welcomed.v2';
+const WELCOME_KEY = 'orbit.welcomed.v3';
+/** The guided tour contributed in package.json (`walkthroughs`). */
+const TUTORIAL_ID = 'vscode.orbit#orbit.tour';
+
+/** Claude Code's Shift+Tab cycle of permission modes. */
+const MODE_CYCLE = ['default', 'acceptEdits', 'plan', 'auto'];
+const MODE_LABELS: Record<string, string> = { default: 'par défaut', acceptEdits: 'modifications acceptées', plan: 'plan', auto: 'auto' };
+/** Modes Orbit just set with Shift+Tab, until Claude reports its mode again through a hook. */
+const assumedModes = new Map<string, { mode: string; at: number }>();
+
+/**
+ * Puts every Claude terminal of the window in one permission mode, on the user's click:
+ * Claude Code only changes mode with Shift+Tab, so each terminal gets the presses it needs
+ * from the mode its hooks last reported.
+ */
+async function setModeEverywhere(claude: ClaudeTerminals, tracker: AgentTracker, target: string): Promise<void> {
+	if (assistantId() === 'chatgpt') {
+		let restarted = 0;
+		let already = 0;
+		const skipped: string[] = [];
+		for (const terminal of claude.list()) {
+			const state = tracker.get(claude.keyOf(terminal));
+			if (claude.launchModeOf(terminal) === target) {
+				already++;
+			} else if (state?.status === 'running' || state?.status === 'waiting') {
+				skipped.push(`${terminal.name} (${state.status === 'running' ? 'travaille' : 'attend ton accord'})`);
+			} else {
+				// Shift+Tab means something else in Codex (it switches to plan): restart on the same conversation instead.
+				const name = terminal.name;
+				terminal.dispose();
+				claude.create({ label: name, permissionMode: target, flags: state?.sessionId ? ['--resume', state.sessionId] : [], preserveFocus: true });
+				restarted++;
+			}
+		}
+		const parts = [
+			restarted ? `${restarted} ${restarted > 1 ? 'terminaux relancés' : 'terminal relancé'} en mode ${MODE_LABELS[target]}, sur la même discussion` : '',
+			already ? `${already} déjà en mode ${MODE_LABELS[target]}` : '',
+			skipped.length ? `non changé${skipped.length > 1 ? 's' : ''} : ${skipped.join(', ')}` : '',
+		].filter(Boolean);
+		vscode.window.showInformationMessage(parts.length ? `${parts.join(' · ')}.` : 'Aucun terminal ChatGPT ouvert.');
+		return;
+	}
+	const wanted = MODE_CYCLE.indexOf(target);
+	let changed = 0;
+	let already = 0;
+	const skipped: string[] = [];
+	for (const terminal of claude.list()) {
+		const key = claude.keyOf(terminal);
+		const state = tracker.get(key);
+		const assumed = key ? assumedModes.get(key) : undefined;
+		// A hook that spoke after our last change knows better than our assumption.
+		const mode = assumed && (!state?.permissionMode || assumed.at >= state.updatedAt) ? assumed.mode : state?.permissionMode ?? claude.launchModeOf(terminal);
+		const current = mode ? MODE_CYCLE.indexOf(mode) : -1;
+		if (!key || current < 0) {
+			skipped.push(`${terminal.name} (mode inconnu : envoie-lui un premier message)`);
+			continue;
+		}
+		if (state?.status === 'waiting') {
+			skipped.push(`${terminal.name} (attend ton accord)`);
+			continue;
+		}
+		if (current === wanted) {
+			already++;
+			continue;
+		}
+		const presses = (wanted - current + MODE_CYCLE.length) % MODE_CYCLE.length;
+		for (let i = 0; i < presses; i++) {
+			terminal.sendText('\x1b[Z', false);
+			await new Promise(resolve => setTimeout(resolve, 140));
+		}
+		assumedModes.set(key, { mode: target, at: Date.now() });
+		changed++;
+	}
+	const parts = [
+		changed ? `${changed} ${changed > 1 ? 'terminaux' : 'terminal'} Claude passé${changed > 1 ? 's' : ''} en mode ${MODE_LABELS[target]}` : '',
+		already ? `${already} déjà en mode ${MODE_LABELS[target]}` : '',
+		skipped.length ? `non changé${skipped.length > 1 ? 's' : ''} : ${skipped.join(', ')}` : '',
+	].filter(Boolean);
+	vscode.window.showInformationMessage(parts.length ? `${parts.join(' · ')}.` : 'Aucun terminal Claude ouvert.');
+}
 
 export function activate(context: vscode.ExtensionContext): void {
-	const claude = new ClaudeTerminals(context.globalState);
-	const tracker = new AgentTracker(pid => claude.byPid(pid)?.name, pid => claude.byPid(pid)?.show());
+	setUnityExtensionPath(context.extensionPath);
+	const claude = new ClaudeTerminals(context.globalState, context.extensionUri);
+	const tracker = new AgentTracker(claude);
+	// When Orbit is closed and opened again, its agent terminals come back as bare shells: same
+	// name, same history on screen, but the agent is gone and anything typed there would be run by
+	// the shell. A terminal whose shell process changed since Orbit last saw it is such a ghost.
+	const runsSomething = (pid: number) => new Promise<boolean>(resolve => {
+		// When the question cannot be answered, the agent is assumed to be there: nothing is marked.
+		if (process.platform === 'win32') {
+			execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `@(Get-CimInstance Win32_Process -Filter "ParentProcessId=${pid}").Count`], { windowsHide: true, timeout: 20000 }, (err, out) => resolve(err ? true : Number(String(out).trim()) > 0));
+		} else {
+			execFile('pgrep', ['-P', String(pid)], { timeout: 10000 }, (err, out) => resolve(err && (err as NodeJS.ErrnoException).code === 'ENOENT' ? true : String(out).trim().length > 0));
+		}
+	});
+	for (const terminal of vscode.window.terminals) {
+		terminal.processId.then(async pid => {
+			const key = claude.isClaude(terminal) ? claude.keyOf(terminal) : undefined;
+			if (key && pid && !tracker.get(key)?.ended && !await runsSomething(pid)) {
+				tracker.markEnded(key);
+			}
+		});
+	}
+	claude.setWaitingProvider(t => tracker.get(claude.keyOf(t))?.status === 'waiting');
+	// Before any Claude starts: it writes the MCP config every Claude terminal receives.
+	const control = new OrbitControl(context.extensionPath, claude, tracker);
+	const recipes = new Recipes(claude);
+	context.subscriptions.push(control, registerImagePaste(claude), registerSmartCommit(), new Verifier(tracker, claude), ...registerFixWithClaude(claude), recipes, ...recipes.register());
 	const store = new SessionStore(context.globalState);
 	const sessionsView = new SessionsView(store, tracker);
 	const chat = new ChatViewProvider(context.extensionUri, claude, tracker);
 	const studio = new StudioPanel(context.extensionUri);
 	const inline = new InlineEditController();
+	const usage = new UsageMonitor();
+	const activity = new AgentActivity(tracker, claude);
+	const map = new MapPanel(context.extensionUri, activity, claude);
+	const team = new Team(context, claude, tracker, activity);
+	const community = new CommunityPanel(context.extensionUri, claude);
+	// An empty window becomes a workspace without a reload, so running agents keep going.
+	const follow = new FollowAgent(context.extensionUri, tracker, claude, dir => vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length ?? 0, 0, { uri: vscode.Uri.file(dir) }));
+	tracker.setRoleProvider(key => team.roleOf(key)?.role);
+	activity.setRoleProvider(key => team.roleOf(key));
+	const timeMachine = new TimeMachine(tracker, claude);
+	const conductor = new Conductor(claude, tracker);
+	const preview = new LivePreview(context.extensionUri, claude, tracker);
+	const database = new DatabasePanel(context, claude);
+	const studio3d = new GameStudio(context.extensionUri, claude, tracker);
+	const higgsfield = new HiggsfieldStudio(context.extensionUri, claude, tracker);
+	// With ChatGPT, the agents' activity is read from Codex's own conversation logs.
+	const codex = new CodexTracker((key, event) => tracker.ingest(key, event), key => !!claude.byKey(key));
+	const phone = new Phone(context, claude, tracker);
+	const queue = new NightQueue(context.extensionUri, claude, tracker, phone);
+	const vercel = new VercelPublisher(context, claude, tracker);
+	// Pages hand their messages to a live agent, or start one: never to a bare shell.
+	const tellAgent = (message: string) => !!deliverToAgent(claude, tracker, message);
+	const envVars = new EnvVars(context, tellAgent);
+	const board = new Board(context, claude, tracker);
+	const visual = new VisualCheck(context, tracker, claude);
+	const skills = new Store(context, () => vscode.commands.executeCommand('orbit.recipes.refresh'));
+	const figma = new Figma(context, skills, tellAgent);
+	const supabase = new Supabase(context, tellAgent);
+	const stripe = new Stripe(context, tellAgent);
+	control.desk = {
+		boardList: () => board.list(),
+		boardAdd: (title, detail) => {
+			if (!title.trim()) {
+				throw new Error('Il faut un titre.');
+			}
+			const card = board.add(title.trim(), detail.trim());
+			return { id: card.id, title: card.title };
+		},
+		boardTake: (id, terminal) => board.take(id, terminal),
+		boardMove: (id, column, summary) => board.move(id, column, summary),
+		envNames: () => envVars.names(),
+		envAsk: (key, why) => envVars.ask(key, why),
+	};
+	// Everything the project is plugged into, behind one button.
+	const tools = vscode.commands.registerCommand('orbit.tools', async () => {
+		const items: (vscode.QuickPickItem & { command: string })[] = [
+			{ label: '$(checklist) Tableau de tâches', description: 'Des cartes que tes agents prennent et traitent', command: 'orbit.board.show' },
+			{ label: '$(key) Variables d\'environnement', description: 'Les fichiers .env, masqués, synchronisés avec Vercel', command: 'orbit.env.show' },
+			{ label: '$(eye) Relecture visuelle', description: 'La page avant et après, relue par l\'agent', command: 'orbit.visual.show' },
+			{ label: '$(extensions) Magasin de compétences', description: 'Connecteurs et recettes en un clic', command: 'orbit.store.show' },
+			{ label: '', kind: vscode.QuickPickItemKind.Separator, command: '' },
+			{ label: '$(orbit-vercel) Vercel', description: 'Mettre le projet en ligne', command: 'orbit.vercel.show' },
+			{ label: '$(database) Supabase', description: 'Base de données, comptes, stockage', command: 'orbit.supabase.show' },
+			{ label: '$(credit-card) Stripe', description: 'Paiements', command: 'orbit.stripe.show' },
+			{ label: '$(symbol-color) Figma vers code', description: 'Coller un lien, l\'agent construit l\'écran', command: 'orbit.figma.show' },
+			{ label: '$(sparkle) Higgsfield', description: 'Images, vidéos, 3D et sons', command: 'orbit.higgsfield.show' },
+			{ label: '', kind: vscode.QuickPickItemKind.Separator, command: '' },
+			{ label: '$(globe) Vue vivante', description: 'L\'interface en direct', command: 'orbit.preview.show' },
+			{ label: '$(database) Base de données locale', description: 'SQLite et PostgreSQL', command: 'orbit.database.show' },
+			{ label: '$(list-ordered) File de nuit', description: 'Enchaîner des tâches', command: 'orbit.queue.show' },
+		];
+		const picked = await vscode.window.showQuickPick(items, { placeHolder: 'Outils du projet', matchOnDescription: true });
+		if (picked?.command) {
+			await vscode.commands.executeCommand(picked.command);
+		}
+	});
+	context.subscriptions.push(...registerDocumentViewers(context, tellAgent));
+	context.subscriptions.push(registerFontViewer(context));
+	context.subscriptions.push(envVars, board, visual, skills, figma, supabase, stripe, tools, vscode.workspace.onDidChangeConfiguration(e => e.affectsConfiguration('orbit.env.hideFromAgent') && installHooks()));
+
+	const pickModel = async () => {
+		const target = claude.current();
+		const pick = await vscode.window.showQuickPick(
+			models().map(m => ({ label: m.label, description: m.id, id: m.id })),
+			{ title: 'Modèle de Claude', placeHolder: target ? `Appliqué tout de suite à « ${target.name} » — Claude Code le garde ensuite par défaut` : 'Aucun terminal Claude ouvert : ce sera le modèle des prochains' });
+		if (!pick) {
+			return;
+		}
+		if (!target) {
+			await vscode.workspace.getConfiguration('orbit').update(assistantId() === 'chatgpt' ? 'chatgpt.model' : 'claude.model', pick.id, vscode.ConfigurationTarget.Global);
+			return;
+		}
+		if (tracker.get(claude.keyOf(target))?.status === 'waiting') {
+			// Typing now would answer the permission prompt instead.
+			vscode.window.showWarningMessage('Claude attend une autorisation dans ce terminal : réponds-lui d\'abord, puis change de modèle.');
+			return;
+		}
+		claude.sendCommand(target, `/model ${pick.id || 'default'}`);
+	};
 
 	const renameSession = async (sessionId: string | undefined, terminal?: vscode.Terminal) => {
 		if (!sessionId) {
@@ -37,10 +268,10 @@ export function activate(context: vscode.ExtensionContext): void {
 		await store.rename(sessionId, name);
 		const live = terminal ?? (() => {
 			const state = tracker.findBySession(sessionId);
-			return state ? claude.byPid(state.pid) : undefined;
+			return state ? claude.byKey(state.key) : undefined;
 		})();
 		if (live) {
-			await claude.rename(live, name.trim() ? `✦ ${name.trim()}` : 'Claude');
+			await claude.rename(live, name.trim() || 'Claude');
 		}
 		sessionsView.refreshSoon();
 	};
@@ -48,13 +279,123 @@ export function activate(context: vscode.ExtensionContext): void {
 		if (!t) {
 			return undefined;
 		}
-		const pid = claude.pidOf(t);
-		return tracker.get(pid)?.sessionId ?? claude.sessionIdFor(t);
+		return tracker.get(claude.keyOf(t))?.sessionId ?? claude.sessionIdFor(t);
 	};
 
+	// With another assistant than Claude, Orbit's messages name it; the commands' titles are worded by the core from this marker.
+	if (assistantId() !== 'claude') {
+		installBranding();
+	}
+	const writeMarker = () => {
+		try {
+			fs.mkdirSync(context.globalStorageUri.fsPath, { recursive: true });
+			const file = path.join(context.globalStorageUri.fsPath, 'assistant');
+			if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== assistantId()) {
+				fs.writeFileSync(file, assistantId());
+			}
+		} catch (err) {
+			console.error('[orbit] could not record the assistant', err);
+		}
+	};
+	writeMarker();
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => e.affectsConfiguration('orbit.assistant') && writeMarker()));
+	/**
+	 * One assistant at a time: the terminals of the previous one are closed, then the window
+	 * reloads so every title, logo and page follows, and a fresh agent starts.
+	 */
+	const afterSwitch = async (before: string): Promise<void> => {
+		writeMarker();
+		const working = claude.list().filter(t => tracker.get(claude.keyOf(t))?.status === 'running').length;
+		if (working) {
+			const go = 'Fermer et continuer';
+			const answer = await vscode.window.showWarningMessage(`${working} agent${working > 1 ? 's travaillent' : ' travaille'} encore`, { modal: true, detail: `Passer à ${assistant().name} ferme les terminaux d'agent ouverts et interrompt ce travail.` }, go);
+			if (answer !== go) {
+				await vscode.workspace.getConfiguration('orbit').update('assistant', before, vscode.ConfigurationTarget.Global);
+				writeMarker();
+				return;
+			}
+		}
+		claude.closeOtherAssistants();
+		await new Promise(resolve => setTimeout(resolve, 400));
+		vscode.commands.executeCommand('workbench.action.reloadWindow');
+	};
+	// The button of the status bar: the assistant in use, one click for the other.
+	const switcher = vscode.window.createStatusBarItem('orbit.assistant', vscode.StatusBarAlignment.Right, 1001);
+	const other = ASSISTANTS.find(a => a.id !== assistantId())!;
+	switcher.name = 'Changer d\'IA';
+	switcher.text = `$(${assistant().icon}) $(arrow-swap) $(${other.icon})`;
+	switcher.tooltip = `Tu travailles avec ${assistant().name}. Cliquer pour passer à ${other.name}.`;
+	switcher.command = 'orbit.assistant.toggle';
+	switcher.show();
+	context.subscriptions.push(switcher);
+	const tour = new Tour(context);
+	context.subscriptions.push(tour);
+	// First launch: which AI does this user work with? Asked once, changeable at any time. The
+	// discovery circuit follows, once the choice is made (it names the AI at every stop).
+	if (!assistantChosen() && !context.globalState.get<boolean>('orbit.assistant.asked')) {
+		context.globalState.update('orbit.assistant.asked', true);
+		setTimeout(() => vscode.commands.executeCommand('orbit.assistant.choose'), 2500);
+	} else {
+		setTimeout(() => tour.offerOnce(), 6000);
+	}
 	context.subscriptions.push(
-		claude, tracker, sessionsView, chat, studio, inline,
-		claude.onDidClose(pid => tracker.forget(pid)),
+		claude, tracker, sessionsView, chat, studio, inline, usage, activity, map, timeMachine, conductor, preview, database, studio3d, higgsfield, codex, phone, queue, vercel, team, follow, community,
+		claude.onDidStart(started => assistantId() === 'chatgpt' && codex.expect(started.key, started.cwd)),
+		vscode.commands.registerCommand('orbit.assistant.choose', async () => {
+			const before = assistantId();
+			const picked = await chooseAssistant();
+			if (picked && picked !== before) {
+				await afterSwitch(before);
+			} else if (picked) {
+				tour.offerOnce();
+			}
+		}),
+		// One click: straight to the other assistant, no list.
+		vscode.commands.registerCommand('orbit.assistant.toggle', async () => {
+			const before = assistantId();
+			await vscode.workspace.getConfiguration('orbit').update('assistant', before === 'claude' ? 'chatgpt' : 'claude', vscode.ConfigurationTarget.Global);
+			await afterSwitch(before);
+		}),
+		vscode.commands.registerCommand('orbit.community.show', () => community.show('discover')),
+		vscode.commands.registerCommand('orbit.community.share', () => community.show('share')),
+		vscode.commands.registerCommand('orbit.claude.quickProject', () => claude.quickProject()),
+		vscode.window.registerTreeDataProvider('orbit.team', team),
+		vscode.commands.registerCommand('orbit.team.start', () => team.startLead()),
+		vscode.commands.registerCommand('orbit.team.show', (terminal?: vscode.Terminal) => terminal?.show()),
+		vscode.commands.registerCommand('orbit.team.message', async (terminal?: vscode.Terminal) => {
+			if (!terminal) {
+				return;
+			}
+			const text = await vscode.window.showInputBox({ title: `Message à ${terminal.name}`, placeHolder: 'Ce que l\'agent doit faire ou corriger…', ignoreFocusOut: true });
+			if (text?.trim()) {
+				claude.sendMessage(terminal, text.trim());
+			}
+		}),
+		vscode.commands.registerCommand('orbit.team.stop', (terminal?: vscode.Terminal) => terminal?.sendText(String.fromCharCode(27), false)),
+		vscode.commands.registerCommand('orbit.team.close', (terminal?: vscode.Terminal) => terminal?.dispose()),
+		vscode.commands.registerCommand('orbit.unity.show', () => studio3d.show()),
+		vscode.commands.registerCommand('orbit.higgsfield.show', () => higgsfield.show()),
+		vscode.commands.registerCommand('orbit.higgsfield.animate', (uri?: vscode.Uri) => higgsfield.show(uri, 'video')),
+		vscode.commands.registerCommand('orbit.higgsfield.vary', (uri?: vscode.Uri) => higgsfield.show(uri, 'image')),
+		vscode.commands.registerCommand('orbit.database.show', () => database.show()),
+		vscode.commands.registerCommand('orbit.preview.show', (address?: string) => preview.show(address)),
+		vscode.window.registerTreeDataProvider('orbit.timeline', timeMachine),
+		vscode.commands.registerCommand('orbit.time.rewind', node => timeMachine.rewind(node)),
+		vscode.commands.registerCommand('orbit.time.revertFile', node => timeMachine.revertFile(node)),
+		vscode.commands.registerCommand('orbit.time.comment', node => timeMachine.comment(node)),
+		vscode.commands.registerCommand('orbit.time.diff', node => timeMachine.diff(node)),
+		vscode.commands.registerCommand('orbit.time.refresh', () => timeMachine.refresh()),
+		vscode.commands.registerCommand('orbit.time.snapshot', () => timeMachine.snapshotNow()),
+		vscode.commands.registerCommand('orbit.conductor.start', () => conductor.start()),
+		vscode.commands.registerCommand('orbit.conductor.merge', () => conductor.merge()),
+		vscode.commands.registerCommand('orbit.map.show', () => map.show()),
+		vscode.commands.registerCommand('orbit.tutorial', () => vscode.commands.executeCommand('workbench.action.openWalkthrough', TUTORIAL_ID, false)),
+		tracker.onDidChange(state => state.status === 'done' && usage.refreshSoon()),
+		vscode.commands.registerCommand('orbit.usage.show', () => usage.show()),
+		vscode.commands.registerCommand('orbit.usage.openSettings', () => usage.openSettings()),
+		vscode.commands.registerCommand('orbit.claude.pickModel', pickModel),
+		vscode.commands.registerCommand('orbit.claude.autoModeAll', () => setModeEverywhere(claude, tracker, 'auto')),
+		claude.onDidClose(key => tracker.forget(key)),
 		vscode.window.registerTreeDataProvider('orbit.sessions', sessionsView),
 		vscode.window.registerWebviewViewProvider(ChatViewProvider.viewId, chat, { webviewOptions: { retainContextWhenHidden: true } }),
 
@@ -63,8 +404,9 @@ export function activate(context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand('orbit.chat.toggle', () => chat.toggle()),
 
 		vscode.commands.registerCommand('orbit.sessions.open', (id: string) => {
+			store.bringHome(id);
 			const state = tracker.findBySession(id);
-			claude.resume(id, store.get(id)?.customName, state ? claude.byPid(state.pid) : undefined);
+			claude.resume(id, store.get(id)?.customName, state ? claude.byKey(state.key) : undefined);
 		}),
 		vscode.commands.registerCommand('orbit.sessions.rename', (node?: { session?: { id: string } }) => renameSession(node?.session?.id)),
 		vscode.commands.registerCommand('orbit.sessions.renameCurrent', () => {
@@ -133,13 +475,39 @@ export function activate(context: vscode.ExtensionContext): void {
 		}),
 	);
 
-	claude.autoStart();
+	// The project you are in, always one click away from the next one.
+	const project = vscode.window.createStatusBarItem('orbit.project', vscode.StatusBarAlignment.Left, 1000);
+	project.name = 'Projet';
+	project.text = `$(folder) ${vscode.workspace.workspaceFolders?.[0]?.name ?? 'Aucun projet'} $(chevron-down)`;
+	project.tooltip = `Changer de projet ou en créer un (${keys('⌥⌘P', 'Ctrl+Alt+P')})`;
+	project.command = 'orbit.project.switch';
+	project.show();
+	const lead = vscode.window.createStatusBarItem('orbit.team', vscode.StatusBarAlignment.Left, 999);
+	lead.name = 'Chef d\'équipe';
+	lead.text = `$(${assistant().icon}) Chef d'équipe`;
+	lead.tooltip = `Parle à un seul Claude qui crée et pilote les autres agents (${keys('⌥⌘C', 'Ctrl+Alt+C')})`;
+	lead.command = 'orbit.team.start';
+	lead.show();
+	context.subscriptions.push(lead);
+	context.subscriptions.push(project, vscode.commands.registerCommand('orbit.project.switch', () => claude.switchProject()));
 
-	if (!context.globalState.get(WELCOME_KEY)) {
+	claude.setReopening(
+		terminal => tracker.get(claude.keyOf(terminal))?.ended === true,
+		() => {
+			const last = store.latest();
+			return last && { id: last.id, name: last.customName, title: last.title };
+		},
+	);
+	claude.autoStart();
+	// Whatever the start-up settings, agents of another assistant than the one in use do not stay.
+	setTimeout(() => claude.closeOtherAssistants(), 3200);
+
+	// Someone who already went round the circuit at first launch needs no welcome message on top.
+	if (!context.globalState.get(WELCOME_KEY) && context.globalState.get('orbit.tour.seen')) {
 		context.globalState.update(WELCOME_KEY, true);
 		setTimeout(() => {
-			vscode.window.showInformationMessage('Bienvenue dans Orbit ✦ — ⌘L terminal Claude, ⌥⌘N nouveau, ⌥⌘A organiser les agents, ⌘K édition inline, ⌥⌘, tout personnaliser.', 'Ouvrir le Studio')
-				.then(choice => choice && studio.show());
+			vscode.window.showInformationMessage(`Bienvenue dans Orbit — ${keys('⌘L', 'Ctrl+L')} terminal Claude, ${keys('⌥⌘N', 'Ctrl+Alt+N')} nouveau, ${keys('⌥⌘A', 'Ctrl+Alt+A')} organiser les agents, ${keys('⌘K', 'Ctrl+K')} édition inline, ${keys('⌥⌘,', 'Ctrl+Alt+,')} tout personnaliser.`, 'Suivre le tutoriel', 'Ouvrir le Studio')
+				.then(choice => choice === 'Suivre le tutoriel' ? vscode.commands.executeCommand('orbit.tutorial') : choice && studio.show());
 		}, 2500);
 	}
 }

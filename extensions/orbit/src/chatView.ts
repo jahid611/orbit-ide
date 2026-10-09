@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AgentTracker } from './agentTracker';
 import { ClaudeTerminals } from './claudeTerminals';
+import { clipboardImages, saveDataUrl } from './pasteImage';
 import { cleanPrompt } from './sessions';
 import { renderWebview, webviewOptions } from './webview';
 
@@ -39,9 +40,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 					this.follow(t);
 				}
 			}),
+			vscode.window.onDidCloseTerminal(t => {
+				if (t !== this.terminal) {
+					return;
+				}
+				// The terminal shown is gone: move on to the one the user is using, if any.
+				this.terminal = undefined;
+				const next = [claude.current(), ...claude.list().reverse()].find(x => x && x !== t);
+				if (next) {
+					this.follow(next);
+				} else {
+					this.load(undefined);
+				}
+			}),
 			claude.onDidChange(() => this.postTerminals()),
 			tracker.onDidChange(state => {
-				if (this.terminal && state.pid === this.pidOf(this.terminal)) {
+				if (this.terminal && state.key === this.keyOf(this.terminal)) {
 					if (state.transcriptPath && state.transcriptPath !== this.transcript) {
 						this.load(state.transcriptPath);
 					} else {
@@ -61,9 +75,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 		this.view = view;
 		view.webview.options = webviewOptions(this.extensionUri);
 		view.webview.html = renderWebview(view.webview, this.extensionUri, 'chat');
-		view.webview.onDidReceiveMessage(msg => this.onMessage(msg), undefined, this.disposables);
-		view.onDidDispose(() => { this.view = undefined; }, undefined, this.disposables);
-		view.onDidChangeVisibility(() => view.visible && this.sendAll());
+		// Listeners of this view only: freed with it, so reopening the view does not pile them up.
+		const listeners: vscode.Disposable[] = [
+			view.webview.onDidReceiveMessage(msg => this.onMessage(msg)),
+			view.onDidChangeVisibility(() => view.visible && this.sendAll()),
+		];
+		view.onDidDispose(() => {
+			if (this.view === view) {
+				this.view = undefined;
+			}
+			listeners.forEach(d => d.dispose());
+		});
 	}
 
 	async show(): Promise<void> {
@@ -103,18 +125,50 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 				}
 				this.sendAll();
 				break;
+			case 'pasteImage': {
+				// A screenshot pasted in the chat: saved as a file that travels with the message.
+				try {
+					const file = await saveDataUrl(String(msg.data ?? ''));
+					this.view?.webview.postMessage({ type: 'attached', file, name: path.basename(file), id: typeof msg.id === 'string' ? msg.id : undefined });
+				} catch (err) {
+					vscode.window.showWarningMessage(`Image non collée : ${err instanceof Error ? err.message : String(err)}`);
+				}
+				break;
+			}
+			case 'pasteClipboard': {
+				// Ctrl+V with nothing the page can read (e.g. image files copied in the file manager).
+				for (const file of await clipboardImages()) {
+					this.view?.webview.postMessage({ type: 'attached', file, name: path.basename(file) });
+				}
+				break;
+			}
 			case 'send': {
-				const text = String(msg.text ?? '').trim();
-				const terminal = this.terminal ?? this.claude.current() ?? this.claude.create({ preserveFocus: true });
+				const files = (Array.isArray(msg.files) ? msg.files : []).map(String);
+				const text = [String(msg.text ?? '').trim(), ...files.map((f: string) => /\s/.test(f) ? `"${f}"` : f)].filter(Boolean).join(' ');
 				if (!text) {
 					return;
+				}
+				const terminal = this.terminal ?? this.claude.current();
+				if (!terminal) {
+					// A Claude still starting would drop typed text: the message is its first prompt.
+					this.follow(this.claude.create({ preserveFocus: true, flags: [text] }));
+					break;
 				}
 				if (!this.terminal) {
 					this.follow(terminal);
 				}
-				// Bracketed paste keeps multi-line messages in one prompt.
-				terminal.sendText(text.includes('\n') ? `\x1b[200~${text}\x1b[201~` : text, false);
-				setTimeout(() => terminal.sendText('\r', false), 60);
+				this.claude.sendMessage(terminal, text);
+				break;
+			}
+			case 'insert': {
+				const code = String(msg.code ?? '');
+				const editor = vscode.window.activeTextEditor ?? vscode.window.visibleTextEditors[0];
+				if (!editor) {
+					await vscode.env.clipboard.writeText(code);
+					vscode.window.showInformationMessage('Aucun éditeur ouvert : le code est copié dans le presse-papiers.');
+					break;
+				}
+				await editor.edit(edit => editor.selections.forEach(s => edit.replace(s, code)));
 				break;
 			}
 			case 'decide': {
@@ -136,7 +190,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 				this.terminal?.sendText('\x1b', false);
 				break;
 			case 'switch': {
-				const t = this.claude.list().find(x => x.name === msg.name);
+				const t = this.claude.list().find(x => terminalId(this.claude, x) === msg.key);
 				if (t) {
 					this.follow(t);
 				}
@@ -150,7 +204,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 				break;
 			case 'openFile':
 				if (typeof msg.path === 'string') {
-					const base = this.tracker.get(this.terminal && this.pidOf(this.terminal))?.cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
+					const base = this.tracker.get(this.terminal && this.keyOf(this.terminal))?.cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '';
 					const file = path.isAbsolute(msg.path) ? msg.path : path.join(base, msg.path);
 					vscode.window.showTextDocument(vscode.Uri.file(file), { preview: true }).then(undefined, () => undefined);
 				}
@@ -163,12 +217,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 			return;
 		}
 		this.terminal = terminal;
-		const state = this.tracker.get(this.pidOf(terminal));
+		const state = this.tracker.get(this.keyOf(terminal));
 		this.load(state?.transcriptPath ?? this.claude.sessionFileFor(terminal));
 	}
 
-	private pidOf(terminal: vscode.Terminal): number | undefined {
-		return this.claude.pidOf(terminal);
+	private keyOf(terminal: vscode.Terminal): string | undefined {
+		return this.claude.keyOf(terminal);
 	}
 
 	private load(transcript: string | undefined): void {
@@ -213,10 +267,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 		if (size <= this.offset) {
 			return false;
 		}
-		const fd = fs.openSync(this.transcript, 'r');
 		const buffer = Buffer.alloc(size - this.offset);
-		fs.readSync(fd, buffer, 0, buffer.length, this.offset);
-		fs.closeSync(fd);
+		try {
+			const fd = fs.openSync(this.transcript, 'r');
+			try {
+				fs.readSync(fd, buffer, 0, buffer.length, this.offset);
+			} finally {
+				fs.closeSync(fd);
+			}
+		} catch {
+			return false; // locked while Claude writes (Windows): the next change retries
+		}
 		const text = buffer.toString('utf8');
 		const end = text.lastIndexOf('\n');
 		if (end < 0) {
@@ -297,13 +358,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 	private postTerminals(): void {
 		this.post({
 			type: 'terminals',
-			terminals: this.claude.list().map(t => t.name),
-			current: this.terminal?.name,
+			terminals: this.claude.list().map(t => ({ key: terminalId(this.claude, t), name: t.name })),
+			current: this.terminal && terminalId(this.claude, this.terminal),
 		});
 	}
 
 	private postStatus(): void {
-		const state = this.terminal ? this.tracker.get(this.pidOf(this.terminal)) : undefined;
+		const state = this.terminal ? this.tracker.get(this.keyOf(this.terminal)) : undefined;
 		this.post({
 			type: 'status',
 			status: state?.status ?? 'idle',
@@ -315,6 +376,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 	private post(message: object): void {
 		this.view?.webview.postMessage(message);
 	}
+}
+
+/** Identifies a terminal in the page: its key, or its name until an old terminal reports its pid. */
+function terminalId(claude: ClaudeTerminals, terminal: vscode.Terminal): string {
+	return claude.keyOf(terminal) ?? `name:${terminal.name}`;
 }
 
 function resultText(content: unknown): string {

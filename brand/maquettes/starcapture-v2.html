@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Maquette StarCapture</title>
+<style>
+	:root { --bg: #0e0e11; --panel: #17171c; --panel2: #1f1f26; --panel3: #292932; --line: #2b2b35; --fg: #f1f1f5; --muted: #8c8c9a; --dim: #5d5d6b; --accent: #8b7bff; --mint: #2fd6c1; --amber: #ffb84d; --rose: #ff6b9d; }
+	* { box-sizing: border-box; }
+	html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 12.5px/1.4 "Segoe UI", "Inter", system-ui, sans-serif; overflow: hidden; }
+	svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+	.app { display: grid; grid-template-rows: 46px minmax(0, 1fr) 388px; height: 100vh; gap: 6px; padding: 0 6px 6px; }
+	.card { background: var(--panel); border-radius: 10px; overflow: hidden; }
+
+	/* Top bar */
+	.top { display: flex; align-items: center; gap: 14px; padding: 0 8px; }
+	.brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 14px; letter-spacing: -.01em; }
+	.brand i { width: 24px; height: 24px; border-radius: 7px; background: conic-gradient(from 210deg, #8b7bff, #2fd6c1, #ffb84d, #ff6b9d, #8b7bff); display: grid; place-items: center; }
+	.brand i svg { width: 13px; height: 13px; stroke: #fff; fill: #fff; stroke-width: 0; }
+	.menu { display: flex; gap: 2px; color: var(--muted); }
+	.menu span { padding: 5px 10px; border-radius: 6px; }
+	.menu span:first-child { color: var(--fg); background: var(--panel2); }
+	.title { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; font-size: 13px; }
+	.title em { font-style: normal; color: var(--dim); font-size: 11.5px; }
+	.spacer { flex: 1; }
+	.chip { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 8px; color: var(--fg); background: var(--panel2); font-weight: 600; }
+	.chip.ai { color: #ffd9c7; background: linear-gradient(120deg, #3a2318, #2a1b2e); box-shadow: inset 0 0 0 1px #d9775733; }
+	.chip.ai b { width: 15px; height: 15px; border-radius: 50%; background: #d97757; }
+	.export { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 18px; border-radius: 8px; font-weight: 700; color: #06231f; background: var(--mint); box-shadow: 0 6px 22px #2fd6c14d; }
+
+	/* Middle */
+	.mid { display: grid; grid-template-columns: 430px minmax(0, 1fr) 330px; gap: 6px; min-height: 0; }
+	.lib { display: grid; grid-template-rows: 58px minmax(0, 1fr); }
+	.tools { display: flex; align-items: stretch; padding: 0 6px; border-bottom: 1px solid var(--line); }
+	.tools div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10.5px; color: var(--muted); position: relative; }
+	.tools svg { width: 18px; height: 18px; }
+	.tools .on { color: var(--mint); }
+	.tools .on::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 0; height: 2px; border-radius: 2px; background: var(--mint); }
+	.libBody { display: grid; grid-template-columns: 108px minmax(0, 1fr); min-height: 0; }
+	.cats { padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); color: var(--muted); }
+	.cats span { padding: 7px 10px; border-radius: 7px; }
+	.cats .on { color: var(--fg); background: var(--panel3); font-weight: 600; }
+	.cats small { margin: 10px 10px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
+	.grid { padding: 10px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+	.import { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 8px; color: var(--mint); border: 1px dashed #2fd6c166; background: #2fd6c10f; font-weight: 600; }
+	.import span { margin-left: auto; color: var(--dim); font-weight: 400; font-size: 11px; }
+	.thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .thumbs > div { min-width: 0; }
+	.thumb { position: relative; aspect-ratio: 16 / 10; border-radius: 7px; overflow: hidden; background: #000 center / cover; }
+	.thumb b { position: absolute; right: 5px; bottom: 5px; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #000a; }
+	.thumb.used::before { content: "Ajouté"; position: absolute; left: 5px; top: 5px; padding: 1px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 700; color: #06231f; background: var(--mint); }
+	.thumb.audio { background: linear-gradient(135deg, #1d3a37, #17171c); display: grid; place-items: center; color: var(--mint); }
+	.thumb.audio svg { width: 24px; height: 24px; }
+	.name { margin-top: 4px; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+	.player { display: grid; grid-template-rows: 36px minmax(0, 1fr) 44px; }
+	.phead { display: flex; align-items: center; padding: 0 14px; color: var(--muted); border-bottom: 1px solid var(--line); }
+	.phead b { color: var(--fg); font-weight: 600; margin-right: 8px; }
+	.screen { display: grid; place-items: center; background: #08080a; min-height: 0; padding: 12px; }
+	.frame { position: relative; height: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 4px; overflow: hidden; background: url(f3.jpg) center / cover; box-shadow: 0 0 0 1px #ffffff14; }
+	.caption { position: absolute; left: 0; right: 0; bottom: 11%; text-align: center; font: 900 34px/1 "Segoe UI", sans-serif; letter-spacing: .01em; color: #fff; -webkit-text-stroke: 7px #000; paint-order: stroke fill; }
+	.caption i { font-style: normal; color: #ffe14d; }
+	.select { position: absolute; left: 22%; right: 22%; bottom: 7.5%; height: 13%; border: 1.5px solid var(--mint); border-radius: 3px; }
+	.select::before, .select::after { content: ""; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px var(--mint); top: -5px; }
+	.select::before { left: -5px; } .select::after { right: -5px; }
+	.pbar { display: flex; align-items: center; gap: 14px; padding: 0 14px; border-top: 1px solid var(--line); }
+	.tc { font: 600 12.5px "Cascadia Mono", Consolas, monospace; color: var(--mint); }
+	.tc em { font-style: normal; color: var(--dim); font-weight: 400; }
+	.ctl { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; color: var(--muted); }
+	.ctl .play { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #0e0e11; background: #fff; }
+	.ctl .play svg { fill: currentColor; stroke-width: 0; width: 14px; height: 14px; }
+	.pill { padding: 3px 9px; border-radius: 6px; font-size: 11px; color: var(--muted); background: var(--panel2); }
+
+	.insp { display: grid; grid-template-rows: 40px minmax(0, 1fr); }
+	.itabs { display: flex; padding: 0 8px; border-bottom: 1px solid var(--line); color: var(--muted); }
+	.itabs span { position: relative; display: grid; place-items: center; padding: 0 12px; }
+	.itabs .on { color: var(--fg); font-weight: 600; }
+	.itabs .on::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px; border-radius: 2px; background: var(--mint); }
+	.ibody { padding: 12px 14px; display: flex; flex-direction: column; gap: 13px; }
+	.sub { display: flex; gap: 4px; padding: 3px; border-radius: 8px; background: var(--panel2); }
+	.sub span { flex: 1; text-align: center; padding: 5px 0; border-radius: 6px; color: var(--muted); font-size: 11.5px; }
+	.sub .on { color: var(--fg); background: var(--panel3); font-weight: 600; }
+	.sec { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 12px; }
+	.sec svg { width: 12px; height: 12px; color: var(--muted); }
+	.sec .key { margin-left: auto; width: 11px; height: 11px; transform: rotate(45deg); border: 1.5px solid var(--dim); border-radius: 2px; }
+	.sec .key.on { border-color: var(--amber); background: var(--amber); }
+	.field { display: grid; grid-template-columns: 78px minmax(0, 1fr) 54px; align-items: center; gap: 10px; color: var(--muted); }
+	.slider { position: relative; height: 3px; border-radius: 3px; background: var(--panel3); }
+	.slider i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--mint); }
+	.slider b { position: absolute; top: -5px; width: 13px; height: 13px; margin-left: -6px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px #000a; }
+	.num { height: 24px; display: grid; place-items: center; border-radius: 6px; font: 11.5px "Cascadia Mono", Consolas, monospace; color: var(--fg); background: var(--panel2); }
+	.hr { height: 1px; background: var(--line); margin: 1px -14px; }
+	.swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+	.sw { aspect-ratio: 16 / 10; border-radius: 6px; background: url(f5.jpg) center / cover; position: relative; overflow: hidden; }
+	.sw span { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0; text-align: center; font-size: 9.5px; background: #000a; }
+	.sw.on { box-shadow: 0 0 0 2px var(--mint); }
+
+	/* Timeline */
+	.tl { display: grid; grid-template-rows: 38px 24px minmax(0, 1fr); }
+	.tbar { display: flex; align-items: center; gap: 4px; padding: 0 10px; border-bottom: 1px solid var(--line); color: var(--muted); }
+	.tbar .b { display: grid; place-items: center; width: 30px; height: 28px; border-radius: 7px; }
+	.tbar .b.on { color: var(--mint); background: #2fd6c11a; }
+	.tbar .sep { width: 1px; height: 16px; margin: 0 6px; background: var(--line); }
+	.tbar .txt { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 7px; font-size: 11.5px; }
+	.tbar .txt.ai { color: #ffd9c7; background: #d977571f; }
+	.zoom { display: flex; align-items: center; gap: 8px; width: 150px; }
+	.ruler { position: relative; margin-left: 132px; border-bottom: 1px solid var(--line); background: repeating-linear-gradient(90deg, transparent 0 119px, #3a3a46 119px 120px), repeating-linear-gradient(90deg, transparent 0 23px, #2a2a33 23px 24px); background-position: 0 100%, 0 100%; background-size: 120px 9px, 24px 5px; background-repeat: repeat-x; }
+	.ruler span { position: absolute; top: 3px; font: 10px "Cascadia Mono", Consolas, monospace; color: var(--dim); }
+	.tracks { position: relative; overflow: hidden; }
+	.row { display: grid; grid-template-columns: 132px minmax(0, 1fr); border-bottom: 1px solid #1f1f27; }
+	.head { display: flex; align-items: center; gap: 9px; padding: 0 12px; color: var(--muted); background: var(--panel); border-right: 1px solid var(--line); }
+	.head b { font-weight: 600; color: var(--fg); font-size: 11.5px; margin-right: auto; }
+	.head svg { width: 14px; height: 14px; }
+	.lane { position: relative; background: #121216; }
+	.clip { position: absolute; top: 4px; bottom: 4px; border-radius: 6px; overflow: hidden; }
+	.clip span { position: absolute; left: 7px; top: 3px; font-size: 10px; font-weight: 600; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+	.v { background-size: auto 100%; box-shadow: inset 0 0 0 1px #ffffff26; }
+	.v.sel { box-shadow: inset 0 0 0 2px #fff; }
+	.v.sel::before, .v.sel::after { content: ""; position: absolute; top: 0; bottom: 0; width: 7px; background: #fff; }
+	.v.sel::before { left: 0; border-radius: 6px 0 0 6px; } .v.sel::after { right: 0; border-radius: 0 6px 6px 0; }
+	.t { background: #c96f1f; box-shadow: inset 0 0 0 1px #ffb84d88; }
+	.t span { top: 50%; transform: translateY(-50%); }
+	.o { background: #7a3bb8; box-shadow: inset 0 0 0 1px #c79bff88; }
+	.o span { top: 50%; transform: translateY(-50%); }
+	.a { background: #0f4d49; box-shadow: inset 0 0 0 1px #2fd6c166; }
+	.a::after { content: ""; position: absolute; inset: 14px 0 3px; background: repeating-linear-gradient(90deg, #2fd6c1 0 2px, transparent 2px 4px); -webkit-mask: linear-gradient(90deg, #000, #000), repeating-linear-gradient(90deg, #000 0 9px, #0006 9px 13px, #000 13px 31px, #0003 31px 37px, #000 37px 58px, #0008 58px 66px); -webkit-mask-composite: source-in; clip-path: polygon(0 50%, 3% 20%, 6% 60%, 9% 10%, 13% 55%, 17% 25%, 21% 70%, 25% 5%, 29% 50%, 33% 30%, 37% 65%, 41% 15%, 45% 55%, 49% 35%, 53% 75%, 57% 10%, 61% 50%, 65% 28%, 69% 62%, 73% 12%, 77% 58%, 81% 33%, 85% 70%, 89% 18%, 93% 52%, 97% 30%, 100% 50%, 100% 100%, 0 100%); opacity: .85; }
+	.m { background: #17324f; box-shadow: inset 0 0 0 1px #5aa9ff66; }
+	.m::after { content: ""; position: absolute; inset: 14px 0 3px; background: repeating-linear-gradient(90deg, #5aa9ff 0 2px, transparent 2px 4px); clip-path: polygon(0 60%, 2% 30%, 4% 55%, 6% 20%, 8% 50%, 10% 35%, 12% 60%, 14% 15%, 16% 48%, 18% 30%, 20% 58%, 22% 22%, 24% 52%, 26% 38%, 28% 62%, 30% 12%, 32% 46%, 34% 28%, 36% 56%, 38% 20%, 40% 50%, 42% 34%, 44% 60%, 46% 16%, 48% 48%, 50% 30%, 52% 58%, 54% 24%, 56% 52%, 58% 36%, 60% 62%, 62% 14%, 64% 46%, 66% 28%, 68% 56%, 70% 20%, 72% 50%, 74% 34%, 76% 60%, 78% 16%, 80% 48%, 82% 30%, 84% 58%, 86% 24%, 88% 52%, 90% 38%, 92% 62%, 94% 18%, 96% 48%, 98% 32%, 100% 55%, 100% 100%, 0 100%); opacity: .8; }
+	.tr { position: absolute; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 6px; background: #fff; display: grid; place-items: center; color: #0e0e11; z-index: 2; box-shadow: 0 2px 8px #000a; }
+	.tr svg { width: 12px; height: 12px; }
+	.head.main { box-shadow: inset 3px 0 0 var(--mint); }
+	.playhead { position: absolute; top: -24px; bottom: 0; left: 632px; width: 1.5px; background: #fff; z-index: 5; }
+	.playhead::before { content: ""; position: absolute; top: 0; left: -6px; width: 13px; height: 15px; background: #fff; border-radius: 3px 3px 7px 7px; }
+</style>
+</head>
+<body>
+<div class="app">
+	<header class="top">
+		<div class="brand"><i><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.7-5.9-3.4-5.9 3.4 1.3-6.7-4.9-4.6 6.6-.8z"/></svg></i>StarCapture</div>
+		<div class="menu"><span>Montage</span><span>Fichier</span><span>Édition</span><span>Affichage</span><span>Aide</span></div>
+		<div class="title">messi_wc2026 <em>enregistré</em></div>
+		<span class="spacer"></span>
+		<div class="chip"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></svg></div>
+		<div class="chip ai"><b></b>Monter avec Claude</div>
+		<div class="export"><svg viewBox="0 0 24 24"><path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4"/></svg>Exporter</div>
+	</header>
+
+	<section class="mid">
+		<div class="card lib">
+			<div class="tools">
+				<div class="on"><svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM10 9.5v5l4.5-2.5z"/></svg>Médias</div>
+				<div><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm10-2a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/></svg>Audio</div>
+				<div><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg>Texte</div>
+				<div><svg viewBox="0 0 24 24"><path d="M4 12h6l2-6 2 12 2-6h4"/></svg>Sous-titres</div>
+				<div><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6zM18.5 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>Effets</div>
+				<div><svg viewBox="0 0 24 24"><path d="M4 5h7v14H4zM13 5h7v14h-7zM8.5 12h7m0 0-2.5-2.5M15.5 12 13 14.5"/></svg>Transitions</div>
+				<div><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/></svg>Filtres</div>
+				<div><svg viewBox="0 0 24 24"><path d="M5 7h9m4 0h1M5 12h3m4 0h7M5 17h11m4 0h-.5"/><circle cx="16" cy="7" r="1.8"/><circle cx="10" cy="12" r="1.8"/><circle cx="18" cy="17" r="1.8"/></svg>Réglages</div>
+			</div>
+			<div class="libBody">
+				<div class="cats"><span class="on">Projet</span><span>Vidéos</span><span>Images</span><span>Sons</span><small>Sources</small><span>Higgsfield</span><span>Enregistrements</span><span>Dossier du projet</span></div>
+				<div class="grid">
+					<div class="import"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Importer<span>ou glisse des fichiers ici</span></div>
+					<div class="thumbs">
+						<div><div class="thumb used" style="background-image:url(f1.jpg)"><b>01:40</b></div><div class="name">messi_wc2026_goals.mp4</div></div>
+						<div><div class="thumb used" style="background-image:url(f2.jpg)"><b>00:34</b></div><div class="name">defile_final.mp4</div></div>
+						<div><div class="thumb" style="background-image:url(f4.jpg)"><b>00:03</b></div><div class="name">1_ldc_2015.mp4</div></div>
+						<div><div class="thumb" style="background-image:url(f5.jpg)"><b>00:03</b></div><div class="name">6_mondial_2022.mp4</div></div>
+						<div><div class="thumb" style="background-image:url(f6.jpg)"><b>00:04</b></div><div class="name">7_trophee.mp4</div></div>
+						<div><div class="thumb audio used"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm10-2a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/></svg><b>03:40</b></div><div class="name">faouzia_unethical.mp3</div></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="card player">
+			<div class="phead"><b>Lecteur</b>1920 × 1080 · 60 i/s</div>
+			<div class="screen"><div class="frame"><div class="caption">LE <i>MONDIAL</i> DE MESSI</div><div class="select"></div></div></div>
+			<div class="pbar" style="position:relative">
+				<span class="tc">00:00:26.14 <em>/ 00:01:47.00</em></span>
+				<div class="ctl"><svg viewBox="0 0 24 24"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg><div class="play"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg></div><svg viewBox="0 0 24 24"><path d="M18 5v14M5 5l9 7-9 7z"/></svg></div>
+				<span class="spacer"></span>
+				<span class="pill">Pleine qualité</span><span class="pill">16:9</span>
+				<svg viewBox="0 0 24 24" style="color:var(--muted)"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+			</div>
+		</div>
+
+		<div class="card insp">
+			<div class="itabs"><span class="on">Vidéo</span><span>Audio</span><span>Vitesse</span><span>Animation</span><span>Couleur</span></div>
+			<div class="ibody">
+				<div class="sub"><span class="on">Base</span><span>Détourage</span><span>Masque</span><span>Fondu</span></div>
+				<div class="sec"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>Transformation<i class="key on"></i></div>
+				<div class="field">Échelle<div class="slider"><i style="width:58%"></i><b style="left:58%"></b></div><div class="num">112 %</div></div>
+				<div class="field">Position X<div class="slider"><i style="width:50%"></i><b style="left:50%"></b></div><div class="num">0</div></div>
+				<div class="field">Position Y<div class="slider"><i style="width:46%"></i><b style="left:46%"></b></div><div class="num">-24</div></div>
+				<div class="field">Rotation<div class="slider"><i style="width:50%"></i><b style="left:50%"></b></div><div class="num">0°</div></div>
+				<div class="hr"></div>
+				<div class="sec"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>Fusion<i class="key"></i></div>
+				<div class="field">Opacité<div class="slider"><i style="width:100%"></i><b style="left:100%"></b></div><div class="num">100 %</div></div>
+				<div class="hr"></div>
+				<div class="sec"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>Étalonnage rapide</div>
+				<div class="swatches">
+					<div class="sw on"><span>Origine</span></div>
+					<div class="sw" style="filter:saturate(1.5) contrast(1.15)"><span>Stade</span></div>
+					<div class="sw" style="filter:sepia(.45) contrast(1.1)"><span>Ciné</span></div>
+					<div class="sw" style="filter:grayscale(1) contrast(1.2)"><span>Noir et blanc</span></div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="card tl">
+		<div class="tbar">
+			<div class="b on"><svg viewBox="0 0 24 24"><path d="M5 4l13 7.5-5.5 1.5L11 19z"/></svg></div>
+			<div class="b"><svg viewBox="0 0 24 24"><circle cx="6.5" cy="7" r="2.5"/><circle cx="6.5" cy="17" r="2.5"/><path d="M8.7 8.5 20 17M8.7 15.5 20 7"/></svg></div>
+			<span class="sep"></span>
+			<div class="b"><svg viewBox="0 0 24 24"><path d="M12 4v16M7 8H4v8h3M17 8h3v8h-3"/></svg></div>
+			<div class="b"><svg viewBox="0 0 24 24"><path d="M12 4v16M12 8H5v8h7"/></svg></div>
+			<div class="b"><svg viewBox="0 0 24 24"><path d="M12 4v16M12 8h7v8h-7"/></svg></div>
+			<div class="b"><svg viewBox="0 0 24 24"><path d="M6 7h12M9.5 7V5h5v2M8 7l.8 12h6.4L16 7"/></svg></div>
+			<span class="sep"></span>
+			<div class="txt ai"><svg viewBox="0 0 24 24"><path d="M4 12h3l2-5 3 10 2.5-7 1.5 2h4"/></svg>Couper les silences</div>
+			<div class="txt ai"><svg viewBox="0 0 24 24"><path d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6"/></svg>Sous-titres automatiques</div>
+			<span class="spacer"></span>
+			<div class="b on"><svg viewBox="0 0 24 24"><path d="M7 4v7a5 5 0 0 0 10 0V4M7 8h3M14 8h3"/></svg></div>
+			<div class="b"><svg viewBox="0 0 24 24"><path d="M9 12h6M7 8h3a4 4 0 0 1 0 8H7M17 8h-3M17 16h-3"/></svg></div>
+			<span class="sep"></span>
+			<div class="zoom"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg><div class="slider" style="flex:1"><i style="width:62%"></i><b style="left:62%"></b></div><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></div>
+		</div>
+		<div class="ruler"><span style="left:4px">00:00</span><span style="left:244px">00:10</span><span style="left:484px">00:20</span><span style="left:724px">00:30</span><span style="left:964px">00:40</span><span style="left:1204px">00:50</span><span style="left:1444px">01:00</span><span style="left:1684px">01:10</span></div>
+		<div class="tracks">
+			<div class="row" style="height:36px"><div class="head"><b>Texte</b><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z"/></svg></div><div class="lane">
+				<div class="clip t" style="left:14px;width:230px"><span>LE MONDIAL DE MESSI</span></div><div class="clip t" style="left:366px;width:150px"><span>But n° 1</span></div><div class="clip t" style="left:640px;width:170px"><span>But n° 2</span></div><div class="clip t" style="left:930px;width:200px"><span>But n° 3</span></div><div class="clip t" style="left:1380px;width:210px"><span>But n° 4</span></div>
+			</div></div>
+			<div class="row" style="height:36px"><div class="head"><b>Habillage</b><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z"/></svg></div><div class="lane">
+				<div class="clip o" style="left:360px;width:268px"><span>bandeau_1.png</span></div><div class="clip o" style="left:636px;width:282px"><span>bandeau_2.png</span></div><div class="clip o" style="left:926px;width:440px"><span>bandeau_3.png</span></div><div class="clip o" style="left:1374px;width:410px"><span>bandeau_4.png</span></div>
+			</div></div>
+			<div class="row" style="height:76px"><div class="head main"><b>Vidéo principale</b><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z"/></svg></div><div class="lane">
+				<div class="clip v" style="left:4px;width:268px;background-image:url(f1.jpg)"><span>messi_wc2026_goals.mp4</span></div>
+				<div class="clip v" style="left:274px;width:84px;background-image:url(f4.jpg)"><span>1_ldc_2015.mp4</span></div>
+				<div class="tr" style="left:358px"><svg viewBox="0 0 24 24"><path d="M4 6h6v12H4zM14 6h6v12h-6z"/></svg></div>
+				<div class="clip v" style="left:360px;width:268px;background-image:url(f2.jpg)"><span>messi_wc2026_goals.mp4</span></div>
+				<div class="clip v sel" style="left:630px;width:288px;background-image:url(f3.jpg)"><span style="left:14px">messi_wc2026_goals.mp4 · 112 %</span></div>
+				<div class="tr" style="left:920px"><svg viewBox="0 0 24 24"><path d="M4 6h6v12H4zM14 6h6v12h-6z"/></svg></div>
+				<div class="clip v" style="left:922px;width:444px;background-image:url(f5.jpg)"><span>messi_wc2026_goals.mp4</span></div>
+				<div class="clip v" style="left:1368px;width:420px;background-image:url(f6.jpg)"><span>messi_wc2026_goals.mp4</span></div>
+			</div></div>
+			<div class="row" style="height:52px"><div class="head"><b>Son d'origine</b><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM16 9a4 4 0 0 1 0 6"/></svg><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z"/></svg></div><div class="lane">
+				<div class="clip a" style="left:4px;width:268px"><span>messi_wc2026_goals.mp4</span></div><div class="clip a" style="left:360px;width:268px"><span>messi_wc2026_goals.mp4</span></div><div class="clip a" style="left:630px;width:288px"><span>messi_wc2026_goals.mp4</span></div><div class="clip a" style="left:922px;width:444px"><span>messi_wc2026_goals.mp4</span></div><div class="clip a" style="left:1368px;width:420px"><span>messi_wc2026_goals.mp4</span></div>
+			</div></div>
+			<div class="row" style="height:52px"><div class="head"><b>Musique</b><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM16 9a4 4 0 0 1 0 6"/></svg><svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z"/></svg></div><div class="lane">
+				<div class="clip m" style="left:4px;width:1784px"><span>faouzia_unethical.mp3</span></div>
+			</div></div>
+			<div class="playhead" style="left:764px"></div>
+		</div>
+	</section>
+</div>
+</body>
+</html>

@@ -183,7 +183,7 @@ export class WebviewEditor extends EditorPane {
 			containsGroup: (group) => this.group.id === group.id
 		}));
 
-		this._webviewVisibleDisposables.add(new WebviewWindowDragMonitor(this.window, () => this.webview));
+		this._webviewVisibleDisposables.add(new WebviewWindowDragMonitor(this.window, () => this.webview, () => this.input?.editorId === 'starcapture.editor'));
 
 		this.setWebviewAnchorElement(input.webview);
 		this._webviewVisibleDisposables.add(this.trackFocus(input.webview));

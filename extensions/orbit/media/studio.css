@@ -25,7 +25,8 @@ h2 { font-size: 1.4em; margin: 0 0 4px; letter-spacing: -.01em; }
 .row .control { display: flex; align-items: center; gap: 8px; }
 .row.end { justify-content: flex-end; }
 .row.gap { gap: 8px; flex-wrap: wrap; }
-.row select, .row input[type="text"] { padding: 4px 9px; min-width: 180px; }
+.row input[type="text"] { padding: 4px 9px; min-width: 180px; }
+.row .osel { min-width: 180px; height: 30px; }
 .row input.custom-in { min-width: 90px; width: 110px; }
 .row output { min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
 input[type="range"] { width: 180px; accent-color: var(--accent); }

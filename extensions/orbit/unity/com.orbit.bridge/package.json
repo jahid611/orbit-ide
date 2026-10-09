@@ -1,0 +1,10 @@
+{
+  "name": "com.orbit.bridge",
+  "version": "1.2.0",
+  "displayName": "Orbit Bridge",
+  "description": "Connects the Unity Editor to the Orbit IDE: live game view, hierarchy, inspector, console and play controls, and tools for Claude. Editor only; nothing is included in builds.",
+  "unity": "2021.3",
+  "author": {
+    "name": "Orbit"
+  }
+}

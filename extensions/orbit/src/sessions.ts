@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { AgentStatus, AgentTracker } from './agentTracker';
+import { randomBytes } from 'crypto';
 import { workspaceRoot } from './config';
 
 const NAMES_KEY = 'orbit.sessionNames';
@@ -33,8 +34,65 @@ export function projectSessionsDir(cwd = workspaceRoot()): string {
 export function cleanPrompt(text: string): string {
 	return text
 		.replace(/<(editor_context|attachment|system-reminder|command-[\w-]+|local-command-[\w-]+)[^>]*>[\s\S]*?<\/\1>/g, '')
+		.replace(/<\/?pasted_content[^>]*>/g, '')
 		.replace(/\s+/g, ' ')
 		.trim();
+}
+
+const PROJECTS_FILE = path.join(os.homedir(), '.orbit', 'projects.json');
+
+/**
+ * Claude Code files a discussion under the path of the folder it ran in: move or rename the
+ * folder, and its discussions are left behind under the old name. Orbit gives a project an
+ * identifier of its own, kept in `.orbit/project.json` inside the folder, and remembers in
+ * `~/.orbit/projects.json` every path that identifier has been seen at. The discussions of a
+ * project are those of all its paths, the current one first.
+ */
+export function projectPaths(root = workspaceRoot()): string[] {
+	if (!root) {
+		return [];
+	}
+	const same = (a: string, b: string) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+	try {
+		const marker = path.join(root, '.orbit', 'project.json');
+		let id: string | undefined;
+		try {
+			id = JSON.parse(fs.readFileSync(marker, 'utf8')).id;
+		} catch {
+			// The identifier is written the day the project has a discussion to keep: a folder that
+			// was only opened is left as it was found.
+			let has = false;
+			try {
+				has = fs.readdirSync(projectSessionsDir(root)).some(file => file.endsWith('.jsonl'));
+			} catch {
+				// no discussion yet
+			}
+			if (!has) {
+				return [root];
+			}
+			id = randomBytes(8).toString('hex');
+			fs.mkdirSync(path.dirname(marker), { recursive: true });
+			fs.writeFileSync(marker, `${JSON.stringify({ id, note: 'Identifiant du projet pour Orbit : il relie ce dossier à ses discussions, même déplacé ou renommé.' }, null, '\t')}\n`);
+		}
+		if (typeof id !== 'string' || !/^[\w-]{6,64}$/.test(id)) {
+			return [root];
+		}
+		let registry: Record<string, { paths: string[] }> = {};
+		try {
+			registry = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8'));
+		} catch {
+			// first project
+		}
+		const known = (registry[id]?.paths ?? []).filter(p => typeof p === 'string');
+		if (!known.some(p => same(p, root))) {
+			registry[id] = { paths: [root, ...known] };
+			fs.mkdirSync(path.dirname(PROJECTS_FILE), { recursive: true });
+			fs.writeFileSync(PROJECTS_FILE, `${JSON.stringify(registry, null, '\t')}\n`);
+		}
+		return [root, ...known.filter(p => !same(p, root))];
+	} catch {
+		return [root];
+	}
 }
 
 /** Reads Claude Code session transcripts of the current project. */
@@ -45,17 +103,24 @@ export class SessionStore {
 	constructor(private readonly state: vscode.Memento) { }
 
 	list(): SessionInfo[] {
-		const dir = projectSessionsDir();
-		let files: string[] = [];
-		try {
-			files = fs.readdirSync(dir).filter(f => f.endsWith('.jsonl') && !f.startsWith('agent-'));
-		} catch {
-			return [];
+		// The folders the project's discussions were filed under: its current path, then its former ones.
+		const files: string[] = [];
+		const seen = new Set<string>();
+		for (const dir of projectPaths().map(p => projectSessionsDir(p))) {
+			try {
+				for (const name of fs.readdirSync(dir)) {
+					if (name.endsWith('.jsonl') && !name.startsWith('agent-') && !seen.has(name)) {
+						seen.add(name);
+						files.push(path.join(dir, name));
+					}
+				}
+			} catch {
+				// nothing was ever said under that path
+			}
 		}
 		const names = this.names();
 		const sessions: SessionInfo[] = [];
-		for (const f of files) {
-			const file = path.join(dir, f);
+		for (const file of files) {
 			let mtime: number;
 			try {
 				mtime = fs.statSync(file).mtimeMs;
@@ -80,6 +145,34 @@ export class SessionStore {
 		return this.list().find(s => s.id === id);
 	}
 
+	/** The discussion last worked on in this project. */
+	latest(): SessionInfo | undefined {
+		return this.list()[0];
+	}
+
+	/**
+	 * Claude Code only resumes a discussion filed under the folder it runs in. One that was held
+	 * when the project lived elsewhere is brought over first (the original stays where it is).
+	 */
+	bringHome(id: string): void {
+		const session = this.get(id);
+		const home = projectSessionsDir();
+		if (!session || path.resolve(path.dirname(session.file)).toLowerCase() === path.resolve(home).toLowerCase()) {
+			return;
+		}
+		try {
+			fs.mkdirSync(home, { recursive: true });
+			fs.copyFileSync(session.file, path.join(home, path.basename(session.file)));
+			// What goes with it (sub-agents, tool results) sits in a folder of the same name.
+			const extras = session.file.replace(/\.jsonl$/, '');
+			if (fs.existsSync(extras)) {
+				fs.cpSync(extras, path.join(home, path.basename(extras)), { recursive: true });
+			}
+		} catch {
+			// the resume will say it cannot find it
+		}
+	}
+
 	async rename(id: string, name: string | undefined): Promise<void> {
 		const names = { ...this.names() };
 		if (name?.trim()) {
@@ -95,14 +188,34 @@ export class SessionStore {
 	}
 }
 
+const LARGE = 6 * 1024 * 1024;
+const EDGE = 768 * 1024;
+
 function parseSession(file: string, modified: number): SessionInfo | undefined {
 	let text: string;
 	try {
 		const stat = fs.statSync(file);
-		if (stat.size > 40 * 1024 * 1024) {
-			return undefined; // pathological transcript, skip rather than freeze
+		if (stat.size > LARGE) {
+			// Days of work make a transcript of tens of megabytes: reading it whole on every refresh
+			// would freeze the window, and leaving it out (as was done above 40 MB) hid exactly the
+			// discussions that matter most. Its beginning gives the first message, its end the
+			// title and the last message; the count is of what was read.
+			const fd = fs.openSync(file, 'r');
+			try {
+				const head = Buffer.alloc(EDGE);
+				const tail = Buffer.alloc(EDGE);
+				fs.readSync(fd, head, 0, EDGE, 0);
+				fs.readSync(fd, tail, 0, EDGE, stat.size - EDGE);
+				// Each end is cut on a line: the first line of the tail and the last of the head are partial.
+				const first = head.toString('utf8');
+				const last = tail.toString('utf8');
+				text = `${first.slice(0, first.lastIndexOf('\n'))}\n${last.slice(last.indexOf('\n') + 1)}`;
+			} finally {
+				fs.closeSync(fd);
+			}
+		} else {
+			text = fs.readFileSync(file, 'utf8');
 		}
-		text = fs.readFileSync(file, 'utf8');
 	} catch {
 		return undefined;
 	}
@@ -248,7 +361,7 @@ function liveLabel(status: AgentStatus): string {
 	switch (status) {
 		case 'running': return 'en cours…';
 		case 'waiting': return 'attend ton accord';
-		case 'done': return 'terminé ✓';
+		case 'done': return 'terminé';
 		default: return 'ouverte';
 	}
 }
