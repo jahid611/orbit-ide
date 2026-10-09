@@ -80,6 +80,8 @@ jobs:
           # complete before it, so what counts is that Orbit.exe is there.
           npm run gulp vscode-win32-x64-min
           if (-not (Test-Path ..\VSCode-win32-x64\Orbit.exe)) { throw "The build did not produce Orbit.exe" }
+          # npm ended in error because of that signing step: it must not fail this one.
+          $global:LASTEXITCODE = 0
       - name: Build the installer
         shell: pwsh
         run: |
