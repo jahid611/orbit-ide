@@ -47,6 +47,22 @@ export function sessionUsage(transcript: string | undefined): SessionUsage | und
 	}
 	const { usage, seen } = known;
 	const count = (line: string) => {
+		if (line.includes('"token_count"')) {
+			// ChatGPT (Codex) writes running totals: the last one read is the count.
+			try {
+				const info = (JSON.parse(line) as { payload?: { info?: { total_token_usage?: Record<string, number>; last_token_usage?: Record<string, number> } } }).payload?.info;
+				if (info?.total_token_usage) {
+					usage.output = info.total_token_usage.output_tokens ?? usage.output;
+					usage.cacheRead = info.total_token_usage.cached_input_tokens ?? usage.cacheRead;
+					usage.input = Math.max(0, (info.total_token_usage.input_tokens ?? 0) - usage.cacheRead);
+					usage.context = info.last_token_usage?.input_tokens ?? usage.context;
+					usage.messages++;
+				}
+			} catch {
+				// not a line of the log
+			}
+			return;
+		}
 		if (!line.includes('"usage"')) {
 			return;
 		}

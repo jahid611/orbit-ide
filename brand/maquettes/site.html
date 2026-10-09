@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Orbit — maquette du site</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #07061a; --panel: #0f0d26; --line: rgba(255, 255, 255, .08); --text: #edeaff; --muted: #9a96c4; --violet: #8b7bff; --mint: #5eead4; --orange: #f0935e; }
+* { box-sizing: border-box; margin: 0; }
+body { width: 1440px; background: var(--bg); color: var(--text); font: 16px/1.55 Inter, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+.wrap { width: 1180px; margin: 0 auto; }
+.mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+
+/* sky */
+.sky { position: absolute; inset: 0 0 auto 0; height: 1180px; overflow: hidden; z-index: 0; background: radial-gradient(900px 520px at 50% -80px, rgba(139, 123, 255, .34), transparent 70%), radial-gradient(700px 420px at 88% 260px, rgba(94, 234, 212, .12), transparent 70%); }
+.sky::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 31% 44%, #cfc8ff 50%, transparent 51%), radial-gradient(1.4px 1.4px at 58% 12%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 74% 36%, #b9fff3 50%, transparent 51%), radial-gradient(1px 1px at 88% 9%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 6% 62%, #fff 50%, transparent 51%), radial-gradient(1.2px 1.2px at 93% 58%, #d8d2ff 50%, transparent 51%), radial-gradient(1px 1px at 44% 70%, #fff 50%, transparent 51%); opacity: .7; }
+.ring { position: absolute; left: 50%; top: 330px; width: 1700px; height: 620px; margin-left: -850px; border-radius: 50%; border: 1px solid rgba(139, 123, 255, .28); transform: rotate(-8deg); }
+.ring.two { top: 380px; width: 2100px; margin-left: -1050px; border-color: rgba(94, 234, 212, .12); }
+
+header { position: relative; z-index: 2; }
+nav { display: flex; align-items: center; height: 76px; }
+.brand { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 19px; letter-spacing: -.01em; }
+.brand img { width: 34px; height: 34px; border-radius: 9px; }
+nav .links { display: flex; gap: 30px; margin-left: 56px; color: var(--muted); font-size: 14.5px; font-weight: 500; }
+nav .right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.gh { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); font-size: 14px; font-weight: 500; }
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 38px; padding: 0 18px; border-radius: 10px; font-weight: 600; font-size: 14.5px; color: #0b0920; background: linear-gradient(180deg, #a99cff, var(--violet)); box-shadow: 0 8px 30px rgba(139, 123, 255, .35), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.btn.big { height: 54px; padding: 0 26px; border-radius: 14px; font-size: 16.5px; }
+.btn.ghost { color: var(--text); background: rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 1px var(--line); }
+svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+.hero { position: relative; z-index: 2; text-align: center; padding: 74px 0 0; }
+.pill { display: inline-flex; align-items: center; gap: 9px; height: 32px; padding: 0 14px 0 6px; border-radius: 99px; background: rgba(139, 123, 255, .12); box-shadow: inset 0 0 0 1px rgba(139, 123, 255, .3); color: #cfc8ff; font-size: 13px; font-weight: 500; }
+.pill b { padding: 2px 9px; border-radius: 99px; background: var(--violet); color: #0b0920; font-size: 11.5px; font-weight: 700; }
+h1 { margin: 26px auto 0; max-width: 980px; font-size: 76px; line-height: 1.02; letter-spacing: -.045em; font-weight: 800; }
+h1 em { font-style: normal; background: linear-gradient(100deg, #b7acff 10%, var(--mint) 90%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { max-width: 690px; margin: 24px auto 0; color: var(--muted); font-size: 19.5px; line-height: 1.55; }
+.cta { display: flex; justify-content: center; gap: 14px; margin-top: 36px; }
+.under { margin-top: 16px; color: #746fa3; font-size: 13.5px; }
+.shot { position: relative; margin: 62px auto 0; width: 1180px; border-radius: 18px; padding: 8px; background: linear-gradient(180deg, rgba(139, 123, 255, .5), rgba(139, 123, 255, .06) 55%, rgba(94, 234, 212, .25)); box-shadow: 0 60px 140px rgba(60, 40, 180, .45); }
+.shot img { display: block; width: 100%; border-radius: 12px; }
+
+.with { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 44px; margin-top: 64px; color: #7f7aae; font-size: 13.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+.with span.l { display: flex; align-items: center; gap: 10px; color: #c9c5ea; font-size: 17px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.dot { width: 9px; height: 9px; border-radius: 50%; }
+
+section { position: relative; z-index: 2; padding: 120px 0 0; }
+.eyebrow { color: var(--mint); font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+h2 { margin-top: 14px; font-size: 48px; line-height: 1.08; letter-spacing: -.035em; font-weight: 700; max-width: 760px; }
+.sub { margin-top: 18px; max-width: 620px; color: var(--muted); font-size: 18px; }
+
+.duo { display: grid; grid-template-columns: 470px 1fr; gap: 64px; align-items: center; margin-top: 8px; }
+.duo.flip { grid-template-columns: 1fr 470px; }
+.duo.flip .copy { order: 2; }
+.points { margin-top: 30px; display: grid; gap: 18px; }
+.point { display: grid; grid-template-columns: 38px 1fr; gap: 14px; }
+.point i { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: rgba(139, 123, 255, .14); color: #b9afff; }
+.point b { display: block; font-size: 16px; font-weight: 600; }
+.point span { color: var(--muted); font-size: 15px; }
+.frame { border-radius: 16px; padding: 6px; background: linear-gradient(160deg, rgba(139, 123, 255, .4), rgba(255, 255, 255, .04) 60%); box-shadow: 0 40px 100px rgba(0, 0, 0, .5); }
+.frame img { display: block; width: 100%; border-radius: 11px; }
+
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 54px; }
+.card { padding: 26px; border-radius: 18px; background: linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .015)); box-shadow: inset 0 0 0 1px var(--line); }
+.card i { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: rgba(94, 234, 212, .12); color: var(--mint); }
+.card h3 { margin-top: 18px; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+.card p { margin-top: 8px; color: var(--muted); font-size: 15px; }
+
+.loop { margin-top: 54px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-radius: 20px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); background: var(--panel); }
+.step { padding: 30px 28px 32px; border-right: 1px solid var(--line); }
+.step:last-child { border-right: 0; }
+.step .n { color: var(--violet); font-size: 13px; font-weight: 600; }
+.step h3 { margin-top: 12px; font-size: 19px; font-weight: 600; }
+.step p { margin-top: 8px; color: var(--muted); font-size: 14.5px; }
+
+.studios { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 54px; }
+.studio { border-radius: 22px; overflow: hidden; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+.studio img { display: block; width: 100%; height: 330px; object-fit: cover; object-position: left top; }
+.studio .t { padding: 26px 28px 30px; }
+.studio .tag { color: var(--orange); font-size: 12.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.studio.game .tag { color: var(--mint); }
+.studio h3 { margin-top: 10px; font-size: 25px; letter-spacing: -.02em; font-weight: 700; }
+.studio p { margin-top: 10px; color: var(--muted); font-size: 15.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chips span { padding: 5px 11px; border-radius: 99px; background: rgba(255, 255, 255, .06); color: #c9c5ea; font-size: 12.5px; font-weight: 500; }
+
+.tools { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 40px; }
+.tools span { padding: 10px 16px; border-radius: 12px; background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px var(--line); font-size: 14.5px; font-weight: 500; color: #d6d2f2; }
+
+.dl { margin-top: 120px; padding: 70px; border-radius: 30px; text-align: center; background: radial-gradient(700px 300px at 50% 0, rgba(139, 123, 255, .35), transparent 70%), var(--panel); box-shadow: inset 0 0 0 1px rgba(139, 123, 255, .3); }
+.dl img { width: 84px; height: 84px; border-radius: 22px; box-shadow: 0 20px 60px rgba(139, 123, 255, .5); }
+.dl h2 { margin: 26px auto 0; }
+.os { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; text-align: left; }
+.os div { padding: 22px; border-radius: 16px; background: rgba(255, 255, 255, .04); box-shadow: inset 0 0 0 1px var(--line); }
+.os b { display: block; font-size: 17px; }
+.os span { display: block; margin-top: 4px; color: var(--muted); font-size: 13.5px; }
+.os a { display: inline-flex; margin-top: 16px; }
+
+footer { margin-top: 110px; padding: 40px 0 56px; border-top: 1px solid var(--line); color: #7f7aae; font-size: 14px; }
+footer .wrap { display: flex; align-items: center; gap: 30px; }
+footer .wrap span:last-child { margin-left: auto; }
+</style>
+</head>
+<body>
+<div class="sky"><div class="ring"></div><div class="ring two"></div></div>
+<header><div class="wrap"><nav>
+	<a class="brand"><img src="../orbit-icon-1024.png" alt="">Orbit</a>
+	<div class="links"><a>Agents</a><a>Boucle fermée</a><a>StarCapture</a><a>NovaGame</a><a>Outils</a><a>Documentation</a></div>
+	<div class="right"><a class="gh"><svg class="i" viewBox="0 0 24 24"><path d="M9 19c-4.5 1.4-4.5-2.3-6.300-2.800M15 22v-3.500c0-1 .1-1.400-.5-2 2.800-.3 5.500-1.400 5.500-6a4.600 4.600 0 0 0-1.300-3.200 4.200 4.200 0 0 0-.1-3.200s-1.100-.3-3.500 1.300a12 12 0 0 0-6.200 0C6.500 3.800 5.400 4.100 5.400 4.100a4.200 4.200 0 0 0-.1 3.200A4.600 4.600 0 0 0 4 10.500c0 4.600 2.700 5.700 5.500 6-.6.600-.6 1.200-.5 2V22"/></svg>GitHub</a><a class="btn">Télécharger</a></div>
+</nav></div></header>
+
+<div class="hero"><div class="wrap">
+	<span class="pill"><b>1.0</b>Disponible pour Windows et macOS</span>
+	<h1>L'IDE où tes agents <em>travaillent en orbite</em></h1>
+	<p class="lead">Claude Code ou ChatGPT dans de vrais terminaux, et un éditeur qui sait ce que fait chacun d'eux : qui écrit quoi, qui attend, ce qui a cassé.</p>
+	<div class="cta"><a class="btn big"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Télécharger pour Windows</a><a class="btn big ghost">macOS · Apple Silicon</a></div>
+	<p class="under">Gratuit et open source · fonctionne avec ton abonnement Claude ou ChatGPT, sans clé d'API</p>
+	<div class="shot"><img src="../promo/assets/hd/grille.png" alt=""></div>
+</div></div>
+
+<div class="with"><span>Fait pour</span><span class="l"><i class="dot" style="background:#d97757"></i>Claude Code</span><span class="l"><i class="dot" style="background:#10a37f"></i>ChatGPT · Codex</span><span>Basé sur</span><span class="l">Code - OSS</span><span class="l">Open VSX</span></div>
+
+<section><div class="wrap duo">
+	<div class="copy">
+		<div class="eyebrow">Des agents, pas un chat</div>
+		<h2>Chaque agent a sa planète</h2>
+		<p class="sub">Lance deux, quatre ou six agents côte à côte. Orbit suit chacun en direct et te prévient avant qu'ils se marchent dessus.</p>
+		<div class="points">
+			<div class="point"><i><svg class="i" viewBox="0 0 24 24"><path d="M4 5h7v6H4zM13 5h7v6h-7zM4 13h7v6H4zM13 13h7v6h-7z"/></svg></i><div><b>Grille d'agents</b><span>Onglets, splits, un worktree git par agent, statut sur chaque onglet.</span></div></div>
+			<div class="point"><i><svg class="i" viewBox="0 0 24 24"><path d="M12 4l9 15.500H3zM12 10v4M12 17v.100"/></svg></i><div><b>Radar de collision</b><span>Alerte dès que deux agents modifient le même fichier.</span></div></div>
+			<div class="point"><i><svg class="i" viewBox="0 0 24 24"><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 20a7 7 0 0 1 14 0"/></svg></i><div><b>Chef d'équipe</b><span>Un agent découpe la tâche, crée les autres et te rend le résultat.</span></div></div>
+		</div>
+	</div>
+	<div class="frame"><img src="../promo/assets/hd/orbite.png" alt=""></div>
+</div></section>
+
+<section><div class="wrap">
+	<div class="eyebrow">La boucle fermée</div>
+	<h2>L'agent écrit. Orbit vérifie. Tu valides.</h2>
+	<p class="sub">Plus besoin de relire chaque ligne pour savoir si ça marche : Orbit relance les contrôles et montre le résultat à l'agent.</p>
+	<div class="loop">
+		<div class="step"><div class="n mono">01</div><h3>Vérification</h3><p>Types, lint et tests relancés à la fin de chaque tour. Les échecs repartent chez l'agent.</p></div>
+		<div class="step"><div class="n mono">02</div><h3>Relecture visuelle</h3><p>Captures avant et après de la page modifiée, que l'agent regarde lui-même.</p></div>
+		<div class="step"><div class="n mono">03</div><h3>Vue vivante</h3><p>Ton site à côté du code, sur 14 appareils. Un clic remonte au fichier et à la ligne.</p></div>
+		<div class="step"><div class="n mono">04</div><h3>Retour arrière</h3><p>Une photo du projet à chaque message. Annule un tour entier ou un seul fichier.</p></div>
+	</div>
+</div></section>
+
+<section><div class="wrap duo flip">
+	<div class="frame"><img src="../promo/assets/hd/vivante.png" alt=""></div>
+	<div class="copy">
+		<div class="eyebrow">Vue vivante</div>
+		<h2>Montre du doigt ce qu'il faut changer</h2>
+		<p class="sub">Clique un bouton, un titre, une carte : l'agent reçoit l'élément, son fichier et sa ligne. Les erreurs de la page lui arrivent toutes seules.</p>
+	</div>
+</div></section>
+
+<section><div class="wrap">
+	<div class="eyebrow">Deux ateliers dans l'éditeur</div>
+	<h2>Monte une vidéo. Fais un jeu. Sans changer de fenêtre.</h2>
+	<div class="studios">
+		<div class="studio"><img src="../promo/assets/hd/starcapture.png" alt=""><div class="t"><div class="tag">StarCapture</div><h3>Le montage vidéo, piloté par l'agent</h3><p>Une vraie timeline, des sous-titres mot par mot, la coupe des silences. Demande « fais-moi un short de ce match » et regarde le montage se faire.</p><div class="chips"><span>Sous-titres karaoké</span><span>Export rapide</span><span>Effets réutilisables</span></div></div></div>
+		<div class="studio game"><img src="../promo/assets/hd/jeu.jpg" alt=""><div class="t"><div class="tag">NovaGame</div><h3>Ton jeu Unity tourne dans l'IDE</h3><p>La scène, l'inspecteur et le jeu jouable au clavier, à côté de l'agent qui écrit les scripts et voit ce qu'il a construit.</p><div class="chips"><span>Unity</span><span>Jouable dans Orbit</span><span>L'agent voit la scène</span></div></div></div>
+	</div>
+</div></section>
+
+<section><div class="wrap">
+	<div class="eyebrow">Tout le reste</div>
+	<h2>Les outils d'un projet, déjà branchés</h2>
+	<div class="grid">
+		<div class="card"><i><svg class="i" viewBox="0 0 24 24"><path d="M12 4l9 15H3z"/></svg></i><h3>Mise en ligne en un clic</h3><p>Vercel, dépôt GitHub et domaine depuis l'éditeur, journal de construction compris.</p></div>
+		<div class="card"><i><svg class="i" viewBox="0 0 24 24"><path d="M5 6c0-1.100 3.100-2 7-2s7 .900 7 2-3.100 2-7 2-7-.900-7-2zM5 6v12c0 1.100 3.100 2 7 2s7-.900 7-2V6M5 12c0 1.100 3.100 2 7 2s7-.900 7-2"/></svg></i><h3>Base de données et paiement</h3><p>Supabase, Stripe, SQLite et PostgreSQL : tables, clés et liens de paiement sans quitter Orbit.</p></div>
+		<div class="card"><i><svg class="i" viewBox="0 0 24 24"><path d="M8 11V8a4 4 0 0 1 8 0v3M6 11h12v9H6z"/></svg></i><h3>Secrets cachés aux agents</h3><p>Les fichiers .env restent masqués : l'agent connaît les noms, jamais les valeurs.</p></div>
+		<div class="card"><i><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i><h3>File de nuit</h3><p>Empile les tâches le soir, retrouve un compte rendu par tâche le matin.</p></div>
+		<div class="card"><i><svg class="i" viewBox="0 0 24 24"><path d="M7 4h10v16H7zM11 17h2"/></svg></i><h3>Sur ton téléphone</h3><p>Une notification quand un agent attend ton accord ou a terminé.</p></div>
+		<div class="card"><i><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.500 5.500L20 9.500l-4 4 1 6-5-3-5 3 1-6-4-4 5.500-1z"/></svg></i><h3>À ton image</h3><p>Six thèmes, fond d'écran, dispositions, CSS libre : le Studio règle tout en direct.</p></div>
+	</div>
+	<div class="tools"><span>Figma vers code</span><span>Magasin de connecteurs</span><span>Tableau de tâches</span><span>Higgsfield</span><span>Recettes</span><span>Commit intelligent</span><span>Lecteur PDF et PowerPoint</span><span>Communauté de templates</span><span>Édition en ligne</span></div>
+</div></section>
+
+<div class="wrap"><div class="dl">
+	<img src="../orbit-icon-1024.png" alt="">
+	<h2>Mets ton code en orbite</h2>
+	<p class="sub" style="margin-left:auto;margin-right:auto">Gratuit, open source, et il se met à jour tout seul.</p>
+	<div class="os">
+		<div><b>Windows</b><span>Windows 10 et 11 · x64</span><a class="btn">Télécharger l'installateur</a></div>
+		<div><b>macOS</b><span>Apple Silicon (M1 et suivants)</span><a class="btn ghost">Télécharger le .zip</a></div>
+		<div><b>Linux</b><span>Depuis les sources</span><a class="btn ghost">Voir sur GitHub</a></div>
+	</div>
+</div></div>
+
+<footer><div class="wrap"><a class="brand" style="font-size:16px"><img src="../orbit-icon-1024.png" alt="" style="width:26px;height:26px;border-radius:7px">Orbit</a><span>Documentation</span><span>Nouveautés</span><span>GitHub</span><span>Licence MIT · sans lien avec Microsoft, Anthropic ni OpenAI</span></div></footer>
+</body>
+</html>

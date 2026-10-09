@@ -55,6 +55,7 @@ export class Bridge implements vscode.Disposable {
 		}
 		this.server.listen(0, '127.0.0.1', () => {
 			this.port = (this.server.address() as AddressInfo).port;
+			this.prune();
 			this.register();
 		});
 		this.disposables.push(vscode.window.onDidChangeWindowState(s => {
@@ -69,6 +70,32 @@ export class Bridge implements vscode.Disposable {
 		this.server.close();
 		fs.rmSync(this.entry, { force: true });
 		this.disposables.forEach(d => d.dispose());
+	}
+
+	/** Says again which montages this window has open: the tools pick the window by them. */
+	refresh(): void {
+		this.register();
+	}
+
+	/** A window that was killed never removed its entry: those of processes that are gone are cleared. */
+	private prune(): void {
+		try {
+			for (const name of fs.readdirSync(REGISTRY)) {
+				const pid = Number(path.basename(name, '.json'));
+				if (!pid || pid === process.pid) {
+					continue;
+				}
+				try {
+					process.kill(pid, 0);
+				} catch (error) {
+					if ((error as NodeJS.ErrnoException).code === 'ESRCH') {
+						fs.rmSync(path.join(REGISTRY, name), { force: true });
+					}
+				}
+			}
+		} catch {
+			// no registry yet
+		}
 	}
 
 	private register(): void {

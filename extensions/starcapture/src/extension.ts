@@ -63,7 +63,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	const bridge = new Bridge(context, provider, runExport);
 	const home = new Home(context, provider);
-	provider.onOpened = doc => home.remember(doc.file);
+	provider.onOpened = doc => {
+		home.remember(doc.file);
+		bridge.refresh();
+	};
 	context.subscriptions.push(home, new Recorder());
 
 	context.subscriptions.push(

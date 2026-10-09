@@ -473,10 +473,13 @@ export class ClaudeTerminals implements vscode.Disposable {
 	private lastDiscussion: (() => { id: string; name?: string; title: string } | undefined) | undefined;
 
 	/** How to tell a terminal whose agent is gone, and which discussion the project was last on. */
-	setReopening(gone: (terminal: vscode.Terminal) => boolean, lastDiscussion: () => { id: string; name?: string; title: string } | undefined): void {
+	setReopening(gone: (terminal: vscode.Terminal) => boolean, lastDiscussion: () => { id: string; name?: string; title: string } | undefined, known: Promise<unknown>): void {
 		this.goneProvider = gone;
 		this.lastDiscussion = lastDiscussion;
+		this.ghostsKnown = known;
 	}
+	/** Settles once every terminal that came back with the window has been looked at. */
+	private ghostsKnown: Promise<unknown> = Promise.resolve();
 
 	/** Open the first Claude terminal when a project opens, like a fresh Claude Code session. */
 	autoStart(): void {
@@ -497,7 +500,10 @@ export class ClaudeTerminals implements vscode.Disposable {
 			return;
 		}
 		// Give revived terminals a moment to come back before deciding.
-		setTimeout(() => {
+		setTimeout(async () => {
+			// Telling an agent's terminal from the shell it left behind asks the system a question:
+			// the answer used to come after the decision, and the dead shell stayed alone.
+			await Promise.race([this.ghostsKnown, new Promise(resolve => setTimeout(resolve, 12000))]);
 			for (const t of vscode.window.terminals) {
 				this.adopt(t);
 			}

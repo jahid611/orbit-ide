@@ -11,6 +11,7 @@ import { ClaudeTerminals } from './claudeTerminals';
 import { clipboardImages, saveDataUrl } from './pasteImage';
 import { cleanPrompt } from './sessions';
 import { renderWebview, webviewOptions } from './webview';
+import { claudeShaped } from './transcript';
 
 type ChatItem =
 	| { kind: 'user'; id: string; text: string }
@@ -299,7 +300,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private ingest(entry: any): boolean {
+	private ingest(raw: any): boolean {
+		const entry = claudeShaped(raw);
 		if (entry.isSidechain || entry.isMeta) {
 			return false;
 		}

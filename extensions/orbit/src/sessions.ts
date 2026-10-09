@@ -10,6 +10,8 @@ import * as path from 'path';
 import { AgentStatus, AgentTracker } from './agentTracker';
 import { randomBytes } from 'crypto';
 import { workspaceRoot } from './config';
+import { assistantId } from './assistant';
+import { claudeShaped } from './transcript';
 
 const NAMES_KEY = 'orbit.sessionNames';
 
@@ -106,7 +108,10 @@ export class SessionStore {
 		// The folders the project's discussions were filed under: its current path, then its former ones.
 		const files: string[] = [];
 		const seen = new Set<string>();
-		for (const dir of projectPaths().map(p => projectSessionsDir(p))) {
+		if (assistantId() === 'chatgpt') {
+			files.push(...codexSessions(projectPaths()));
+		}
+		for (const dir of assistantId() === 'chatgpt' ? [] : projectPaths().map(p => projectSessionsDir(p))) {
 			try {
 				for (const name of fs.readdirSync(dir)) {
 					if (name.endsWith('.jsonl') && !name.startsWith('agent-') && !seen.has(name)) {
@@ -188,6 +193,57 @@ export class SessionStore {
 	}
 }
 
+const CODEX_SESSIONS = path.join(os.homedir(), '.codex', 'sessions');
+/** Which folder each Codex session log was held in, read once from its first line. */
+const codexFolders = new Map<string, string>();
+
+/**
+ * ChatGPT's discussions. Codex files its session logs by date (`~/.codex/sessions/2026/10/04/…`),
+ * all projects together: the folder each one was held in is written on its first line.
+ */
+function codexSessions(roots: string[]): string[] {
+	const wanted = new Set(roots.map(root => path.resolve(root).toLowerCase()));
+	const found: string[] = [];
+	const walk = (dir: string, depth: number) => {
+		let entries: fs.Dirent[];
+		try {
+			entries = fs.readdirSync(dir, { withFileTypes: true });
+		} catch {
+			return;
+		}
+		for (const entry of entries) {
+			const file = path.join(dir, entry.name);
+			if (entry.isDirectory() && depth < 4) {
+				walk(file, depth + 1);
+			} else if (entry.name.startsWith('rollout-') && entry.name.endsWith('.jsonl')) {
+				let cwd = codexFolders.get(file);
+				if (cwd === undefined) {
+					cwd = '';
+					try {
+						const fd = fs.openSync(file, 'r');
+						try {
+							const head = Buffer.alloc(8192);
+							const read = fs.readSync(fd, head, 0, head.length, 0);
+							cwd = /"cwd":("(?:[^"\\]|\\.)*")/.exec(head.toString('utf8', 0, read))?.[1] ?? '';
+							cwd = cwd ? path.resolve(JSON.parse(cwd)).toLowerCase() : '';
+						} finally {
+							fs.closeSync(fd);
+						}
+					} catch {
+						// unreadable: left out
+					}
+					codexFolders.set(file, cwd);
+				}
+				if (cwd && wanted.has(cwd)) {
+					found.push(file);
+				}
+			}
+		}
+	};
+	walk(CODEX_SESSIONS, 0);
+	return found;
+}
+
 const LARGE = 6 * 1024 * 1024;
 const EDGE = 768 * 1024;
 
@@ -224,6 +280,7 @@ function parseSession(file: string, modified: number): SessionInfo | undefined {
 	let firstPrompt = '';
 	let lastPrompt = '';
 	let messages = 0;
+	let codexId = '';
 	for (const line of text.split('\n')) {
 		if (!line) {
 			continue;
@@ -234,6 +291,16 @@ function parseSession(file: string, modified: number): SessionInfo | undefined {
 		} catch {
 			continue;
 		}
+		if (entry.type === 'session_meta') {
+			// A Codex session log: its identifier is inside, not in the name of the file.
+			codexId = String(entry.payload?.id ?? entry.payload?.session_id ?? '');
+			// A helper Codex started by itself is part of another discussion, not one of the user's.
+			if (entry.payload?.thread_source && entry.payload.thread_source !== 'user') {
+				return undefined;
+			}
+			continue;
+		}
+		entry = claudeShaped(entry);
 		switch (entry.type) {
 			case 'ai-title':
 				aiTitle = entry.aiTitle || aiTitle;
@@ -260,7 +327,7 @@ function parseSession(file: string, modified: number): SessionInfo | undefined {
 			}
 		}
 	}
-	const id = path.basename(file, '.jsonl');
+	const id = codexId || path.basename(file, '.jsonl');
 	return {
 		id,
 		file,

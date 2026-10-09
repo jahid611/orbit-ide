@@ -148,14 +148,13 @@ export function activate(context: vscode.ExtensionContext): void {
 			execFile('pgrep', ['-P', String(pid)], { timeout: 10000 }, (err, out) => resolve(err && (err as NodeJS.ErrnoException).code === 'ENOENT' ? true : String(out).trim().length > 0));
 		}
 	});
-	for (const terminal of vscode.window.terminals) {
-		terminal.processId.then(async pid => {
-			const key = claude.isClaude(terminal) ? claude.keyOf(terminal) : undefined;
-			if (key && pid && !tracker.get(key)?.ended && !await runsSomething(pid)) {
-				tracker.markEnded(key);
-			}
-		});
-	}
+	// Kept: what opens when a project opens waits for this answer (see `setReopening`).
+	const ghostsKnown = Promise.all(vscode.window.terminals.map(terminal => Promise.resolve(terminal.processId).then(async pid => {
+		const key = claude.isClaude(terminal) ? claude.keyOf(terminal) : undefined;
+		if (key && pid && !tracker.get(key)?.ended && !await runsSomething(pid)) {
+			tracker.markEnded(key);
+		}
+	}).catch(() => undefined)));
 	claude.setWaitingProvider(t => tracker.get(claude.keyOf(t))?.status === 'waiting');
 	// Before any Claude starts: it writes the MCP config every Claude terminal receives.
 	const control = new OrbitControl(context.extensionPath, claude, tracker);
@@ -498,8 +497,13 @@ export function activate(context: vscode.ExtensionContext): void {
 		terminal => tracker.get(claude.keyOf(terminal))?.ended === true,
 		() => {
 			const last = store.latest();
+			// Held when the project lived elsewhere: brought under its present path, or it cannot be resumed.
+			if (last) {
+				store.bringHome(last.id);
+			}
 			return last && { id: last.id, name: last.customName, title: last.title };
 		},
+		ghostsKnown,
 	);
 	claude.autoStart();
 	// Whatever the start-up settings, agents of another assistant than the one in use do not stay.
