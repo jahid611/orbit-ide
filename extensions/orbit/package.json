@@ -588,6 +588,12 @@
         "title": "Supabase : ouvrir le tableau de bord du projet dans le navigateur",
         "category": "Orbit",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "orbit.tools.menu",
+        "title": "Outils du projet",
+        "category": "Orbit",
+        "icon": "$(tools)"
       }
     ],
     "menus": {
@@ -798,8 +804,13 @@
           "group": "navigation@86"
         },
         {
+          "command": "orbit.tools.menu",
+          "when": "view == terminal && orbit.hasMenu",
+          "group": "navigation@85"
+        },
+        {
           "submenu": "orbit.toolsMenu",
-          "when": "view == terminal",
+          "when": "view == terminal && !orbit.hasMenu",
           "group": "navigation@85"
         }
       ],
@@ -904,6 +915,10 @@
         },
         {
           "command": "orbit.phone.test",
+          "when": "false"
+        },
+        {
+          "command": "orbit.tools.menu",
           "when": "false"
         }
       ],

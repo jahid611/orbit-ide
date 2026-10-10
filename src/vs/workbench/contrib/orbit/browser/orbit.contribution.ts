@@ -608,3 +608,139 @@ CommandsRegistry.registerCommand('_orbit.tour', (accessor, step: IOrbitTourStep 
 	store.add({ dispose: () => mainWindow.clearInterval(timer) });
 	return true;
 });
+
+interface IOrbitMenuItem {
+	id: string;
+	label: string;
+	detail?: string;
+	/** A picture on the disk (a logo), or the name of a codicon. */
+	image?: string;
+	icon?: string;
+	keys?: string;
+}
+
+interface IOrbitMenu {
+	/** Part of the label of the toolbar button the menu drops under. */
+	anchor: string;
+	groups: { title?: string; items: IOrbitMenuItem[] }[];
+}
+
+const ORBIT_MENU_CSS = `
+.orbit-menu { position: fixed; z-index: 2600; min-width: 300px; max-width: 400px; max-height: calc(100vh - 80px); overflow-y: auto; padding: 6px; border-radius: 12px; color: var(--vscode-menu-foreground, var(--vscode-foreground)); background: var(--vscode-menu-background, var(--vscode-editorWidget-background)); border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, rgba(255, 255, 255, .12))); box-shadow: 0 18px 50px rgba(0, 0, 0, .5); font-size: 13px; animation: orbit-menu-in .12s ease-out; outline: none; }
+@keyframes orbit-menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.orbit-menu-title { padding: 8px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .55; }
+.orbit-menu-group + .orbit-menu-group { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--vscode-menu-separatorBackground, rgba(255, 255, 255, .1)); }
+.orbit-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 10px; border: 0; border-radius: 8px; color: inherit; background: none; font: inherit; text-align: left; cursor: pointer; }
+.orbit-menu-item.focused { color: var(--vscode-menu-selectionForeground, inherit); background: var(--vscode-menu-selectionBackground, var(--vscode-list-hoverBackground)); }
+.orbit-menu-mark { display: grid; place-items: center; flex: none; width: 22px; height: 22px; }
+.orbit-menu-mark img { width: 18px; height: 18px; object-fit: contain; }
+.orbit-menu-mark .codicon { font-size: 16px; }
+.orbit-menu-text { flex: 1; min-width: 0; }
+.orbit-menu-label { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.orbit-menu-detail { display: block; font-size: 11.5px; opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.orbit-menu-keys { flex: none; font-size: 11px; opacity: .55; }
+`;
+
+let orbitMenu: { close: (picked?: string) => void } | undefined;
+
+/**
+ * A menu of the Orbit extension that drops under one of its toolbar buttons, with a picture on
+ * each line (the real logo of a service, or a codicon) and a second line of text: the menus an
+ * extension can contribute show neither. Resolves with the id of the chosen item.
+ */
+CommandsRegistry.registerCommand('_orbit.menu', (_accessor, menu: IOrbitMenu | undefined): Promise<string | undefined> => {
+	orbitMenu?.close();
+	if (!menu?.groups?.length) {
+		return Promise.resolve(undefined);
+	}
+	if (!mainWindow.document.getElementById('orbit-menu-style')) {
+		createStyleSheet(mainWindow.document.head, style => {
+			style.id = 'orbit-menu-style';
+			style.textContent = ORBIT_MENU_CSS;
+		});
+	}
+	return new Promise(resolve => {
+		const store = new DisposableStore();
+		const host = mainWindow.document.querySelector<HTMLElement>('.monaco-workbench') ?? mainWindow.document.body;
+		const root = append(host, $('.orbit-menu'));
+		root.tabIndex = -1;
+		root.setAttribute('role', 'menu');
+		const rows: { element: HTMLElement; id: string }[] = [];
+		const close = (picked?: string) => {
+			if (orbitMenu?.close === close) {
+				orbitMenu = undefined;
+			}
+			store.dispose();
+			root.remove();
+			resolve(picked);
+		};
+		orbitMenu = { close };
+		let focused = -1;
+		const focus = (index: number) => {
+			focused = (index + rows.length) % rows.length;
+			rows.forEach((row, i) => row.element.classList.toggle('focused', i === focused));
+			rows[focused]?.element.scrollIntoView({ block: 'nearest' });
+		};
+		for (const group of menu.groups) {
+			const section = append(root, $('.orbit-menu-group'));
+			if (group.title) {
+				append(section, $('.orbit-menu-title')).textContent = group.title;
+			}
+			for (const item of group.items) {
+				const element = append(section, $('button.orbit-menu-item'));
+				element.setAttribute('role', 'menuitem');
+				const mark = append(element, $('span.orbit-menu-mark'));
+				if (item.image) {
+					const image = append(mark, $('img')) as HTMLImageElement;
+					image.alt = '';
+					image.src = FileAccess.uriToBrowserUri(URI.file(item.image)).toString(true);
+				} else if (item.icon) {
+					append(mark, $(`span.codicon.codicon-${item.icon.replace(/[^a-z0-9-]/gi, '')}`));
+				}
+				const text = append(element, $('span.orbit-menu-text'));
+				append(text, $('span.orbit-menu-label')).textContent = item.label;
+				if (item.detail) {
+					append(text, $('span.orbit-menu-detail')).textContent = item.detail;
+				}
+				if (item.keys) {
+					append(element, $('span.orbit-menu-keys')).textContent = item.keys;
+				}
+				const index = rows.length;
+				rows.push({ element, id: item.id });
+				store.add(addDisposableListener(element, EventType.MOUSE_ENTER, () => focus(index)));
+				store.add(addDisposableListener(element, EventType.CLICK, () => close(item.id)));
+			}
+		}
+		// Under the button, its right edge on the button's; kept inside the window.
+		const anchor = Array.from(mainWindow.document.querySelectorAll<HTMLElement>('.action-label')).find(element => (element.getAttribute('aria-label') ?? element.title ?? '').includes(menu.anchor) && element.offsetParent !== null);
+		const rect = anchor?.getBoundingClientRect();
+		const width = root.offsetWidth;
+		const left = rect ? Math.min(mainWindow.innerWidth - width - 8, Math.max(8, rect.right - width)) : (mainWindow.innerWidth - width) / 2;
+		root.style.left = `${left}px`;
+		root.style.top = `${rect ? rect.bottom + 6 : 60}px`;
+		store.add(addDisposableListener(root, EventType.KEY_DOWN, (event: KeyboardEvent) => {
+			if (event.key === 'Escape') {
+				close();
+			} else if (event.key === 'ArrowDown') {
+				focus(focused + 1);
+			} else if (event.key === 'ArrowUp') {
+				focus(focused < 0 ? rows.length - 1 : focused - 1);
+			} else if (event.key === 'Enter' && rows[focused]) {
+				close(rows[focused].id);
+			} else {
+				return;
+			}
+			event.preventDefault();
+			event.stopPropagation();
+		}));
+		// A click anywhere else, or the window losing the focus, puts the menu away.
+		store.add(addDisposableListener(mainWindow.document, EventType.MOUSE_DOWN, (event: MouseEvent) => {
+			if (!root.contains(event.target as Node)) {
+				close();
+			}
+		}, true));
+		store.add(addDisposableListener(mainWindow, EventType.BLUR, () => close()));
+		store.add(addDisposableListener(mainWindow, EventType.RESIZE, () => close()));
+		root.focus();
+	});
+});

@@ -18,6 +18,16 @@ import { ClaudeLaunch, claudeCommandLine, claudeShell, claudeTerminalEnv, keys, 
 const execFileAsync = promisify(execFile);
 
 const PENDING_LAUNCH_KEY = 'orbit.launchClaudeIn';
+/** What Orbit knows of each agent terminal, kept across a reload of the window (see `revive`). */
+const KNOWN_TERMINALS_KEY = 'orbit.agentTerminals';
+
+interface KnownTerminal {
+	/** The shell of the terminal: it lives through a reload of the window, not through a restart. */
+	pid: number;
+	id?: string;
+	session?: { id: string; cwd: string };
+	mode?: string;
+}
 // Unity (Library, Temp, Logs, obj) and other tools write build output nobody wants opened in front of them.
 const IGNORED_PATH = /[\\/](node_modules|\.git|dist|build|out|\.next|\.turbo|\.cache|coverage|\.venv|__pycache__|Library|Temp|Logs|obj|\.orbit)[\\/]/;
 // Media too: a video being rendered or downloaded is opened by its own tool once complete.
@@ -74,12 +84,17 @@ export class ClaudeTerminals implements vscode.Disposable {
 
 	constructor(private readonly state: vscode.Memento, extensionUri?: vscode.Uri) {
 		this.extensionUri = extensionUri;
-		// Terminals revived after a reload keep their name, so adopt them.
+		// Terminals that come back with the window: those recognised at once, then those that only
+		// their shell identifies.
 		for (const t of vscode.window.terminals) {
 			this.adopt(t);
+			this.revive(t);
 		}
 		this.disposables.push(
-			vscode.window.onDidOpenTerminal(t => this.adopt(t)),
+			vscode.window.onDidOpenTerminal(t => {
+				this.adopt(t);
+				this.revive(t);
+			}),
 			vscode.window.onDidCloseTerminal(t => {
 				const key = this.keyOf(t);
 				if (key !== undefined) {
@@ -90,6 +105,7 @@ export class ClaudeTerminals implements vscode.Disposable {
 				this.sessions.delete(t);
 				const had = this.terminals.delete(t);
 				if (had) {
+					this.remember();
 					this._onDidChange.fire();
 				}
 				if (this.lastActive === t) {
@@ -589,11 +605,55 @@ export class ClaudeTerminals implements vscode.Disposable {
 		};
 	}
 
+	/**
+	 * After a reload of the window, a terminal comes back with its agent still running in it, but
+	 * not always with what Orbit set when it created it: its identifier is gone, and a terminal
+	 * that is not called « Claude » (the team lead, a renamed agent) was not recognised at all.
+	 * Its status was lost, pages took it for missing and opened a second agent beside it. What
+	 * Orbit knew is therefore kept by the shell's process, which a reload does not change.
+	 */
+	private revive(terminal: vscode.Terminal): void {
+		Promise.resolve(terminal.processId).then(pid => {
+			const known = pid === undefined ? undefined : this.state.get<KnownTerminal[]>(KNOWN_TERMINALS_KEY, []).find(k => k.pid === pid);
+			if (!known) {
+				return;
+			}
+			const fresh = !this.terminals.has(terminal);
+			this.terminals.add(terminal);
+			this.pids.set(terminal, known.pid);
+			if (known.id && !this.ids.has(terminal)) {
+				this.ids.set(terminal, known.id);
+			}
+			if (known.session && !this.sessions.has(terminal)) {
+				this.sessions.set(terminal, known.session);
+			}
+			if (known.mode && !this.launchModes.has(terminal)) {
+				this.launchModes.set(terminal, known.mode);
+			}
+			if (fresh || known.id) {
+				this.updateStatus();
+				this._onDidChange.fire();
+			}
+		}, () => undefined);
+	}
+
+	/** Writes down what is known of the agent terminals that are open, for the next reload. */
+	private remember(): void {
+		const known: KnownTerminal[] = [];
+		for (const terminal of this.terminals) {
+			const pid = this.pids.get(terminal);
+			if (pid !== undefined) {
+				known.push({ pid, id: this.ids.get(terminal), session: this.sessions.get(terminal), mode: this.launchModes.get(terminal) });
+			}
+		}
+		this.state.update(KNOWN_TERMINALS_KEY, known);
+	}
+
 	private adopt(terminal: vscode.Terminal, force = false): void {
 		// The id survives reloads and renames; the name only identifies terminals from older builds.
 		const env = 'env' in terminal.creationOptions ? terminal.creationOptions.env : undefined;
 		const id = env?.[TERMINAL_ID_ENV] ?? undefined;
-		if ((force || id || /^(Claude|ChatGPT|✦)/.test(terminal.name) || /^(Claude|ChatGPT|✦)/.test(terminal.creationOptions.name ?? '')) && !this.terminals.has(terminal)) {
+		if ((force || id || /^(Claude|ChatGPT|Chef d.équipe|✦)/.test(terminal.name) || /^(Claude|ChatGPT|Chef d.équipe|✦)/.test(terminal.creationOptions.name ?? '')) && !this.terminals.has(terminal)) {
 			this.terminals.add(terminal);
 			if (id) {
 				this.ids.set(terminal, id);
@@ -601,6 +661,7 @@ export class ClaudeTerminals implements vscode.Disposable {
 			terminal.processId.then(pid => {
 				if (pid !== undefined) {
 					this.pids.set(terminal, pid);
+					this.remember();
 					this._onDidChange.fire();
 				}
 			});

@@ -188,6 +188,14 @@ export function activate(context: vscode.ExtensionContext): void {
 	const vercel = new VercelPublisher(context, claude, tracker);
 	// Pages hand their messages to a live agent, or start one: never to a bare shell.
 	const tellAgent = (message: string) => !!deliverToAgent(claude, tracker, message);
+	// For the test bench: what a page's message would find, and optionally the delivery itself.
+	context.subscriptions.push(vscode.commands.registerCommand('_orbit.debug.tell', (message?: string) => {
+		const before = claude.list().map(t => ({ name: t.name, key: claude.keyOf(t), state: tracker.get(claude.keyOf(t)) && { status: tracker.get(claude.keyOf(t))?.status, ended: tracker.get(claude.keyOf(t))?.ended } }));
+		const current = claude.current()?.name;
+		const active = vscode.window.activeTerminal?.name;
+		const went = message ? deliverToAgent(claude, tracker, message)?.name : undefined;
+		return { before, current, active, all: vscode.window.terminals.map(t => t.name), went, after: claude.list().map(t => t.name) };
+	}));
 	const envVars = new EnvVars(context, tellAgent);
 	const board = new Board(context, claude, tracker);
 	const visual = new VisualCheck(context, tracker, claude);
@@ -210,34 +218,64 @@ export function activate(context: vscode.ExtensionContext): void {
 		envAsk: (key, why) => envVars.ask(key, why),
 	};
 	// Everything the project is plugged into, behind one button.
+	// A service is shown by its own logo, anything else by an icon that says what it is.
+	interface Tool { label: string; detail: string; command: string; image?: string; icon?: string; keys?: string }
+	const logo = (file: string) => path.join(context.extensionPath, 'media', file);
+	const toolGroups: { title: string; items: Tool[] }[] = [
+		{
+			title: 'Travail', items: [
+				{ label: 'Tableau de tâches', detail: 'Des cartes que tes agents prennent et traitent', command: 'orbit.board.show', icon: 'checklist' },
+				{ label: 'File de nuit', detail: 'Enchaîner des tâches et lire le rapport', command: 'orbit.queue.show', icon: 'watch', keys: 'Ctrl+Alt+Q' },
+				{ label: 'Relecture visuelle', detail: 'La page avant et après, relue par l\'agent', command: 'orbit.visual.show', icon: 'eye' },
+				{ label: 'Vue vivante', detail: 'L\'interface en direct, à côté du code', command: 'orbit.preview.show', icon: 'browser', keys: 'Ctrl+Alt+V' },
+			],
+		},
+		{
+			title: 'Services', items: [
+				{ label: 'Vercel', detail: 'Mettre le projet en ligne', command: 'orbit.vercel.show', image: logo('vercel.svg') },
+				{ label: 'Supabase', detail: 'Base de données, comptes, stockage', command: 'orbit.supabase.show', image: logo('supabase.svg') },
+				{ label: 'Tableau de bord Supabase', detail: 'Le projet de ce dossier, dans le navigateur', command: 'orbit.supabase.dashboard', image: logo('supabase.svg') },
+				{ label: 'Stripe', detail: 'Paiements du projet', command: 'orbit.stripe.show', image: logo('stripe.svg') },
+				{ label: 'Base de données locale', detail: 'SQLite et PostgreSQL', command: 'orbit.database.show', icon: 'database', keys: 'Ctrl+Alt+D' },
+				{ label: 'Variables d\'environnement', detail: 'Les fichiers .env, masqués aux agents', command: 'orbit.env.show', icon: 'key' },
+			],
+		},
+		{
+			title: 'Création', items: [
+				{ label: 'Figma vers code', detail: 'Coller un lien, l\'agent construit l\'écran', command: 'orbit.figma.show', image: logo('figma.svg') },
+				{ label: 'Higgsfield', detail: 'Images, vidéos, 3D et sons', command: 'orbit.higgsfield.show', image: logo('higgsfield.png'), keys: 'Ctrl+Alt+H' },
+				{ label: 'Magasin de compétences', detail: 'Connecteurs et recettes en un clic', command: 'orbit.store.show', icon: 'extensions' },
+			],
+		},
+	];
+	// The whole list with its search field (Ctrl+Alt+K).
 	const tools = vscode.commands.registerCommand('orbit.tools', async () => {
-		const items: (vscode.QuickPickItem & { command: string })[] = [
-			{ label: '$(checklist) Tableau de tâches', description: 'Des cartes que tes agents prennent et traitent', command: 'orbit.board.show' },
-			{ label: '$(key) Variables d\'environnement', description: 'Les fichiers .env, masqués, synchronisés avec Vercel', command: 'orbit.env.show' },
-			{ label: '$(eye) Relecture visuelle', description: 'La page avant et après, relue par l\'agent', command: 'orbit.visual.show' },
-			{ label: '$(extensions) Magasin de compétences', description: 'Connecteurs et recettes en un clic', command: 'orbit.store.show' },
-			{ label: '', kind: vscode.QuickPickItemKind.Separator, command: '' },
-			{ label: '$(orbit-vercel) Vercel', description: 'Mettre le projet en ligne', command: 'orbit.vercel.show' },
-			{ label: '$(database) Supabase', description: 'Base de données, comptes, stockage', command: 'orbit.supabase.show' },
-			{ label: '$(link-external) Tableau de bord Supabase', description: 'Le projet Supabase de ce dossier, dans le navigateur', command: 'orbit.supabase.dashboard' },
-			{ label: '$(credit-card) Stripe', description: 'Paiements', command: 'orbit.stripe.show' },
-			{ label: '$(symbol-color) Figma vers code', description: 'Coller un lien, l\'agent construit l\'écran', command: 'orbit.figma.show' },
-			{ label: '$(sparkle) Higgsfield', description: 'Images, vidéos, 3D et sons', command: 'orbit.higgsfield.show' },
-			{ label: '', kind: vscode.QuickPickItemKind.Separator, command: '' },
-			{ label: '$(globe) Vue vivante', description: 'L\'interface en direct', command: 'orbit.preview.show' },
-			{ label: '$(database) Base de données locale', description: 'SQLite et PostgreSQL', command: 'orbit.database.show' },
-			{ label: '$(list-ordered) File de nuit', description: 'Enchaîner des tâches', command: 'orbit.queue.show' },
-		];
+		const items: (vscode.QuickPickItem & { command: string })[] = toolGroups.flatMap(group => [
+			{ label: group.title, kind: vscode.QuickPickItemKind.Separator, command: '' },
+			...group.items.map(tool => ({ label: tool.image ? tool.label : `$(${tool.icon}) ${tool.label}`, description: tool.detail, iconPath: tool.image ? vscode.Uri.file(tool.image) : undefined, command: tool.command })),
+		]);
 		const picked = await vscode.window.showQuickPick(items, { placeHolder: 'Outils du projet', matchOnDescription: true });
 		if (picked?.command) {
 			await vscode.commands.executeCommand(picked.command);
+		}
+	});
+	// The button of the terminal bar: the same tools in a menu that drops under it. The menu is
+	// drawn by Orbit's core; an Orbit whose core does not have it yet shows the list instead.
+	vscode.commands.getCommands(false).then(all => vscode.commands.executeCommand('setContext', 'orbit.hasMenu', all.includes('_orbit.menu')));
+	const toolsMenu = vscode.commands.registerCommand('orbit.tools.menu', async () => {
+		const picked = await vscode.commands.executeCommand<string | undefined>('_orbit.menu', {
+			anchor: 'Outils du projet',
+			groups: toolGroups.map(group => ({ title: group.title, items: group.items.map(tool => ({ id: tool.command, label: tool.label, detail: tool.detail, image: tool.image, icon: tool.icon, keys: tool.keys })) })),
+		}).then(undefined, () => 'orbit.tools');
+		if (picked) {
+			await vscode.commands.executeCommand(picked);
 		}
 	});
 	context.subscriptions.push(...registerDocumentViewers(context, tellAgent));
 	context.subscriptions.push(registerFontViewer(context));
 	const updater = new Updater(context);
 	context.subscriptions.push(updater, vscode.commands.registerCommand('orbit.update.check', () => updater.check(true)));
-	context.subscriptions.push(envVars, board, visual, skills, figma, supabase, stripe, tools, vscode.workspace.onDidChangeConfiguration(e => e.affectsConfiguration('orbit.env.hideFromAgent') && installHooks()));
+	context.subscriptions.push(envVars, board, visual, skills, figma, supabase, stripe, tools, toolsMenu, vscode.workspace.onDidChangeConfiguration(e => e.affectsConfiguration('orbit.env.hideFromAgent') && installHooks()));
 
 	const pickModel = async () => {
 		const target = claude.current();
