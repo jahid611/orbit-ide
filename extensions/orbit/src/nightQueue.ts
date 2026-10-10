@@ -253,6 +253,23 @@ export class NightQueue implements vscode.Disposable {
 		}
 	}
 
+	/** `queue_list`: what waits, what ran and how it ended. */
+	agentList(): unknown {
+		return { running: this.running, tasks: this.data.tasks.map(t => ({ id: t.id, prompt: t.prompt, status: t.status, summary: t.summary, note: t.note, changed: t.changed })) };
+	}
+
+	/** `queue_add`: a task for later. Starting the queue stays the user's decision. */
+	agentAdd(prompt: string): unknown {
+		if (!prompt.trim()) {
+			throw new Error('Il faut le texte de la tâche.');
+		}
+		const before = this.data.tasks.length;
+		this.add(prompt);
+		this.render();
+		this.send();
+		return { ok: true, added: this.data.tasks.length - before, waiting: this.data.tasks.filter(t => t.status === 'waiting').length, note: 'La file ne démarre pas toute seule : l\'utilisateur la lance depuis la page File de nuit.' };
+	}
+
 	private add(prompt: string): void {
 		const text = prompt.trim();
 		if (!text) {

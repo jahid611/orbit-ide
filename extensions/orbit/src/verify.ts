@@ -113,6 +113,38 @@ export class Verifier implements vscode.Disposable {
 		}
 	}
 
+	/** `verify`: the agent runs the project's checks itself and reads the result; nothing is sent back to its terminal. */
+	async agentRun(root: string): Promise<unknown> {
+		const id = normal(root);
+		const previous = this.running.get(id);
+		if (previous) {
+			previous.cancelled = true;
+			previous.children.forEach(c => c.kill());
+		}
+		const checks = detectChecks(root);
+		if (!checks.length) {
+			return { checks: [], note: 'Aucun contrôle trouvé dans ce projet (ni script typecheck/lint/test, ni tsconfig, ni Cargo, ni Go). Ils se déclarent dans .orbit/checks.json.' };
+		}
+		const run = { children: [] as ChildProcess[], cancelled: false };
+		this.running.set(id, run);
+		this.render();
+		const timeout = (vscode.workspace.getConfiguration('orbit').get<number>('verify.timeoutSeconds') ?? 180) * 1000;
+		const results: Result[] = [];
+		for (const check of checks) {
+			if (run.cancelled) {
+				throw new Error('Vérification remplacée par une autre, plus récente.');
+			}
+			results.push(await execute(check, root, timeout, run));
+		}
+		if (this.running.get(id) === run) {
+			this.running.delete(id);
+		}
+		this.last.set(id, { results, key: '' });
+		this.log(root, results);
+		this.render();
+		return { ok: results.every(r => r.ok), checks: results.map(r => ({ name: r.check.name, command: r.check.command, ok: r.ok, seconds: Math.round(r.ms / 100) / 10, timedOut: r.timedOut, output: r.ok ? undefined : tail(r.output, 6000) })) };
+	}
+
 	/** Runs the checks of a project. A newer run for the same project replaces the one in flight. */
 	private async run(root: string, key: string, manual: boolean): Promise<Result[] | undefined> {
 		const id = normal(root);

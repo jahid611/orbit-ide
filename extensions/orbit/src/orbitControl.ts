@@ -63,6 +63,15 @@ export interface AgentDesk {
 	supabaseState(): Promise<unknown>;
 	supabaseSql(query: string, file: string | undefined, write: boolean): Promise<unknown>;
 	supabaseAuthUrls(add: string[]): Promise<unknown>;
+	verify(root: string): Promise<unknown>;
+	checkpoint(root: string, name: string): Promise<unknown>;
+	queueList(): unknown;
+	queueAdd(prompt: string): unknown;
+	vercelState(): Promise<unknown>;
+	vercelPublish(production: boolean): Promise<unknown>;
+	vercelLogs(id: string | undefined): Promise<unknown>;
+	stripeState(): Promise<unknown>;
+	stripeCreate(name: string, price: number, currency: string, interval: string | undefined, description: string): Promise<unknown>;
 }
 
 /** The MCP configuration every Claude started by Orbit receives (`orbit` tools). */
@@ -210,6 +219,15 @@ export class OrbitControl implements vscode.Disposable {
 				case '/supabase_state': return reply(200, await this.desk?.supabaseState());
 				case '/supabase_sql': return reply(200, await this.desk?.supabaseSql(String(q.query ?? ''), q.file ? resolvePath(q.file, q.cwd) : undefined, q.write === 'true'));
 				case '/supabase_auth_urls': return reply(200, await this.desk?.supabaseAuthUrls(JSON.parse(q.add || '[]')));
+				case '/verify': return reply(200, await this.desk?.verify(projectOf(q.cwd)));
+				case '/checkpoint': return reply(200, await this.desk?.checkpoint(projectOf(q.cwd), String(q.name ?? '')));
+				case '/queue_list': return reply(200, this.desk?.queueList());
+				case '/queue_add': return reply(200, this.desk?.queueAdd(String(q.prompt ?? '')));
+				case '/vercel_state': return reply(200, await this.desk?.vercelState());
+				case '/vercel_publish': return reply(200, await this.desk?.vercelPublish(q.production === 'true'));
+				case '/vercel_logs': return reply(200, await this.desk?.vercelLogs(q.id || undefined));
+				case '/stripe_state': return reply(200, await this.desk?.stripeState());
+				case '/stripe_create_product': return reply(200, await this.desk?.stripeCreate(String(q.name ?? ''), Number(q.price), String(q.currency || 'eur'), q.interval || undefined, String(q.description ?? '')));
 				case '/find_commands': {
 					const words = String(q.query ?? '').toLowerCase().split(/\s+/).filter(Boolean);
 					const all = await vscode.commands.getCommands(true);
@@ -359,6 +377,20 @@ export function projectRoot(file: string): string | undefined {
 		dir = path.dirname(dir);
 	}
 	return undefined;
+}
+
+/** The project an agent works on: the one its folder belongs to, else the one the window shows. */
+function projectOf(cwd: string | undefined): string {
+	const folders = (vscode.workspace.workspaceFolders ?? []).map(f => f.uri.fsPath);
+	const inside = (folder: string, dir: string) => {
+		const rel = path.relative(folder, dir);
+		return !rel.startsWith('..') && !path.isAbsolute(rel);
+	};
+	const root = folders.find(f => !!cwd && inside(f, cwd)) ?? folders[0];
+	if (!root) {
+		throw new Error('Aucun projet ouvert dans Orbit.');
+	}
+	return root;
 }
 
 function resolvePath(value: string | undefined, cwd: string | undefined): string {

@@ -155,6 +155,49 @@ export class Stripe extends Page {
 		return !this.live() || await vscode.window.showWarningMessage(`${what} en mode réel ?`, { modal: true, detail: 'Tu utilises une clé réelle : ce qui est créé ici est visible par tes vrais clients et peut encaisser de vrais paiements.' }, 'Continuer') === 'Continuer';
 	}
 
+	/** `stripe_state`: mode, account, products with their prices and payment links, last payments. Never the key. */
+	async agentState(): Promise<unknown> {
+		await this.refresh();
+		if (!this.key) {
+			this.show();
+			throw new Error('Orbit n\'est pas connecté à Stripe. La page Stripe vient de s\'ouvrir : demande à l\'utilisateur d\'y coller sa clé, puis réessaie.');
+		}
+		return { mode: this.live() ? 'réel' : 'test', account: this.account, balance: this.balance, products: this.products, payments: this.payments, error: this.error };
+	}
+
+	/** `stripe_create_product`: a product, its price and its payment link, once the user has said yes. */
+	async agentCreate(name: string, price: number, currency: string, interval: string | undefined, description: string): Promise<unknown> {
+		this.key ??= await this.context.secrets.get(KEY);
+		if (!this.key) {
+			this.show();
+			throw new Error('Orbit n\'est pas connecté à Stripe. La page Stripe vient de s\'ouvrir : demande à l\'utilisateur d\'y coller sa clé, puis réessaie.');
+		}
+		const amount = Math.round(price * 100);
+		if (!name.trim() || !Number.isFinite(amount) || amount < 50) {
+			throw new Error('Il faut un nom et un prix d\'au moins 0,50 (price en unités, par exemple 9.9).');
+		}
+		if (!CURRENCIES.includes(currency)) {
+			throw new Error(`Monnaie inconnue « ${currency} ». Monnaies : ${CURRENCIES.join(', ')}.`);
+		}
+		const recurring = interval === 'month' || interval === 'year' ? interval : undefined;
+		const shown = `${(amount / 100).toFixed(2)} ${currency.toUpperCase()}${recurring ? (recurring === 'month' ? ' par mois' : ' par an') : ''}`;
+		const choice = await vscode.window.showWarningMessage('L\'agent veut créer un produit Stripe', { modal: true, detail: `« ${name.trim()} » à ${shown}, avec son lien de paiement.\nMode ${this.live() ? 'réel : visible par tes vrais clients, il peut encaisser de vrais paiements' : 'test : aucun vrai paiement'}.` }, 'Créer');
+		if (choice !== 'Créer') {
+			throw new Error('L\'utilisateur a refusé : rien n\'a été créé.');
+		}
+		const product = await this.call('POST', '/products', { name: name.trim(), description: description.trim() || undefined, 'default_price_data[currency]': currency, 'default_price_data[unit_amount]': amount, 'default_price_data[recurring][interval]': recurring });
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const made = product.json as any;
+		if (!product.ok || !made?.default_price) {
+			throw new Error(`Stripe a refusé le produit : ${product.error ?? 'raison inconnue.'}`);
+		}
+		const link = await this.call('POST', '/payment_links', { 'line_items[0][price]': String(made.default_price), 'line_items[0][quantity]': 1 });
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const url = (link.json as any)?.url;
+		this.refresh();
+		return { ok: true, product: String(made.id), price: String(made.default_price), paymentLink: typeof url === 'string' ? url : undefined, note: link.ok ? undefined : `Produit créé, mais pas son lien de paiement : ${link.error}` };
+	}
+
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	protected async onMessage(msg: any): Promise<void> {
 		switch (msg.type) {

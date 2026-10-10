@@ -268,6 +268,51 @@ const TOOLS = [
 		run: a => call('/supabase_auth_urls', { add: a.add || [] }, 10 * 60 * 1000),
 	},
 	{
+		name: 'verify',
+		description: 'Lance les contrôles du projet (types, lint, tests : ceux de .orbit/checks.json, sinon ceux trouvés dans le projet) et te rend le résultat de chacun, avec la sortie de ceux qui échouent. À appeler après un changement de code, avant de dire que c\'est fini, plutôt que de deviner les commandes.',
+		inputSchema: obj({}), run: () => call('/verify', {}, 30 * 60 * 1000),
+	},
+	{
+		name: 'checkpoint',
+		description: 'Crée un point de sauvegarde du projet dans la machine à remonter le temps d\'Orbit, avec un nom. À poser avant un changement risqué ou large (refonte, suppression, migration) : l\'utilisateur pourra y revenir d\'un clic.',
+		inputSchema: obj({ name: { type: 'string' } }), run: a => call('/checkpoint', { name: a.name }, 120000),
+	},
+	{
+		name: 'queue_list',
+		description: 'La file de nuit du projet : les tâches en attente, celles qui ont tourné, leur résultat et les fichiers qu\'elles ont changés.',
+		inputSchema: obj({}), run: () => call('/queue_list'),
+	},
+	{
+		name: 'queue_add',
+		description: 'Ajoute une tâche à la file de nuit : un autre agent, sans aucun contexte de cette conversation, la fera plus tard. Écris une consigne complète. Un paragraphe = une tâche. La file ne démarre pas : c\'est l\'utilisateur qui la lance.',
+		inputSchema: obj({ prompt: { type: 'string' } }, ['prompt']), run: a => call('/queue_add', { prompt: a.prompt }),
+	},
+	{
+		name: 'vercel_state',
+		description: 'Où en est la mise en ligne du projet sur Vercel : compte connecté, projet relié, branche et fichiers non enregistrés, domaines, et les derniers déploiements avec leur état (READY, ERROR, BUILDING…).',
+		inputSchema: obj({}), run: () => call('/vercel_state', {}, 120000),
+	},
+	{
+		name: 'vercel_publish',
+		description: 'Met le projet en ligne sur Vercel par Orbit, comme le bouton de la page Vercel : enregistre et envoie les changements, relie le projet s\'il ne l\'est pas, déploie et suit la construction. production=true remplace le site public, après accord de l\'utilisateur dans Orbit ; sans, c\'est un aperçu en ligne. Rend l\'adresse, ou la fin du journal en cas d\'échec. N\'utilise pas la commande vercel à la main.',
+		inputSchema: obj({ production: { type: 'boolean' } }), run: a => call('/vercel_publish', { production: a.production ? 'true' : undefined }, 40 * 60 * 1000),
+	},
+	{
+		name: 'vercel_logs',
+		description: 'Le journal de construction d\'un déploiement Vercel (id donné par vercel_state), le plus récent par défaut. Pour comprendre un déploiement en échec.',
+		inputSchema: obj({ id: { type: 'string' } }), run: a => call('/vercel_logs', { id: a.id }, 60000),
+	},
+	{
+		name: 'stripe_state',
+		description: 'Le compte Stripe relié à Orbit : mode test ou réel, solde, produits avec leur prix, leur identifiant et leur lien de paiement, derniers paiements. Orbit garde la clé : tu ne la vois pas.',
+		inputSchema: obj({}), run: () => call('/stripe_state', {}, 60000),
+	},
+	{
+		name: 'stripe_create_product',
+		description: 'Crée un produit Stripe, son prix et son lien de paiement, après accord de l\'utilisateur dans Orbit. price en unités (9.9 pour 9,90). interval month ou year pour un abonnement, rien pour un paiement unique. Rend les identifiants du produit et du prix, et le lien de paiement.',
+		inputSchema: obj({ name: { type: 'string' }, price: { type: 'number' }, currency: { type: 'string', enum: ['eur', 'usd', 'gbp', 'chf', 'cad'] }, interval: { type: 'string', enum: ['month', 'year'] }, description: { type: 'string' } }, ['name', 'price']), run: a => call('/stripe_create_product', { name: a.name, price: a.price, currency: a.currency, interval: a.interval, description: a.description }, 10 * 60 * 1000),
+	},
+	{
 		name: 'find_commands',
 		description: 'Cherche des commandes d\'Orbit/VS Code dont l\'identifiant contient tous les mots donnés (ex. « terminal split », « zen »).',
 		inputSchema: obj({ query: { type: 'string' } }, ['query']), run: a => call('/find_commands', { query: a.query }),

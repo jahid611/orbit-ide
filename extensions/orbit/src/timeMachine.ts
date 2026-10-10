@@ -312,6 +312,17 @@ export class TimeMachine implements vscode.TreeDataProvider<Node>, vscode.TextDo
 		}
 	}
 
+	/** `checkpoint`: the agent marks a point the user can come back to, before a risky change. */
+	async agentSnapshot(root: string, name: string): Promise<unknown> {
+		const label = name.trim() || `Point de sauvegarde du ${new Date().toLocaleString()}`;
+		const sha = await this.take(root, label);
+		if (!sha) {
+			throw new Error('Le point de sauvegarde n\'a pas pu être créé (git est-il installé ?).');
+		}
+		this.add({ id: `${Date.now()}`, root, agent: 'Agent', prompt: label, at: Date.now(), before: sha, after: sha });
+		return { ok: true, name: label, note: 'Visible dans la machine à remonter le temps : l\'utilisateur peut y revenir d\'un clic.' };
+	}
+
 	/** Put the project back as it was just before a message was sent. */
 	async rewind(node: Node | undefined): Promise<void> {
 		if (node?.kind !== 'turn') {

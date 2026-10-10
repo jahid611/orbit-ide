@@ -585,6 +585,69 @@ export class VercelPublisher implements vscode.Disposable {
 		}
 	}
 
+	/** What stops a deployment from here, in words the agent can pass on. */
+	private missing(): string | undefined {
+		return !this.checks?.cli ? 'L\'outil Vercel n\'est pas installé sur cette machine.' : !this.checks.account ? 'Orbit n\'est pas connecté à un compte Vercel.' : undefined;
+	}
+
+	/** `vercel_state`: tool, account, repository, and the project as Vercel's dashboard shows it. */
+	async agentState(): Promise<unknown> {
+		await this.refresh(true);
+		const checks = this.checks;
+		const remote = this.remote;
+		return {
+			missing: this.missing(),
+			account: checks?.account,
+			linked: checks?.linked,
+			git: checks?.git ? { branch: checks.branch, remote: checks.remote, uncommittedFiles: checks.dirty } : undefined,
+			publishing: this.busy,
+			lastFailure: this.failure,
+			project: remote && {
+				name: remote.name, framework: remote.framework, repo: remote.repo, productionBranch: remote.productionBranch, domains: remote.domains, dashboard: remote.dashboard,
+				deployments: remote.deployments.slice(0, 8).map(d => ({ id: d.id, url: `https://${d.url}`, state: d.state, production: d.production, current: d.current, created: new Date(d.created).toISOString(), branch: d.branch, message: d.message })),
+			},
+		};
+	}
+
+	/** `vercel_publish`: the same run as the page's button; going to production asks the user first. */
+	async agentPublish(production: boolean): Promise<unknown> {
+		if (this.busy) {
+			throw new Error('Une mise en ligne est déjà en cours.');
+		}
+		await this.refresh(true);
+		const missing = this.missing();
+		if (missing) {
+			this.show();
+			throw new Error(`${missing} La page Vercel vient de s'ouvrir : l'utilisateur y règle ce point en un clic, puis tu réessaies.`);
+		}
+		if (production && await vscode.window.showWarningMessage('L\'agent veut mettre le site en ligne', { modal: true, detail: `Projet ${this.checks?.linked ?? path.basename(workspaceRoot())}. Les fichiers modifiés sont enregistrés et envoyés, puis le site public est remplacé par cette version.` }, 'Mettre en ligne') !== 'Mettre en ligne') {
+			throw new Error('L\'utilisateur a refusé la mise en ligne : rien n\'a été publié.');
+		}
+		this.show();
+		const before = this.history()[0]?.at;
+		await this.publish(production);
+		const last = this.history()[0];
+		if (this.failure || !last || last.at === before) {
+			throw new Error(`${this.failure ?? 'La mise en ligne n\'a pas abouti.'}\n\nFin du journal :\n${this.log.slice(-50).join('\n')}`);
+		}
+		return { ok: true, url: last.url, production, commit: last.commit };
+	}
+
+	/** `vercel_logs`: the build log of a deployment, the latest one by default. */
+	async agentLogs(id: string | undefined): Promise<unknown> {
+		if (!this.remote) {
+			await this.refresh(true);
+		}
+		const target = id || this.remote?.deployments[0]?.id;
+		if (!target || !/^[\w-]+$/.test(target)) {
+			throw new Error('Aucun déploiement connu pour ce projet.');
+		}
+		const events = await vercelApi(`/v3/deployments/${target}/events?builds=1&limit=2000&${this.team}`, workspaceRoot());
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const lines = (Array.isArray(events) ? events : []).filter((e: any) => typeof e.text === 'string' && e.text.trim()).map((e: any) => String(e.text).replace(/\x1b\[[0-9;]*[A-Za-z]/g, '').trimEnd());
+		return { id: target, state: this.remote?.deployments.find(d => d.id === target)?.state, lines: lines.slice(-160), truncated: lines.length > 160 || undefined };
+	}
+
 	/** A failed deployment goes to the assistant with the end of the log. */
 	private fix(): void {
 		const message = [

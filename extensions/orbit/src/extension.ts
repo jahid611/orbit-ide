@@ -160,7 +160,8 @@ export function activate(context: vscode.ExtensionContext): void {
 	// Before any Claude starts: it writes the MCP config every Claude terminal receives.
 	const control = new OrbitControl(context.extensionPath, claude, tracker);
 	const recipes = new Recipes(claude);
-	context.subscriptions.push(control, registerImagePaste(claude), registerSmartCommit(), new Verifier(tracker, claude), ...registerFixWithClaude(claude), recipes, ...recipes.register());
+	const verifier = new Verifier(tracker, claude);
+	context.subscriptions.push(control, registerImagePaste(claude), registerSmartCommit(), verifier, ...registerFixWithClaude(claude), recipes, ...recipes.register());
 	const store = new SessionStore(context.globalState);
 	const sessionsView = new SessionsView(store, tracker);
 	const chat = new ChatViewProvider(context.extensionUri, claude, tracker);
@@ -219,6 +220,15 @@ export function activate(context: vscode.ExtensionContext): void {
 		supabaseState: () => supabase.agentState(),
 		supabaseSql: (query, file, write) => supabase.agentSql(query, file, write),
 		supabaseAuthUrls: add => supabase.agentAuthUrls(add),
+		verify: root => verifier.agentRun(root),
+		checkpoint: (root, name) => timeMachine.agentSnapshot(root, name),
+		queueList: () => queue.agentList(),
+		queueAdd: prompt => queue.agentAdd(prompt),
+		vercelState: () => vercel.agentState(),
+		vercelPublish: production => vercel.agentPublish(production),
+		vercelLogs: id => vercel.agentLogs(id),
+		stripeState: () => stripe.agentState(),
+		stripeCreate: (name, price, currency, interval, description) => stripe.agentCreate(name, price, currency, interval, description),
 	};
 	// Everything the project is plugged into, behind one button.
 	// A service is shown by its own logo, anything else by an icon that says what it is.

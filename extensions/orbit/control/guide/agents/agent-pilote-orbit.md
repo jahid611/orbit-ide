@@ -36,6 +36,13 @@ Les consignes d'Orbit demandent à l'agent d'utiliser ces outils de lui-même : 
 | `board_list`, `board_add`, `board_take`, `board_move` | Le [Tableau de tâches](/docs/agents/tableau-de-taches) : lister, ajouter, prendre et déplacer des cartes (jamais vers « Fait »). |
 | `env_names` | Les noms des variables d'environnement du projet, jamais les valeurs. |
 | `env_ask` | Demande une variable à remplir : la page des variables s'ouvre avec la demande de l'agent. |
+| `guide` | Le manuel d'Orbit : la liste des pages, une page entière, ou une recherche. L'agent le consulte avant de répondre à une question sur Orbit. |
+| `verify` | Lance les contrôles du projet (types, lint, tests) et rend le résultat de chacun, avec la sortie de ceux qui échouent. Voir [Vérification](/docs/boucle/verification). |
+| `checkpoint` | Pose un point de sauvegarde nommé dans la [Machine à remonter le temps](/docs/boucle/machine-a-remonter-le-temps), avant un changement risqué. |
+| `queue_list`, `queue_add` | La [File de nuit](/docs/agents/file-de-nuit) : lire les tâches et leur résultat, en ajouter une. La file ne démarre que sur ton ordre. |
+| `vercel_state`, `vercel_publish`, `vercel_logs` | [Vercel](/docs/outils/vercel) : où en est la mise en ligne, publier (la mise en production te demande ton accord), lire le journal d'un déploiement. |
+| `supabase_state`, `supabase_sql`, `supabase_auth_urls` | [Supabase](/docs/outils/supabase) : tables, requêtes (une écriture te montre le SQL avant), adresses de redirection. |
+| `stripe_state`, `stripe_create_product` | [Stripe](/docs/outils/stripe) : produits, prix, liens de paiement, derniers paiements ; créer un produit après ton accord. |
 
 ## Changer de projet
 
