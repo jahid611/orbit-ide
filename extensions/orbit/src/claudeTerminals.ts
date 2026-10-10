@@ -160,6 +160,7 @@ export class ClaudeTerminals implements vscode.Disposable {
 			{ label: '$(rocket) Projet rapide', detail: `Un nouveau dossier tout de suite, sans question : tu vois chaque fichier apparaître pendant que Claude code`, id: 'quick' },
 			{ label: '$(new-folder) Nouveau projet…', detail: `Tu choisis le nom ; le dossier est créé dans ${readConfig().projectsFolder}`, id: 'new' },
 			{ label: '$(folder-opened) Ouvrir un dossier…', detail: 'Lance Claude dans un projet existant', id: 'open' },
+			{ label: '$(repo-clone) Partir d\'un dépôt GitHub ou GitLab…', detail: 'Un de tes dépôts, ou une adresse : il est récupéré et Claude s\'y lance', id: 'repo' },
 			{ label: '$(home) Sans dossier', detail: 'Déconseillé : Claude travaille dans ton dossier personnel et l\'explorateur reste vide', id: 'home' },
 		], { title: 'Démarrer Claude', placeHolder: 'Où Claude doit-il travailler ?' });
 		if (pick?.id === 'quick') {
@@ -171,6 +172,8 @@ export class ClaudeTerminals implements vscode.Disposable {
 			if (folder?.[0]) {
 				await this.openAndLaunch(folder[0].fsPath);
 			}
+		} else if (pick?.id === 'repo') {
+			await vscode.commands.executeCommand('orbit.project.fromRepo');
 		} else if (pick?.id === 'home') {
 			this.create();
 		}
@@ -242,6 +245,7 @@ export class ClaudeTerminals implements vscode.Disposable {
 			{ label: '$(add) Nouveau projet…', detail: `Tu choisis le nom, le dossier est créé dans ${readConfig().projectsFolder} et Claude s'y lance`, run: () => this.newProject() },
 			{ label: '$(new-folder) Nouveau projet ailleurs…', detail: 'Choisis d\'abord le dossier parent', run: () => this.newProject({ askParent: true }) },
 			{ label: '$(folder-opened) Ouvrir un dossier…', detail: 'Un projet existant ; Claude s\'y lance aussi', run: () => this.openFolder() },
+			{ label: '$(repo-clone) Partir d\'un dépôt GitHub ou GitLab…', detail: 'Un de tes dépôts, ou une adresse : il est récupéré et Claude s\'y lance', run: () => vscode.commands.executeCommand('orbit.project.fromRepo') },
 			{ label: '$(organization) Partir d\'un template de la communauté…', detail: 'Les projets partagés par les autres utilisateurs d\'Orbit', run: () => vscode.commands.executeCommand('orbit.community.show') },
 		];
 		const recent = (await recentFolders()).filter(dir => !samePath(dir, current)).slice(0, 25);

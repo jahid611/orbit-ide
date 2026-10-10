@@ -44,6 +44,7 @@ import { installHooks } from './agentTracker';
 import { registerDocumentViewers } from './documents';
 import { registerFontViewer } from './fonts';
 import { Updater } from './update';
+import { RepoProjects } from './repos';
 import { CodexTracker } from './codexTracker';
 import { installBranding } from './brand';
 import * as fs from 'fs';
@@ -492,6 +493,8 @@ export function activate(context: vscode.ExtensionContext): void {
 	lead.show();
 	context.subscriptions.push(lead);
 	context.subscriptions.push(project, vscode.commands.registerCommand('orbit.project.switch', () => claude.switchProject()));
+	const repos = new RepoProjects(dir => claude.openProject(dir));
+	context.subscriptions.push(vscode.commands.registerCommand('orbit.project.fromRepo', () => repos.start()));
 
 	claude.setReopening(
 		terminal => tracker.get(claude.keyOf(terminal))?.ended === true,

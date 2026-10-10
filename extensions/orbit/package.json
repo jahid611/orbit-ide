@@ -576,6 +576,12 @@
         "command": "orbit.update.check",
         "title": "Rechercher une mise à jour d'Orbit",
         "category": "Orbit"
+      },
+      {
+        "command": "orbit.project.fromRepo",
+        "title": "Nouveau projet depuis un dépôt GitHub ou GitLab",
+        "category": "Orbit",
+        "icon": "$(repo-clone)"
       }
     ],
     "menus": {
@@ -1842,6 +1848,13 @@
         "default": {
           "fontPath": "./media/orbit-icons.woff",
           "fontCharacter": "\\E003"
+        }
+      },
+      "orbit-gitlab": {
+        "description": "GitLab",
+        "default": {
+          "fontPath": "./media/orbit-icons.woff",
+          "fontCharacter": "\\E004"
         }
       }
     },

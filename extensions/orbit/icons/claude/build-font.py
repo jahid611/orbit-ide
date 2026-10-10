@@ -1,5 +1,5 @@
 """Builds the product icons of the assistants Orbit can run (status bar, menus, trees):
-`$(orbit-claude)`, `$(orbit-openai)`, and the mark of Vercel, `$(orbit-vercel)`.
+`$(orbit-claude)`, `$(orbit-openai)`, and the marks of Vercel and GitLab, `$(orbit-vercel)`, `$(orbit-gitlab)`.
 
 Sources: the Claude and OpenAI marks from Simple Icons (CC0, https://simpleicons.org), kept in
 claude.svg and ../openai/openai.svg.
@@ -21,6 +21,7 @@ MARKS = [
 	('claude', os.path.join(HERE, 'claude.svg'), 0xE001, (('claude.svg', '#D97757'), ('claude-light.svg', '#F3EDE7'))),
 	('openai', os.path.join(HERE, '..', 'openai', 'openai.svg'), 0xE002, (('openai.svg', '#ECECF1'), ('openai-light.svg', '#202123'))),
 	('vercel', os.path.join(HERE, '..', 'vercel', 'vercel.svg'), 0xE003, (('vercel.svg', '#FFFFFF'), ('vercel-light.svg', '#000000'))),
+	('gitlab', os.path.join(HERE, '..', 'gitlab', 'gitlab.svg'), 0xE004, (('gitlab.svg', '#FC6D26'),)),
 ]
 
 # SVG is 24 units, y down; the glyph is 1000 units, y up, with a small margin.
