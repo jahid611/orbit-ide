@@ -104,11 +104,67 @@ async function call(route, params = {}, timeoutMs = 30000) {
 	}
 }
 
+const GUIDE = path.join(__dirname, 'guide');
+
+/** Every page of Orbit's manual: `category/slug`, its title and its one-line description. */
+function guidePages() {
+	const pages = [];
+	let categories = [];
+	try {
+		categories = fs.readdirSync(GUIDE).filter(c => fs.statSync(path.join(GUIDE, c)).isDirectory());
+	} catch {
+		return pages;
+	}
+	for (const category of categories) {
+		for (const name of fs.readdirSync(path.join(GUIDE, category)).filter(f => f.endsWith('.md'))) {
+			const text = fs.readFileSync(path.join(GUIDE, category, name), 'utf8');
+			const head = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(text);
+			const field = key => new RegExp(`^${key}:\\s*(.*)$`, 'm').exec(head ? head[1] : '')?.[1].trim() || '';
+			pages.push({ id: `${category}/${name.slice(0, -3)}`, title: field('title'), description: field('description'), body: head ? text.slice(head[0].length) : text });
+		}
+	}
+	return pages;
+}
+
+function guide({ page, search }) {
+	const pages = guidePages();
+	if (!pages.length) {
+		throw new Error('Le manuel d\'Orbit est introuvable.');
+	}
+	if (page) {
+		const wanted = String(page).toLowerCase().replace(/^\/?docs\//, '').replace(/\.md$/, '');
+		const found = pages.find(p => p.id === wanted) || pages.find(p => p.id.endsWith(`/${wanted}`));
+		if (!found) {
+			throw new Error(`Page inconnue « ${page} ». Appelle guide sans argument pour la liste.`);
+		}
+		return `# ${found.title}\n\n${found.body}`;
+	}
+	if (search) {
+		const words = String(search).toLowerCase().split(/\s+/).filter(Boolean);
+		const hits = pages.map(p => {
+			const text = `${p.title}\n${p.description}\n${p.body}`.toLowerCase();
+			const score = words.reduce((n, w) => n + (text.split(w).length - 1) + (p.title.toLowerCase().includes(w) ? 20 : 0), 0);
+			const body = p.body.toLowerCase();
+			const word = words.find(w => body.includes(w));
+			const from = word ? Math.max(0, body.indexOf(word) - 120) : -1;
+			return { p, score: words.every(w => text.includes(w)) ? score : 0, extract: from >= 0 ? p.body.slice(from, from + 320).replace(/\s+/g, ' ') : p.description };
+		}).filter(h => h.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+		return hits.length ? hits.map(h => `${h.p.id} — ${h.p.title}\n  … ${h.extract} …`).join('\n\n') : 'Rien dans le manuel pour ces mots. Appelle guide sans argument pour la liste des pages.';
+	}
+	return `Manuel d'Orbit : ${pages.length} pages. Appelle guide avec page="categorie/page" pour en lire une, ou search="mots" pour chercher.\n\n${pages.map(p => `${p.id} — ${p.title} : ${p.description}`).join('\n')}`;
+}
+
 const obj = (properties, required = []) => ({ type: 'object', properties, required });
 const file = { type: 'string', description: 'Chemin absolu, ou relatif au dossier où tu as été lancé' };
 const VIEWS = ['explorer', 'search', 'git', 'terminal', 'problems', 'extensions', 'settings', 'map', 'team', 'timeline', 'database', 'preview', 'unity', 'community', 'higgsfield', 'usage', 'studio', 'chat', 'tutorial', 'vercel', 'queue', 'env', 'board', 'visual', 'store', 'figma', 'supabase', 'stripe'];
 
 const TOOLS = [
+	{
+		name: 'guide',
+		description: 'Le manuel complet d\'Orbit : chaque page, chaque outil (StarCapture, NovaGame, Vercel, Supabase, Stripe, Figma, file de nuit, tableau de tâches…), les raccourcis, les réglages, les commandes. À consulter avant de répondre à toute question sur Orbit (« comment je fais… », « où est… », « est-ce qu\'Orbit sait… ») et avant de te servir d\'une page d\'Orbit que tu ne connais pas. Sans argument : la liste des pages. page : une page entière. search : les pages qui parlent de ces mots.',
+		inputSchema: obj({ page: { type: 'string', description: 'Par exemple outils/supabase' }, search: { type: 'string' } }),
+		run: a => guide(a),
+	},
 	{
 		name: 'state',
 		description: 'Ce que l\'utilisateur voit dans Orbit : dossiers affichés dans l\'explorateur, fichier actif et sélection, éditeurs ouverts, terminaux Claude (nom, dossier, état).',
@@ -242,7 +298,7 @@ async function handle(message) {
 				}
 				try {
 					const result = await tool.run(params.arguments || {});
-					return reply({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(result, null, 1) }] } });
+					return reply({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: typeof result === 'string' ? result : JSON.stringify(result, null, 1) }] } });
 				} catch (err) {
 					return reply({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: String(err && err.message || err) }], isError: true } });
 				}
