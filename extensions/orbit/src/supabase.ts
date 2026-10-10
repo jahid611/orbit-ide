@@ -69,11 +69,76 @@ export class Supabase extends Page {
 
 	constructor(context: vscode.ExtensionContext, private readonly tellAgent: (message: string) => boolean) {
 		super(context, 'supabase', 'Supabase', 'supabase.svg');
-		this.disposables.push(vscode.commands.registerCommand('orbit.supabase.show', () => this.show()));
+		this.disposables.push(
+			vscode.commands.registerCommand('orbit.supabase.show', () => this.show()),
+			vscode.commands.registerCommand('orbit.supabase.dashboard', () => {
+				const ref = this.linked();
+				if (!ref) {
+					vscode.window.showInformationMessage('Ce projet ne dit pas quel Supabase il utilise : relie-le depuis la page Supabase d\'Orbit.', 'Ouvrir la page').then(choice => choice && this.show());
+				}
+				return vscode.env.openExternal(vscode.Uri.parse(ref ? `https://supabase.com/dashboard/project/${ref}` : 'https://supabase.com/dashboard'));
+			}),
+		);
 	}
 
+	/** The project's Supabase: the one linked from this page, else the one the project itself names. */
 	private linked(): string | undefined {
-		return this.context.workspaceState.get<string>(LINK_KEY);
+		return this.context.workspaceState.get<string>(LINK_KEY) ?? this.detected();
+	}
+
+	private found: { root: string; ref: string | undefined } | undefined;
+
+	/**
+	 * A project that already uses Supabase says which one somewhere: the Supabase tool's own files,
+	 * an address `https://<ref>.supabase.co` in a `.env`, in the code or in its notes. Read once per
+	 * folder, so that the page opens on the right project without asking.
+	 */
+	private detected(): string | undefined {
+		const root = workspaceRoot();
+		if (!root) {
+			return undefined;
+		}
+		if (this.found?.root === root) {
+			return this.found.ref;
+		}
+		const read = (file: string) => {
+			try {
+				return fs.statSync(file).size < 400_000 ? fs.readFileSync(file, 'utf8') : '';
+			} catch {
+				return '';
+			}
+		};
+		let ref: string | undefined = /^[a-z0-9]{20}$/.exec(read(path.join(root, 'supabase', '.temp', 'project-ref')).trim())?.[0];
+		if (!ref) {
+			// Counted over the files most likely to hold it: the address used most is the project's.
+			const counts = new Map<string, number>();
+			const scan = (folder: string, depth: number) => {
+				let entries: fs.Dirent[];
+				try {
+					entries = fs.readdirSync(folder, { withFileTypes: true }).slice(0, 400);
+				} catch {
+					return;
+				}
+				for (const entry of entries) {
+					const file = path.join(folder, entry.name);
+					if (entry.isDirectory()) {
+						if (depth < 3 && !/^(node_modules|dist|build|out|\.git|\.next|android|ios|coverage|public|assets)$/.test(entry.name)) {
+							scan(file, depth + 1);
+						}
+					} else if (/^\.env|\.(ts|tsx|js|jsx|mjs|json|toml|md|ya?ml|sql|py|vue|svelte)$/.test(entry.name) && !/lock/.test(entry.name)) {
+						// A `.env` counts for more than a note: it is what the application really uses.
+						const weight = entry.name.startsWith('.env') || entry.name === 'config.toml' ? 5 : 1;
+						for (const match of read(file).matchAll(/\b([a-z0-9]{20})\.supabase\.(?:co|in)\b/g)) {
+							counts.set(match[1], (counts.get(match[1]) ?? 0) + weight);
+						}
+					}
+				}
+			};
+			scan(root, 0);
+			ref = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+		}
+		this.found = { root, ref };
+		return ref;
 	}
 
 	private call(method: string, route: string, body?: unknown) {

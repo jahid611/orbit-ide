@@ -582,6 +582,12 @@
         "title": "Nouveau projet depuis un dépôt GitHub ou GitLab",
         "category": "Orbit",
         "icon": "$(repo-clone)"
+      },
+      {
+        "command": "orbit.supabase.dashboard",
+        "title": "Supabase : ouvrir le tableau de bord du projet dans le navigateur",
+        "category": "Orbit",
+        "icon": "$(link-external)"
       }
     ],
     "menus": {

@@ -219,6 +219,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			{ label: '', kind: vscode.QuickPickItemKind.Separator, command: '' },
 			{ label: '$(orbit-vercel) Vercel', description: 'Mettre le projet en ligne', command: 'orbit.vercel.show' },
 			{ label: '$(database) Supabase', description: 'Base de données, comptes, stockage', command: 'orbit.supabase.show' },
+			{ label: '$(link-external) Tableau de bord Supabase', description: 'Le projet Supabase de ce dossier, dans le navigateur', command: 'orbit.supabase.dashboard' },
 			{ label: '$(credit-card) Stripe', description: 'Paiements', command: 'orbit.stripe.show' },
 			{ label: '$(symbol-color) Figma vers code', description: 'Coller un lien, l\'agent construit l\'écran', command: 'orbit.figma.show' },
 			{ label: '$(sparkle) Higgsfield', description: 'Images, vidéos, 3D et sons', command: 'orbit.higgsfield.show' },
