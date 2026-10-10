@@ -216,6 +216,9 @@ export function activate(context: vscode.ExtensionContext): void {
 		boardMove: (id, column, summary) => board.move(id, column, summary),
 		envNames: () => envVars.names(),
 		envAsk: (key, why) => envVars.ask(key, why),
+		supabaseState: () => supabase.agentState(),
+		supabaseSql: (query, file, write) => supabase.agentSql(query, file, write),
+		supabaseAuthUrls: add => supabase.agentAuthUrls(add),
 	};
 	// Everything the project is plugged into, behind one button.
 	// A service is shown by its own logo, anything else by an icon that says what it is.

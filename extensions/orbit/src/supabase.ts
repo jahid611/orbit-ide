@@ -250,6 +250,94 @@ export class Supabase extends Page {
 		await this.loadOverview(ref);
 	}
 
+	/** The linked project, ready for an agent's tool; says what is missing otherwise. */
+	private async forAgent(): Promise<string> {
+		this.token ??= await this.context.secrets.get(TOKEN_KEY);
+		if (!this.token) {
+			vscode.commands.executeCommand('orbit.supabase.show');
+			throw new Error('Orbit n\'est pas connecté à Supabase. La page Supabase vient de s\'ouvrir : demande à l\'utilisateur de s\'y connecter, puis réessaie.');
+		}
+		const ref = this.linked();
+		if (!ref) {
+			vscode.commands.executeCommand('orbit.supabase.show');
+			throw new Error('Ce projet n\'est relié à aucun projet Supabase. La page Supabase vient de s\'ouvrir : demande à l\'utilisateur d\'en relier un, puis réessaie.');
+		}
+		return ref;
+	}
+
+	/** `supabase_state`: which project, its tables, accounts and storage. Never a key. */
+	async agentState(): Promise<unknown> {
+		const ref = await this.forAgent();
+		await this.loadOverview(ref);
+		return { project: ref, dashboard: `https://supabase.com/dashboard/project/${ref}`, tables: this.overview?.tables, users: this.overview?.users, buckets: this.overview?.buckets, error: this.overview?.error };
+	}
+
+	/**
+	 * `supabase_sql`: a query that only reads runs at once, in a read-only transaction. Anything
+	 * that writes is shown to the user first: a live database has no undo.
+	 */
+	async agentSql(query: string, file: string | undefined, write: boolean): Promise<unknown> {
+		const ref = await this.forAgent();
+		if (file) {
+			query = await fs.promises.readFile(file, 'utf8');
+		}
+		query = query.trim();
+		if (!query) {
+			throw new Error('Il faut une requête (query) ou un fichier .sql (file).');
+		}
+		if (write) {
+			const lines = query.split(/\r?\n/);
+			const shown = lines.slice(0, 28).join('\n').slice(0, 1800) + (lines.length > 28 || query.length > 1800 ? `\n… (${lines.length} lignes en tout)` : '');
+			const choice = await vscode.window.showWarningMessage(
+				file ? `L'agent veut exécuter ${path.basename(file)} sur ta base Supabase` : 'L\'agent veut modifier ta base Supabase',
+				{ modal: true, detail: `Projet ${ref}. Rien ne peut être annulé ensuite.\n\n${shown}` },
+				...(file ? ['Exécuter', 'Lire le fichier'] : ['Exécuter']),
+			);
+			if (choice === 'Lire le fichier' && file) {
+				await vscode.window.showTextDocument(vscode.Uri.file(file), { preview: false });
+				throw new Error('L\'utilisateur relit le fichier avant de décider : rien n\'a été exécuté. Attends qu\'il te dise de relancer.');
+			}
+			if (choice !== 'Exécuter') {
+				throw new Error('L\'utilisateur a refusé : rien n\'a été exécuté. Ne réessaie pas sans qu\'il le demande.');
+			}
+		}
+		const answer = await this.call('POST', `/projects/${ref}/database/query`, write ? { query } : { query, read_only: true });
+		if (!answer.ok || !Array.isArray(answer.json)) {
+			throw new Error(`Supabase a refusé la requête : ${answer.error ?? 'réponse inattendue'}${write ? '' : ' (lecture seule : passe write=true pour une requête qui modifie la base)'}`);
+		}
+		if (write) {
+			this.loadOverview(ref).then(() => this.send(), () => undefined);
+		}
+		const rows = answer.json as Record<string, unknown>[];
+		return { ok: true, count: rows.length, rows: rows.slice(0, 200), truncated: rows.length > 200 || undefined };
+	}
+
+	/** `supabase_auth_urls`: the addresses sign-in links may send people back to, and adding some. */
+	async agentAuthUrls(add: string[]): Promise<unknown> {
+		const ref = await this.forAgent();
+		const current = await this.call('GET', `/projects/${ref}/config/auth`);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const config = current.json as any;
+		if (!current.ok || !config) {
+			throw new Error(`Supabase ne donne pas les réglages de connexion : ${current.error ?? 'réponse inattendue'}`);
+		}
+		const allowed = String(config.uri_allow_list ?? '').split(',').map(u => u.trim()).filter(Boolean);
+		const wanted = add.map(u => u.trim()).filter(u => /^[a-z][a-z0-9+.-]*:\/\/[^\s,<>]+$/i.test(u) && !allowed.includes(u));
+		if (!wanted.length) {
+			return { siteUrl: config.site_url, redirectUrls: allowed, note: add.length ? 'Rien à ajouter : ces adresses y sont déjà, ou ne sont pas des adresses complètes.' : undefined };
+		}
+		const choice = await vscode.window.showWarningMessage('L\'agent veut ajouter des adresses de redirection à Supabase', { modal: true, detail: `Projet ${ref}. Les liens de connexion et de mot de passe oublié pourront renvoyer vers :\n\n${wanted.join('\n')}` }, 'Ajouter');
+		if (choice !== 'Ajouter') {
+			throw new Error('L\'utilisateur a refusé : rien n\'a été changé.');
+		}
+		const next = [...allowed, ...wanted];
+		const saved = await this.call('PATCH', `/projects/${ref}/config/auth`, { uri_allow_list: next.join(',') });
+		if (!saved.ok) {
+			throw new Error(`Supabase a refusé : ${saved.error ?? 'réponse inattendue'}`);
+		}
+		return { ok: true, siteUrl: config.site_url, redirectUrls: next };
+	}
+
 	private schemaText(): string {
 		return (this.overview?.tables ?? []).map(t => `- ${t.name} (${t.columns.map(c => `${c.name} ${c.type}`).join(', ')})${t.rls ? '' : ' — sans protection RLS'}`).join('\n') || '(aucune table pour l\'instant)';
 	}
@@ -404,7 +492,7 @@ export class Supabase extends Page {
 					'Tables actuelles du schéma public :',
 					this.schemaText(),
 					'',
-					ask || 'Branche Supabase dans le projet : installe la bibliothèque cliente, crée le client à un seul endroit, et montre-moi comment lire une table. Pour créer ou modifier des tables, donne-moi le SQL : je l\'exécuterai depuis la page Supabase d\'Orbit.',
+					ask || 'Branche Supabase dans le projet : installe la bibliothèque cliente, crée le client à un seul endroit, et montre-moi comment lire une table. Pour lire la base, créer ou modifier des tables, sers-toi de tes outils supabase_state, supabase_sql et supabase_auth_urls : ne me demande pas de le faire à la main.',
 					'Toute table lue depuis le navigateur doit avoir la protection RLS activée, avec des règles d\'accès.',
 				].join('\n'));
 				break;

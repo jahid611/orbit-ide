@@ -195,6 +195,23 @@ const TOOLS = [
 		run: a => call('/env_ask', { key: a.key, why: a.why }),
 	},
 	{
+		name: 'supabase_state',
+		description: 'Le projet Supabase relié à ce projet dans Orbit : son identifiant, l\'adresse de son tableau de bord, ses tables (colonnes, nombre de lignes, protection RLS), le nombre de comptes et d\'espaces de stockage. Orbit garde l\'accès : tu n\'as besoin d\'aucune clé.',
+		inputSchema: obj({}), run: () => call('/supabase_state', {}, 60000),
+	},
+	{
+		name: 'supabase_sql',
+		description: 'Exécute du SQL sur la base Supabase du projet, avec l\'accès d\'Orbit. Donne query, ou file (un fichier .sql du projet, à préférer pour une migration longue). Sans write, la requête tourne en lecture seule et répond tout de suite : sers-t\'en pour vérifier, compter, contrôler. Avec write=true (create, alter, insert, update, delete, policies…), Orbit montre le SQL à l\'utilisateur, qui accepte ou refuse : préviens-le d\'une phrase avant, et n\'envoie qu\'un appel par lot cohérent. N\'écris jamais à la place « exécute ce SQL à la main » : fais-le avec cet outil.',
+		inputSchema: obj({ query: { type: 'string' }, file, write: { type: 'boolean', description: 'true si la requête modifie la base' } }),
+		run: a => call('/supabase_sql', { query: a.query, file: a.file, write: a.write ? 'true' : undefined }, a.write ? 10 * 60 * 1000 : 60000),
+	},
+	{
+		name: 'supabase_auth_urls',
+		description: 'Les adresses vers lesquelles Supabase accepte de renvoyer après une connexion ou un lien de mot de passe oublié (Authentication, URL Configuration). Sans add : la liste actuelle et l\'adresse du site. Avec add : ajoute ces adresses complètes, après accord de l\'utilisateur dans Orbit.',
+		inputSchema: obj({ add: { type: 'array', items: { type: 'string' } } }),
+		run: a => call('/supabase_auth_urls', { add: a.add || [] }, 10 * 60 * 1000),
+	},
+	{
 		name: 'find_commands',
 		description: 'Cherche des commandes d\'Orbit/VS Code dont l\'identifiant contient tous les mots donnés (ex. « terminal split », « zen »).',
 		inputSchema: obj({ query: { type: 'string' } }, ['query']), run: a => call('/find_commands', { query: a.query }),

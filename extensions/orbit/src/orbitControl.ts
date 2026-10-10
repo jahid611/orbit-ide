@@ -60,6 +60,9 @@ export interface AgentDesk {
 	boardMove(id: string, column: string, summary: string | undefined): unknown;
 	envNames(): unknown;
 	envAsk(key: string, why: string): void;
+	supabaseState(): Promise<unknown>;
+	supabaseSql(query: string, file: string | undefined, write: boolean): Promise<unknown>;
+	supabaseAuthUrls(add: string[]): Promise<unknown>;
 }
 
 /** The MCP configuration every Claude started by Orbit receives (`orbit` tools). */
@@ -204,6 +207,9 @@ export class OrbitControl implements vscode.Disposable {
 				case '/env_ask':
 					this.desk?.envAsk(String(q.key ?? ''), String(q.why ?? ''));
 					return reply(200, { ok: true, note: 'La demande est affichée à l\'utilisateur. Continue avec le nom de la variable.' });
+				case '/supabase_state': return reply(200, await this.desk?.supabaseState());
+				case '/supabase_sql': return reply(200, await this.desk?.supabaseSql(String(q.query ?? ''), q.file ? resolvePath(q.file, q.cwd) : undefined, q.write === 'true'));
+				case '/supabase_auth_urls': return reply(200, await this.desk?.supabaseAuthUrls(JSON.parse(q.add || '[]')));
 				case '/find_commands': {
 					const words = String(q.query ?? '').toLowerCase().split(/\s+/).filter(Boolean);
 					const all = await vscode.commands.getCommands(true);
