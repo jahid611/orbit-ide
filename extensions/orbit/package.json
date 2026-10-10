@@ -514,7 +514,7 @@
       },
       {
         "command": "orbit.tools",
-        "title": "Outils du projet : tableau, variables, Vercel, Supabase, Stripe, Figma…",
+        "title": "Outils du projet : chercher parmi tous les outils",
         "category": "Orbit",
         "icon": "$(tools)"
       },
@@ -798,7 +798,7 @@
           "group": "navigation@86"
         },
         {
-          "command": "orbit.tools",
+          "submenu": "orbit.toolsMenu",
           "when": "view == terminal",
           "group": "navigation@85"
         }
@@ -1033,6 +1033,64 @@
           "command": "orbit.higgsfield.vary",
           "when": "resourceExtname =~ /^\\.(png|jpe?g|webp)$/i",
           "group": "navigation@22"
+        }
+      ],
+      "orbit.toolsMenu": [
+        {
+          "command": "orbit.board.show",
+          "group": "1_work@1"
+        },
+        {
+          "command": "orbit.queue.show",
+          "group": "1_work@2"
+        },
+        {
+          "command": "orbit.visual.show",
+          "group": "1_work@3"
+        },
+        {
+          "command": "orbit.preview.show",
+          "group": "1_work@4"
+        },
+        {
+          "command": "orbit.vercel.show",
+          "group": "2_services@1"
+        },
+        {
+          "command": "orbit.supabase.show",
+          "group": "2_services@2"
+        },
+        {
+          "command": "orbit.supabase.dashboard",
+          "group": "2_services@3"
+        },
+        {
+          "command": "orbit.stripe.show",
+          "group": "2_services@4"
+        },
+        {
+          "command": "orbit.database.show",
+          "group": "2_services@5"
+        },
+        {
+          "command": "orbit.env.show",
+          "group": "2_services@6"
+        },
+        {
+          "command": "orbit.figma.show",
+          "group": "3_create@1"
+        },
+        {
+          "command": "orbit.higgsfield.show",
+          "group": "3_create@2"
+        },
+        {
+          "command": "orbit.store.show",
+          "group": "3_create@3"
+        },
+        {
+          "command": "orbit.tools",
+          "group": "4_all@1"
         }
       ]
     },
@@ -1916,6 +1974,13 @@
             "filenamePattern": "*.{ttf,otf,ttc,woff,woff2}"
           }
         ]
+      }
+    ],
+    "submenus": [
+      {
+        "id": "orbit.toolsMenu",
+        "label": "Outils du projet",
+        "icon": "$(tools)"
       }
     ]
   },
