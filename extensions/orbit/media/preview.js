@@ -142,13 +142,21 @@
 		const outerW = w + pad[1] + pad[3];
 		const outerH = h + pad[0] + pad[2];
 		const room = wrap.getBoundingClientRect();
-		const scale = Math.min(1, (room.width - 40) / outerW, (room.height - 56) / outerH);
+		const fit = Math.min(1, (room.width - 40) / outerW, (room.height - 56) / outerH);
+		// A device placed on half a pixel, or scaled to a width that is not a whole number of
+		// pixels, shows its page blurred: both are rounded.
+		// Whole pixels of the screen, not of the page: Orbit's zoom makes the two differ.
+		const dpr = window.devicePixelRatio || 1;
+		const snap = (/** @type {number} */ n) => Math.round(n * dpr) / dpr;
+		const scale = fit < 1 ? Math.max(1, Math.floor(outerW * fit * dpr)) / dpr / outerW : 1;
 		shell.className = `shell ${model.kind} cut-${model.cut} tone-${model.tone}${land ? ' landscape' : ''}`;
 		shell.style.width = `${outerW}px`;
 		shell.style.height = `${outerH}px`;
 		shell.style.padding = pad.map(p => `${p}px`).join(' ');
 		shell.style.borderRadius = `${model.r ? model.r + Math.min(...model.bezel) : 46}px`;
-		shell.style.transform = `translate(-50%, -50%) scale(${scale})`;
+		shell.style.left = `${snap((room.width - outerW * scale) / 2)}px`;
+		shell.style.top = `${snap((room.height - outerH * scale) / 2 + 6)}px`;
+		shell.style.transform = scale < 1 ? `scale(${scale})` : 'none';
 		screen.style.width = `${w}px`;
 		screen.style.height = `${h}px`;
 		screen.style.borderRadius = `${model.r}px`;
@@ -186,6 +194,9 @@
 			sizeFrame();
 			void wrap.offsetWidth;
 			wrap.classList.add('opening');
+			// Left in place, the animation keeps a transform on the frame, and a transformed
+			// frame is no longer drawn on whole pixels: the page under it looks blurred.
+			wrap.addEventListener('animationend', () => wrap.classList.remove('opening'), { once: true });
 		} else {
 			wrap.classList.add('closing');
 			$('stage').classList.add('leaving');

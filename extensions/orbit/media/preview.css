@@ -52,7 +52,7 @@ body.page-preview { overflow: hidden; background: var(--vscode-editor-background
 
 /* Device mockups: the page gets the exact screen size, the device is scaled to fit. */
 .frame-wrap.device { position: relative; overflow: hidden; }
-.frame-wrap.device .shell { position: absolute; left: 50%; top: calc(50% + 6px); box-sizing: border-box; transform-origin: center;
+.frame-wrap.device .shell { position: absolute; left: 0; top: 0; box-sizing: border-box; transform-origin: 0 0;
 	background: linear-gradient(150deg, #34343a, #121215 46%, #26262b);
 	box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .14), inset 0 0 0 5px #08080a, 0 0 0 2px #3c3c43, 0 0 0 3px #0d0d10, 0 40px 90px rgba(0, 0, 0, .6), 0 12px 30px rgba(0, 0, 0, .4);
 	transition: width .3s cubic-bezier(.2, .8, .2, 1), height .3s cubic-bezier(.2, .8, .2, 1), padding .3s ease; }
@@ -92,7 +92,7 @@ iframe { width: 100%; height: 100%; border: none; background: #fff; display: blo
 .modal-close { display: none; }
 .stage.focus .backdrop { display: block; position: fixed; inset: 0; z-index: 40; background: rgba(6, 5, 18, .62); backdrop-filter: blur(14px) saturate(1.2); animation: fade-in .32s ease both; }
 .stage.focus.leaving .backdrop { animation: fade-out .2s ease both; }
-.stage.focus .frame-wrap { position: fixed; z-index: 41; top: 5vh; bottom: 5vh; left: 50%; width: min(90vw, 1680px); height: auto; margin: 0; transform: translateX(-50%);
+.stage.focus .frame-wrap { position: fixed; z-index: 41; top: 5vh; bottom: 5vh; left: 0; right: 0; width: min(90vw, 1680px); height: auto; margin: 0 auto;
 	border-radius: 16px; overflow: visible; box-shadow: 0 0 0 1px rgba(255, 255, 255, .1), 0 30px 120px rgba(0, 0, 0, .7), 0 0 80px color-mix(in srgb, var(--accent) 22%, transparent); transition: width .3s cubic-bezier(.2, .8, .2, 1); }
 /* A device in the large view floats alone over the backdrop. */
 .stage.focus .frame-wrap.device { width: 92vw; background: none; box-shadow: none; overflow: visible; }
@@ -108,11 +108,11 @@ iframe { width: 100%; height: 100%; border: none; background: #fff; display: blo
 .stage.focus .hint { display: none; }
 .stage.focus ~ .panel { position: fixed; z-index: 42; }
 @keyframes modal-in {
-	0% { opacity: 0; transform: translateX(-50%) translateY(26px) scale(.86); filter: blur(6px); }
+	0% { opacity: 0; transform: translateY(26px) scale(.86); filter: blur(6px); }
 	60% { opacity: 1; filter: blur(0); }
-	100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+	100% { opacity: 1; transform: none; filter: none; }
 }
-@keyframes modal-out { to { opacity: 0; transform: translateX(-50%) translateY(14px) scale(.94); } }
+@keyframes modal-out { to { opacity: 0; transform: translateY(14px) scale(.94); } }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
 .hint { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100% - 32px); padding: 7px 8px 7px 14px; border-radius: 10px; font-size: 12px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, .3); white-space: nowrap; }
