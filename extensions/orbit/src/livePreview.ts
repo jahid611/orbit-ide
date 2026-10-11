@@ -241,6 +241,7 @@ export class LivePreview implements vscode.Disposable {
 			this.panel.iconPath = new vscode.ThemeIcon('eye');
 			this.panel.webview.html = renderWebview(this.panel.webview, this.extensionUri, 'preview', { frame: 'http://127.0.0.1:*' });
 			const listener = this.panel.webview.onDidReceiveMessage(msg => this.onMessage(msg));
+			this.restoring = false;
 			this.panel.onDidDispose(() => {
 				listener.dispose();
 				this.panel = undefined;
@@ -254,12 +255,24 @@ export class LivePreview implements vscode.Disposable {
 			this.panel.reveal();
 		}
 		this.panel.title = `Vue vivante · ${target.label}`;
-		this.panel.webview.postMessage({ type: 'load', src, label: target.label, base: `http://127.0.0.1:${port}` });
+		this.loaded = { type: 'load', src, label: target.label, base: `http://127.0.0.1:${port}` };
+		this.panel.webview.postMessage(this.loaded);
 	}
+
+	/** What the view shows, sent again when its page reloads (the view moved to another window). */
+	private loaded: { type: 'load'; src: string; label: string; base: string } | undefined;
+	private restoring = false;
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private async onMessage(msg: any): Promise<void> {
 		switch (msg.type) {
+			case 'ready':
+				// The first `ready` follows the `load` already sent; any later one is a reloaded page.
+				if (this.restoring && this.loaded) {
+					this.panel?.webview.postMessage({ ...this.loaded, restore: true });
+				}
+				this.restoring = true;
+				break;
 			case 'pick':
 				await this.show();
 				break;

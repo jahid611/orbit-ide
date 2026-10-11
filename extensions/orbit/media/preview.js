@@ -370,6 +370,7 @@
 					// keep the previous address
 				}
 				$('address').title = msg.title || '';
+				vscode.setState({ base, path: $('address').value });
 				if (selecting) {
 					toFrame({ type: 'mode', selecting: true });
 				}
@@ -388,12 +389,16 @@
 			return;
 		}
 		switch (msg?.type) {
-			case 'load':
+			case 'load': {
 				base = msg.base;
-				frame.src = msg.src;
-				$('address').value = msg.src.slice(base.length) || '/';
+				// The page itself was reloaded (the view moved to another window): back to where it was.
+				const kept = msg.restore ? vscode.getState() : undefined;
+				const path = kept?.base === base && kept.path ? kept.path : msg.src.slice(base.length) || '/';
+				frame.src = `${base}${path}`;
+				$('address').value = path;
 				closePanel();
 				break;
+			}
 			case 'located':
 				if (msg.location) {
 					$('whereText').innerHTML = `${escape(msg.location.relative)}<b>:${msg.location.line}</b>${msg.location.confidence === 'probable' ? '<i>probable</i>' : ''}`;
@@ -408,4 +413,6 @@
 				break;
 		}
 	});
+	// Sent on every load of this page: moving the view to another window reloads it.
+	vscode.postMessage({ type: 'ready' });
 })();

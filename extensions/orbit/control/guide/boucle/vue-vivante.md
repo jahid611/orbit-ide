@@ -53,6 +53,10 @@ Le cadre est réduit pour tenir dans l'onglet, jamais agrandi, et les barres de 
 
 Le bouton d'agrandissement (ou la touche `F`) fait flotter le même cadre, sans le recharger, au centre sur un fond flouté, avec la zone d'éditeur maximisée. `Échap`, le bouton de fermeture ou un clic à côté la referment. `Échap` recule d'un cran à la fois : d'abord la sélection, puis le panneau de l'élément, puis la vue en grand.
 
+## Dans une autre fenêtre
+
+La vue vivante se déplace comme n'importe quel onglet : glisse-la hors de la fenêtre, ou clic droit sur l'onglet puis « Move into New Window », pour la poser sur un second écran. Le déplacement recharge la page : elle revient à l'adresse où tu étais, mais ce qui était saisi dans un formulaire et non enregistré est perdu, et le choix d'appareil revient à l'affichage libre.
+
 ## Erreurs de la page
 
 L'inspecteur capte les erreurs que la page produit : exceptions, promesses rejetées, `console.error`, requêtes en échec (réponse en erreur ou échec réseau) et ressources introuvables, une fois chacune. Un compteur rouge apparaît dans la barre. Il ouvre la liste (les 30 dernières), et **Faire corriger par Claude** envoie tout à l'agent avec le fichier, la ligne et le début de la pile d'appels. **Effacer** vide la liste.
