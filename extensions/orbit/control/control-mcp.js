@@ -105,25 +105,33 @@ async function call(route, params = {}, timeoutMs = 30000) {
 }
 
 const GUIDE = path.join(__dirname, 'guide');
+/** Pages written on this machine: the full reference of an application the user installed, drawn from that very version. */
+const LOCAL_GUIDE = path.join(os.homedir(), '.orbit', 'guide');
 
 /** Every page of Orbit's manual: `category/slug`, its title and its one-line description. */
 function guidePages() {
 	const pages = [];
+	for (const root of [GUIDE, LOCAL_GUIDE]) {
+		readGuide(root, pages);
+	}
+	return pages;
+}
+
+function readGuide(root, pages) {
 	let categories = [];
 	try {
-		categories = fs.readdirSync(GUIDE).filter(c => fs.statSync(path.join(GUIDE, c)).isDirectory());
+		categories = fs.readdirSync(root).filter(c => fs.statSync(path.join(root, c)).isDirectory());
 	} catch {
-		return pages;
+		return;
 	}
 	for (const category of categories) {
-		for (const name of fs.readdirSync(path.join(GUIDE, category)).filter(f => f.endsWith('.md'))) {
-			const text = fs.readFileSync(path.join(GUIDE, category, name), 'utf8');
+		for (const name of fs.readdirSync(path.join(root, category)).filter(f => f.endsWith('.md'))) {
+			const text = fs.readFileSync(path.join(root, category, name), 'utf8');
 			const head = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(text);
 			const field = key => new RegExp(`^${key}:\\s*(.*)$`, 'm').exec(head ? head[1] : '')?.[1].trim() || '';
 			pages.push({ id: `${category}/${name.slice(0, -3)}`, title: field('title'), description: field('description'), body: head ? text.slice(head[0].length) : text });
 		}
 	}
-	return pages;
 }
 
 function guide({ page, search }) {

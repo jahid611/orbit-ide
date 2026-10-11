@@ -189,6 +189,7 @@ export async function installCraft(app: CraftApp, say: (step: string) => void): 
 			}
 		}
 		ensureCraftIcon(app);
+		await writeCraftGuide(app).catch(() => undefined);
 		return version;
 	} catch (err) {
 		await fs.promises.rm(target, { recursive: true, force: true });
@@ -243,7 +244,84 @@ export function openCraft(app: CraftApp, file?: string): boolean {
 	return true;
 }
 
+const LOCAL_GUIDE = path.join(os.homedir(), '.orbit', 'guide');
+
+/**
+ * Everything the installed application can do, for the agents' manual. The program lists its
+ * own commands (`commands --json`: id, label, menu, parameters), so the pages describe exactly
+ * the version on this machine: one map of every command, then one page per family with the
+ * parameters, short enough to be read in one go. The project's own list of what it cannot do
+ * yet comes with it. Written once per version.
+ */
+export async function writeCraftGuide(app: CraftApp): Promise<void> {
+	const cli = findCraft(app);
+	if (!cli) {
+		return;
+	}
+	const dir = path.join(LOCAL_GUIDE, app.id);
+	// « photocraft-cli 0.7.0 (792616159, 2026-10-11) »: only the number is kept.
+	const said = await execFileAsync(cli, ['--version'], { timeout: 20000, windowsHide: true }).then(r => r.stdout, () => '');
+	const version = /\d+\.\d+\.\d+/.exec(said)?.[0] ?? /\d+\.\d+\.\d+/.exec(cli)?.[0] ?? '';
+	const stamp = path.join(dir, '.version');
+	if (fs.existsSync(stamp) && fs.readFileSync(stamp, 'utf8') === `${cli}\n${version}`) {
+		return;
+	}
+	const listed = await execFileAsync(cli, ['commands', '--json'], { timeout: 60000, windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
+	const parsed = JSON.parse(listed.stdout);
+	const commands: { id: string; label?: string; menu?: string[]; params?: string; shortcut?: string | null }[] = Array.isArray(parsed) ? parsed : parsed.commands;
+	const families = new Map<string, typeof commands>();
+	for (const command of commands) {
+		const family = command.id.split('.')[0];
+		families.set(family, [...families.get(family) ?? [], command]);
+	}
+	await fs.promises.rm(dir, { recursive: true, force: true });
+	await fs.promises.mkdir(dir, { recursive: true });
+	const head = (title: string, description: string) => `---\ntitle: ${title}\ndescription: ${description}\n---\n\n`;
+	const names = [...families.keys()].sort((a, b) => families.get(b)!.length - families.get(a)!.length);
+	const map = [
+		head(`${app.name} : toutes les commandes`, `La carte complète des ${commands.length} commandes de ${app.name} ${version}, par famille. À lire avant de s'en servir.`),
+		`Voici **toutes** les commandes de ${app.name} ${version} installé sur cette machine : ${commands.length}, tirées du programme lui-même. Rien d'autre n'existe. Si une action n'est pas ici, ${app.name} ne sait pas la faire : passe par un autre moyen et dis-le.`,
+		'',
+		`Les paramètres de chaque commande sont dans la page de sa famille : \`guide page="${app.id}/commandes-<famille>"\` (par exemple \`${app.id}/commandes-${names[0]}\`). Les limites connues du logiciel : \`${app.id}/limites\`. Le mode d'emploi et les recettes : \`outils/${app.id}\`.`,
+		'',
+		...names.flatMap(family => [`## ${family} (${families.get(family)!.length})`, '', families.get(family)!.map(c => c.id).join(' · '), '']),
+	].join('\n');
+	await fs.promises.writeFile(path.join(dir, 'commandes.md'), map);
+	for (const family of names) {
+		const lines = families.get(family)!.map(c => `- \`${c.id}\`${c.label ? ` — ${c.label}` : ''}${c.menu?.length ? ` (${c.menu.join(' › ')})` : ''}${c.params && c.params !== '{}' ? `\n  ${c.params}` : ''}`);
+		// A family too long for one reading is cut in parts.
+		const parts: string[][] = [[]];
+		let size = 0;
+		for (const line of lines) {
+			if (size + line.length > 42000) {
+				parts.push([]);
+				size = 0;
+			}
+			parts[parts.length - 1].push(line);
+			size += line.length;
+		}
+		for (const [index, part] of parts.entries()) {
+			const suffix = parts.length > 1 ? `-${index + 1}` : '';
+			const more = parts.length > 1 ? ` Partie ${index + 1} sur ${parts.length} (les autres : ${parts.map((_, i) => `\`${app.id}/commandes-${family}-${i + 1}\``).join(', ')}).` : '';
+			await fs.promises.writeFile(path.join(dir, `commandes-${family}${suffix}.md`), [
+				head(`${app.name} : commandes ${family}${suffix}`, `Les commandes « ${family} » de ${app.name} ${version}, avec leurs paramètres.`),
+				`Commandes « ${family} » de ${app.name} ${version}, avec leur libellé, leur menu et leurs paramètres (\`nom: valeurs possibles = valeur par défaut\`). À lancer avec \`command_run {"id": …, "params": {…}}\`.${more}`,
+				'',
+				...part,
+				'',
+			].join('\n'));
+		}
+	}
+	// What the project itself says its software cannot do yet.
+	const gaps = await fetch(`https://raw.githubusercontent.com/${app.repo}/v${version}/docs/gaps.md`, { signal: AbortSignal.timeout(30000) }).then(r => r.ok ? r.text() : '', () => '');
+	if (gaps) {
+		await fs.promises.writeFile(path.join(dir, 'limites.md'), `${head(`${app.name} : ce qu'il ne sait pas encore faire`, `La liste que le projet ${app.name} tient lui-même de ses manques (en anglais), version ${version}.`)}${gaps.slice(0, 60000)}\n`);
+	}
+	await fs.promises.writeFile(stamp, `${cli}\n${version}`);
+}
+
 /** Removes what Orbit installed of an app. A copy the user installed elsewhere is not touched. */
 export async function removeCraft(app: CraftApp): Promise<void> {
 	await fs.promises.rm(path.join(TOOLS, app.id), { recursive: true, force: true });
+	await fs.promises.rm(path.join(LOCAL_GUIDE, app.id), { recursive: true, force: true });
 }

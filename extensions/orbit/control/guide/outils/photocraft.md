@@ -44,11 +44,23 @@ Les outils eux-mêmes :
 | `doc_export` | Écrire le résultat dans un autre format (`path`, `quality`). |
 | `doc_save` | Enregistrer le document (`.psd` ou `.pcraft` gardent les calques). |
 
+## La référence complète
+
+À l'installation, Orbit demande à PhotoCraft la liste de toutes ses commandes et en fait des pages du manuel de l'agent, propres à la version installée sur ta machine :
+
+| Page | Contenu |
+|---|---|
+| `photocraft/commandes` | La carte de toutes les commandes (858 pour la version 0.7.0), par famille. Tout ce que PhotoCraft sait faire y est ; ce qui n'y est pas n'existe pas. |
+| `photocraft/commandes-<famille>` | Les commandes d'une famille (`layer`, `filter`, `image`, `edit`, `type`, `select`…) avec leur libellé, leur menu et leurs paramètres. |
+| `photocraft/limites` | La liste que le projet tient lui-même de ce que son logiciel ne sait pas encore faire (en anglais). |
+
+L'agent lit la carte une fois par discussion, puis la page de la famille dont il a besoin. Il connaît ainsi toute l'application sans tâtonner. Ces pages sont refaites quand la version installée change.
+
 ## Règles pour l'agent
 
 - **Les chemins sont relatifs au dossier du projet**, avec des `/`. PhotoCraft refuse de lire ou d'écrire ailleurs.
 - **Ne jamais écraser l'original** sauf demande explicite : exporter sous un autre nom.
-- **Chercher avant d'inventer** : `command_list` avec un filtre donne l'identifiant exact et la forme des paramètres. Il y a plus de 500 commandes ; leurs noms suivent les menus de Photoshop (`image.imageSize`, `filter.blur.gaussianBlur`, `layer.newAdjustmentLayer.curves`).
+- **Lire la carte, ne pas deviner** : `guide page="photocraft/commandes"` donne toutes les commandes, la page de la famille leurs paramètres ; `command_list` avec un filtre dit en plus si la commande est active sur le document ouvert. Les noms suivent les menus de Photoshop (`image.imageSize`, `filter.blur.gaussianBlur`, `layer.newAdjustmentLayer.curves`).
 - **Le calque actif compte.** Une commande de pixels (filtre, réglage, détourage) échoue si le calque actif est un calque de texte ou de réglage. Lire les `id` avec `doc_inspect`, puis viser le calque avec le paramètre `layer`, ou le choisir par `layer.select {"layer": id}`.
 - **Regarder avant de conclure** : `render_preview` après la retouche.
 - **Dire quand ça échoue.** PhotoCraft est en alpha : une commande peut manquer ou être inactive. Le message d'erreur dit pourquoi. Dans ce cas, le dire et passer par un autre moyen.

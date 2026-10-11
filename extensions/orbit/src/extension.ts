@@ -36,7 +36,7 @@ import { EnvVars } from './envVars';
 import { Board } from './board';
 import { VisualCheck } from './visualCheck';
 import { Store } from './store';
-import { CRAFT_APPS, craftGui, craftIcon, ensureCraftIcon, findCraft, openCraft } from './craft';
+import { CRAFT_APPS, craftGui, craftIcon, ensureCraftIcon, findCraft, openCraft, writeCraftGuide } from './craft';
 import { CraftView } from './craftView';
 import { Figma } from './figma';
 import { Supabase } from './supabase';
@@ -280,6 +280,8 @@ export function activate(context: vscode.ExtensionContext): void {
 	}), { title: 'Installés', items: skills.installedTools() as Tool[] }].filter(group => group.items.length);
 	for (const app of CRAFT_APPS) {
 		ensureCraftIcon(app);
+		// The agents' reference follows the installed version (written once, a few seconds after starting).
+		setTimeout(() => writeCraftGuide(app).catch(() => undefined), 8000);
 		context.subscriptions.push(new CraftView(context, app, () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath));
 		context.subscriptions.push(vscode.commands.registerCommand(`orbit.craft.open.${app.id}`, async () => {
 			// The picture in front, if there is one, opens with the application.
