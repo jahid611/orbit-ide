@@ -53,6 +53,18 @@ Le cadre est réduit pour tenir dans l'onglet, jamais agrandi, et les barres de 
 
 Le bouton d'agrandissement (ou la touche `F`) fait flotter le même cadre, sans le recharger, au centre sur un fond flouté, avec la zone d'éditeur maximisée. `Échap`, le bouton de fermeture ou un clic à côté la referment. `Échap` recule d'un cran à la fois : d'abord la sélection, puis le panneau de l'élément, puis la vue en grand.
 
+## Liste des pages
+
+La flèche au bout de la barre d'adresse ouvre la liste des pages du site : un clic y va. Orbit la dresse d'après les fichiers du projet (pages HTML d'un dossier, dossiers de routes de Next, Nuxt, Astro et SvelteKit, chemins déclarés à un routeur comme React Router ou Vue Router), et y ajoute sous « Visitées » les pages par lesquelles tu es passé depuis l'ouverture de la vue. Une route à paramètre (`/produit/[id]`) n'a pas d'adresse à proposer : elle n'apparaît qu'une fois visitée. Tu peux toujours taper une adresse à la main.
+
+## Mini fenêtre
+
+Le bouton de mini fenêtre (ou la touche `P`) sort la vue de la zone d'éditeur et la pose dans une petite fenêtre sans barre d'onglets, qui reste au-dessus des autres : tu la déplaces où tu veux, tu la redimensionnes, et tu gardes le site sous les yeux pendant que l'agent travaille dans Orbit. Sa barre ne garde que la navigation, l'adresse et la liste des pages. Le même bouton la ramène dans Orbit. Le passage recharge la page (même adresse).
+
+## Pendant que l'agent travaille
+
+Avec « Suivre Claude », chaque fichier que l'agent écrit s'ouvre dans l'éditeur. Quand une page occupe cet endroit (la vue vivante, une vidéo, un document), le fichier s'ouvre derrière elle : il a son onglet, la page reste devant. En vue en grand, rien ne s'ouvre.
+
 ## Dans une autre fenêtre
 
 La vue vivante se déplace comme n'importe quel onglet : glisse-la hors de la fenêtre, ou clic droit sur l'onglet puis « Move into New Window », pour la poser sur un second écran. Le déplacement recharge la page : elle revient à l'adresse où tu étais, mais ce qui était saisi dans un formulaire et non enregistré est perdu, et le choix d'appareil revient à l'affichage libre.
@@ -68,7 +80,7 @@ L'inspecteur capte les erreurs que la page produit : exceptions, promesses rejet
 | Ouvrir la vue vivante | `Ctrl+Alt+V` | `⌥⌘V` |
 | Envoyer la demande (champ de l'élément) | `Ctrl+Entrée` | `⌘⏎` |
 
-Dans la vue : `S` active ou coupe la sélection, `F` ouvre ou ferme la vue en grand, `Échap` revient d'un cran.
+Dans la vue : `S` active ou coupe la sélection, `F` ouvre ou ferme la vue en grand, `P` la mini fenêtre, `Échap` revient d'un cran.
 
 ## L'agent teste dans la vue vivante
 

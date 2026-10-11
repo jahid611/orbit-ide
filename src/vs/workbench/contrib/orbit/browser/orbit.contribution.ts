@@ -5,7 +5,7 @@
 
 import * as nls from '../../../../nls.js';
 import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
-import { $, addDisposableListener, append, EventType } from '../../../../base/browser/dom.js';
+import { $, addDisposableListener, append, EventType, getWindow } from '../../../../base/browser/dom.js';
 import { AnchorAlignment } from '../../../../base/browser/ui/contextview/contextview.js';
 import { IContextViewService } from '../../../../platform/contextview/browser/contextView.js';
 import { createStyleSheet } from '../../../../base/browser/domStylesheets.js';
@@ -23,6 +23,9 @@ import { Codicon } from '../../../../base/common/codicons.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
 import Severity from '../../../../base/common/severity.js';
 import { ITerminalService } from '../../terminal/browser/terminal.js';
+import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { FocusMode } from '../../../../platform/native/common/native.js';
 
 /**
  * Orbit UI engine: lets users reshape the workbench chrome (floating panels,
@@ -641,6 +644,36 @@ const ORBIT_MENU_CSS = `
 .orbit-menu-keys { flex: none; font-size: 11px; opacity: .55; }
 `;
 
+/**
+ * Mini window: the editor in front (a page of the Orbit extension, such as the live view)
+ * moves to a small window without chrome that stays above the others, at the bottom right
+ * of the main one. Resolves with `true` once it is there.
+ */
+CommandsRegistry.registerCommand('_orbit.pip', async (accessor: ServicesAccessor, size?: { width?: number; height?: number }): Promise<boolean> => {
+	const editorGroupsService = accessor.get(IEditorGroupsService);
+	const hostService = accessor.get(IHostService);
+	const group = editorGroupsService.activeGroup;
+	const editor = group.activeEditor;
+	if (!editor) {
+		return false;
+	}
+	const width = size?.width ?? 520;
+	const height = size?.height ?? 360;
+	// Bottom right of the main window, kept on its screen (a minimized window reports no position).
+	const screen = mainWindow.screen as Screen & { availLeft?: number; availTop?: number };
+	const within = (value: number, start: number, length: number, size: number) => Math.round(Math.min(Math.max(value, start + 12), Math.max(start + 12, start + length - size - 12)));
+	const bounds = {
+		width, height,
+		x: within(mainWindow.screenX + mainWindow.outerWidth - width - 36, screen.availLeft ?? 0, screen.availWidth, width),
+		y: within(mainWindow.screenY + mainWindow.outerHeight - height - 60, screen.availTop ?? 0, screen.availHeight, height),
+	};
+	const part = await editorGroupsService.createAuxiliaryEditorPart({ bounds, compact: true, alwaysOnTop: true });
+	group.moveEditor(editor, part.activeGroup);
+	part.activeGroup.focus();
+	// A window opened while Orbit is not in front can come up minimized: bring it up.
+	await hostService.focus(getWindow(part.activeGroup.element), { mode: FocusMode.Force });
+	return true;
+});
 let orbitMenu: { close: (picked?: string) => void } | undefined;
 
 /**

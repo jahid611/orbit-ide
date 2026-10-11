@@ -13,6 +13,7 @@ import { randomUUID } from 'crypto';
 import { projectSessionsDir } from './sessions';
 import { assistant, assistantId } from './assistant';
 import { TERMINAL_ID_ENV } from './agentTracker';
+import { attention, pageInFront } from './attention';
 import { ClaudeLaunch, claudeCommandLine, claudeShell, claudeTerminalEnv, keys, models, modes, readConfig, workspaceRoot } from './config';
 
 const execFileAsync = promisify(execFile);
@@ -567,10 +568,10 @@ export class ClaudeTerminals implements vscode.Disposable {
 			this.revealTimer = setTimeout(async () => {
 				const target = this.lastCreated;
 				try {
-					if (!target || (await vscode.workspace.fs.stat(target)).type !== vscode.FileType.File) {
+					if (!target || attention.large || (await vscode.workspace.fs.stat(target)).type !== vscode.FileType.File) {
 						return;
 					}
-					await vscode.commands.executeCommand('vscode.open', target, { preview: true, preserveFocus: true, viewColumn: vscode.ViewColumn.One });
+					await vscode.commands.executeCommand('vscode.open', target, { preview: true, preserveFocus: true, background: pageInFront(), viewColumn: vscode.ViewColumn.One });
 				} catch {
 					// file vanished (temp file)
 				}

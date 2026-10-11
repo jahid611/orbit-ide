@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { AgentTracker } from './agentTracker';
+import { attention, pageInFront } from './attention';
 import { ClaudeTerminals } from './claudeTerminals';
 import { projectRoot } from './orbitControl';
 
@@ -103,6 +104,14 @@ export class FollowAgent implements vscode.Disposable {
 			if (!inWorkspace(file)) {
 				return;
 			}
+		}
+		if (attention.large) {
+			return;
+		}
+		if (pageInFront()) {
+			// The user is watching a page there: the file gets its tab, behind the page.
+			await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(file), { preview: true, preserveFocus: true, background: true, viewColumn: vscode.ViewColumn.One });
+			return;
 		}
 		const document = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
 		// The explorer follows the active editor, so it unfolds down to the file by itself.

@@ -13,6 +13,7 @@ import * as path from 'path';
 import * as tls from 'tls';
 import { AddressInfo } from 'net';
 import { AgentTracker } from './agentTracker';
+import { attention } from './attention';
 import { ClaudeTerminals } from './claudeTerminals';
 import { screenshot } from './community';
 import { workspaceRoot } from './config';
@@ -31,6 +32,67 @@ interface Target {
 	/** Page to open first, e.g. `/` or `/index.html`. */
 	path: string;
 	label: string;
+}
+
+const ROUTE_FILES = '**/{app,pages,routes}/**/*.{tsx,jsx,ts,js,vue,svelte,astro,md,mdx}';
+const ROUTERS = ['react-router', 'react-router-dom', 'vue-router', '@tanstack/react-router', 'wouter'];
+
+/**
+ * The pages of the application, as far as the project's files tell: HTML files for a folder,
+ * the route folders of Next, Nuxt, Astro and SvelteKit, and the paths a router declares.
+ * Routes with a parameter ([id], :id) have no address to offer and are left out.
+ */
+async function sitePages(target: Target): Promise<string[]> {
+	const root = workspaceRoot();
+	const found = new Set<string>(['/']);
+	const relative = (uri: vscode.Uri) => path.relative(root, uri.fsPath).split(path.sep).join('/');
+	if (target.folder) {
+		for (const uri of await vscode.workspace.findFiles('**/*.{html,htm}', SOURCE_EXCLUDE, 80)) {
+			found.add('/' + encodeURI(relative(uri)));
+		}
+		found.delete('/');
+	} else {
+		const dependencies = new Set<string>();
+		for (const uri of await vscode.workspace.findFiles('**/package.json', SOURCE_EXCLUDE, 20)) {
+			try {
+				const manifest = JSON.parse(await fs.promises.readFile(uri.fsPath, 'utf8'));
+				Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).forEach(name => dependencies.add(name));
+			} catch {
+				// not a readable manifest
+			}
+		}
+		const pagesFolder = ['next', 'nuxt', 'astro'].some(name => dependencies.has(name));
+		const add = (route: string) => {
+			const parts = route.split('/').filter(part => part && !/^\(.*\)$/.test(part));
+			if (parts.every(part => !/^[\[@_]/.test(part))) {
+				found.add('/' + parts.join('/'));
+			}
+		};
+		for (const uri of await vscode.workspace.findFiles(ROUTE_FILES, SOURCE_EXCLUDE, 600)) {
+			const file = relative(uri);
+			const app = /(?:^|\/)app\/((?:.*\/)?)page\.(?:tsx|jsx|ts|js|mdx)$/.exec(file);
+			const svelte = /(?:^|\/)routes\/((?:.*\/)?)\+page\.svelte$/.exec(file);
+			const page = pagesFolder ? /(?:^|\/)pages\/(.+)\.(?:tsx|jsx|ts|js|vue|astro|md|mdx)$/.exec(file) : null;
+			if (app && dependencies.has('next')) {
+				add(app[1]);
+			} else if (svelte) {
+				add(svelte[1]);
+			} else if (page && !page[1].startsWith('api/')) {
+				add(page[1].replace(/(^|\/)index$/, ''));
+			}
+		}
+		if (ROUTERS.some(name => dependencies.has(name))) {
+			for (const uri of await vscode.workspace.findFiles('**/*.{tsx,jsx,ts,js,vue}', SOURCE_EXCLUDE, 400)) {
+				const source = await fs.promises.readFile(uri.fsPath, 'utf8').catch(() => '');
+				if (source.length < 300_000 && /Route\b|[rR]outer/.test(source)) {
+					for (const match of source.matchAll(/\bpath\s*[:=]\s*\{?\s*["'`](\/[\w\-/.]*)["'`]/g)) {
+						found.add(match[1].length > 1 ? match[1].replace(/\/$/, '') : '/');
+					}
+				}
+			}
+		}
+	}
+	return [...found].sort((a, b) => a.localeCompare(b)).slice(0, 80);
 }
 
 /** A runtime error reported by the inspector injected in the page. */
@@ -245,6 +307,8 @@ export class LivePreview implements vscode.Disposable {
 			this.panel.onDidDispose(() => {
 				listener.dispose();
 				this.panel = undefined;
+				this.pip = false;
+				attention.large = false;
 				if (this.maximized) {
 					this.maximized = false;
 					vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup').then(undefined, () => undefined);
@@ -256,7 +320,56 @@ export class LivePreview implements vscode.Disposable {
 		}
 		this.panel.title = `Vue vivante · ${target.label}`;
 		this.loaded = { type: 'load', src, label: target.label, base: `http://127.0.0.1:${port}` };
-		this.panel.webview.postMessage(this.loaded);
+		this.panel.webview.postMessage({ ...this.loaded, pip: this.pip });
+		this.sendPages(target);
+	}
+
+	/** The list offered under the address: the pages the project's files describe. */
+	private sendPages(target: Target): void {
+		sitePages(target).then(pages => {
+			if (this.target === target) {
+				this.panel?.webview.postMessage({ type: 'pages', pages });
+			}
+		}, () => undefined);
+	}
+
+	/** Whether the view sits in its own small window, kept above the others. */
+	private pip = false;
+
+	/**
+	 * Mini window: the view leaves the editor area for a small window that stays on top, to be
+	 * dragged anywhere while the agent works; the same button brings it back.
+	 */
+	private async togglePip(): Promise<void> {
+		if (!this.panel) {
+			return;
+		}
+		if (this.pip) {
+			this.pip = false;
+			await vscode.commands.executeCommand('workbench.action.restoreEditorsToMainWindow');
+			return;
+		}
+		// The window commands act on the editor in front: wait until the view is that editor.
+		this.panel.reveal(undefined, false);
+		for (let i = 0; i < 20 && this.panel && !this.panel.active; i++) {
+			await new Promise(resolve => setTimeout(resolve, 50));
+		}
+		if (!this.panel?.active) {
+			return;
+		}
+		if (this.maximized) {
+			this.maximized = attention.large = false;
+			await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup').then(undefined, () => undefined);
+		}
+		this.pip = true;
+		// Orbit's own command makes the window small and keeps it above the others. Without it
+		// (an Orbit whose core is older) the view only moves to an ordinary window: the stock
+		// "always on top" command acts on whichever window is active, and would pin the main one.
+		const sized = await vscode.commands.executeCommand('_orbit.pip').then(done => done === true, () => false);
+		if (!sized) {
+			await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+			await vscode.commands.executeCommand('workbench.action.enableCompactAuxiliaryWindow').then(undefined, () => undefined);
+		}
 	}
 
 	/** What the view shows, sent again when its page reloads (the view moved to another window). */
@@ -269,9 +382,15 @@ export class LivePreview implements vscode.Disposable {
 			case 'ready':
 				// The first `ready` follows the `load` already sent; any later one is a reloaded page.
 				if (this.restoring && this.loaded) {
-					this.panel?.webview.postMessage({ ...this.loaded, restore: true });
+					this.panel?.webview.postMessage({ ...this.loaded, restore: true, pip: this.pip });
+					if (this.target) {
+						this.sendPages(this.target);
+					}
 				}
 				this.restoring = true;
+				break;
+			case 'pip':
+				await this.togglePip();
 				break;
 			case 'pick':
 				await this.show();
@@ -279,7 +398,7 @@ export class LivePreview implements vscode.Disposable {
 			case 'focus':
 				// The large view floats over the whole window: give it the whole editor area.
 				if (!!msg.on !== this.maximized) {
-					this.maximized = !!msg.on;
+					this.maximized = attention.large = !!msg.on;
 					await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup').then(undefined, () => undefined);
 				}
 				break;

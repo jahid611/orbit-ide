@@ -53,10 +53,11 @@
 			<button class="icon" data-nav="back" title="Précédent">${icon('back')}</button>
 			<button class="icon" data-nav="forward" title="Suivant">${icon('forward')}</button>
 			<button class="icon" data-nav="reload" title="Recharger">${icon('refresh')}</button>
-			<div class="address"><span class="dot"></span><input id="address" spellcheck="false" /></div>
+			<div class="address"><span class="dot"></span><input id="address" spellcheck="false" /><select id="pages" class="pages" title="Pages du site"></select></div>
 			<div class="devices">${DEVICES.map(d => `<button data-device="${d.id}" class="${d.id === 'desktop' ? 'on' : ''}" title="${d.label}${d.width ? ` · ${d.width} px` : ''}">${icon(d.id)}</button>`).join('')}</div>
 			<div class="models" id="models" hidden><select id="model" title="Modèle"></select><button class="icon" id="rotate" title="Pivoter">${icon('rotate')}</button></div>
 			<button class="icon" id="focus" title="Voir en grand (F)">${icon('expand')}</button>
+			<button class="icon" id="pip" title="Mini fenêtre flottante (P)">${icon('pip')}</button>
 			<button id="errors" class="errors" title="Erreurs de la page" hidden>${icon('alert')}<b id="errorCount">0</b></button>
 			<button id="select" class="select" title="Sélectionner un élément (S)"><span class="cursor"></span>Sélectionner</button>
 			<button class="icon" id="pick" title="Changer de page ou de serveur">${icon('more')}</button>
@@ -291,6 +292,23 @@
 	$('select').addEventListener('click', () => setSelecting(!selecting));
 	$('errors').addEventListener('click', () => document.getElementById('errorList') ? document.getElementById('errorList')?.remove() : showErrors());
 	$('focus').addEventListener('click', () => setFocused(!focused));
+	$('pip').addEventListener('click', () => vscode.postMessage({ type: 'pip' }));
+
+	/** Pages found in the project's files, and those visited since the view opened. */
+	let known = /** @type {string[]} */ ([]);
+	const visited = /** @type {string[]} */ ([]);
+	const text = (/** @type {string} */ s) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] || c);
+	function renderPages() {
+		const extra = visited.filter(p => !known.includes(p));
+		const options = (/** @type {string[]} */ list) => list.map(p => `<option value="${text(p)}">${text(p)}</option>`).join('');
+		$('pages').innerHTML = `${known.length ? `<optgroup label="Pages du site">${options(known)}</optgroup>` : ''}${extra.length ? `<optgroup label="Visitées">${options(extra)}</optgroup>` : ''}`;
+		$('pages').value = $('address').value || '/';
+	}
+	$('pages').addEventListener('change', () => {
+		if (base && $('pages').value) {
+			frame.src = `${base}${$('pages').value}`;
+		}
+	});
 	// The hint is for the first visits: once closed, it stays closed.
 	try {
 		if (localStorage.getItem('orbit.preview.hint') === 'off') {
@@ -352,6 +370,8 @@
 			setSelecting(!selecting);
 		} else if (!typing && e.key.toLowerCase() === 'f') {
 			setFocused(!focused);
+		} else if (!typing && e.key.toLowerCase() === 'p') {
+			vscode.postMessage({ type: 'pip' });
 		}
 	});
 
@@ -371,6 +391,11 @@
 				}
 				$('address').title = msg.title || '';
 				vscode.setState({ base, path: $('address').value });
+				if (!visited.includes($('address').value)) {
+					visited.push($('address').value);
+					visited.splice(0, visited.length - 30);
+				}
+				renderPages();
 				if (selecting) {
 					toFrame({ type: 'mode', selecting: true });
 				}
@@ -396,9 +421,16 @@
 				const path = kept?.base === base && kept.path ? kept.path : msg.src.slice(base.length) || '/';
 				frame.src = `${base}${path}`;
 				$('address').value = path;
+				document.body.classList.toggle('pip', !!msg.pip);
+				$('pip').classList.toggle('on', !!msg.pip);
+				$('pip').title = msg.pip ? 'Revenir dans la fenêtre (P)' : 'Mini fenêtre flottante (P)';
 				closePanel();
 				break;
 			}
+			case 'pages':
+				known = msg.pages;
+				renderPages();
+				break;
 			case 'located':
 				if (msg.location) {
 					$('whereText').innerHTML = `${escape(msg.location.relative)}<b>:${msg.location.line}</b>${msg.location.confidence === 'probable' ? '<i>probable</i>' : ''}`;

@@ -12,6 +12,12 @@ body.page-preview { overflow: hidden; background: var(--vscode-editor-background
 .bar .icon:hover { background: var(--surface-2); color: var(--fg); }
 .address { flex: 1; min-width: 120px; display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; border-radius: 9px; background: var(--surface); border: 1px solid var(--line); }
 .address .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); flex: none; }
+.address .osel.pages { height: 22px; max-width: none; margin-right: -6px; padding: 0 4px; gap: 0; border: none; background: transparent; box-shadow: none; color: var(--muted); }
+.address .osel.pages:hover, .address .osel.pages.open { background: var(--surface-2); color: var(--fg); }
+.address .osel.pages .osel-label, .address .osel.pages .osel-icon { display: none; }
+/* The mini window: only what fits and what serves while watching. */
+body.pip .devices, body.pip .models, body.pip #focus, body.pip #select, body.pip #pick, body.pip .hint { display: none; }
+body.pip .bar { padding: 5px 6px; gap: 3px; }
 .address input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--fg); font-family: var(--mono); font-size: 12px; }
 .devices { display: flex; padding: 2px; border-radius: 9px; background: var(--surface); border: 1px solid var(--line); }
 .devices button { display: grid; place-items: center; width: 30px; height: 24px; color: var(--muted); border-radius: 7px; }
