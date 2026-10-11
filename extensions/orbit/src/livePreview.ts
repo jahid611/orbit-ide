@@ -8,11 +8,13 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
 import * as net from 'net';
+import * as os from 'os';
 import * as path from 'path';
 import * as tls from 'tls';
 import { AddressInfo } from 'net';
 import { AgentTracker } from './agentTracker';
 import { ClaudeTerminals } from './claudeTerminals';
+import { screenshot } from './community';
 import { workspaceRoot } from './config';
 import { renderWebview, webviewOptions } from './webview';
 
@@ -78,6 +80,12 @@ export class LivePreview implements vscode.Disposable {
 	private readonly listeners = new Set<http.ServerResponse>();
 	private readonly disposables: vscode.Disposable[] = [];
 	private reloadTimer: NodeJS.Timeout | undefined;
+	private port = 0;
+	/** The event stream of the page shown: the agent's requests go down it. */
+	private pageStream: http.ServerResponse | undefined;
+	private readonly pageWaiters = new Set<() => void>();
+	private readonly answers = new Map<number, (answer: { result?: unknown; error?: string }) => void>();
+	private nextRequest = 1;
 	private readonly flash = vscode.window.createTextEditorDecorationType({
 		backgroundColor: 'rgba(139, 123, 255, .22)',
 		isWholeLine: true,
@@ -139,13 +147,94 @@ export class LivePreview implements vscode.Disposable {
 		}
 	}
 
+	/** Resolves when a page connects its event stream (a new page after a navigation, or the first one). */
+	private nextPage(ms: number): Promise<boolean> {
+		return new Promise(resolve => {
+			const waiter = () => {
+				clearTimeout(timer);
+				this.pageWaiters.delete(waiter);
+				resolve(true);
+			};
+			const timer = setTimeout(() => {
+				this.pageWaiters.delete(waiter);
+				resolve(false);
+			}, ms);
+			this.pageWaiters.add(waiter);
+		});
+	}
+
+	/**
+	 * `preview_look` and `preview_act`: the agent reads the page shown in the live view and uses it
+	 * as a person would. Acting is kept to what runs on this machine: a real site opened here is
+	 * only read.
+	 */
+	async agent(command: Record<string, unknown>): Promise<unknown> {
+		const target = this.target;
+		if (!this.panel || !target) {
+			throw new Error('La vue vivante n\'est pas ouverte. Ouvre d\'abord l\'application avec open_url (par exemple http://localhost:3000), puis réessaie.');
+		}
+		const local = !!target.folder || /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|[\w.-]+\.localhost)(:\d+)?$/i.test(target.origin ?? '');
+		if (command.action !== 'look' && !local) {
+			throw new Error('Cette page n\'est pas servie par cette machine : tu peux la lire (preview_look), pas y agir.');
+		}
+		if (!this.pageStream && !await this.nextPage(10000)) {
+			throw new Error('La page de la vue vivante ne répond pas (serveur arrêté, page en erreur ?). Vérifie que l\'application tourne, puis rouvre-la avec open_url.');
+		}
+		const stream = this.pageStream;
+		if (!stream) {
+			throw new Error('La page vient de se fermer. Réessaie.');
+		}
+		const id = this.nextRequest++;
+		const answered = new Promise<{ result?: unknown; error?: string }>(resolve => this.answers.set(id, resolve));
+		// A click that leaves the page never answers: the page that replaces it is read instead.
+		const replaced = this.nextPage(45000);
+		stream.write(`event: agent\ndata: ${JSON.stringify({ id, ...command })}\n\n`);
+		const first = await Promise.race([answered, replaced]);
+		this.answers.delete(id);
+		if (first === true) {
+			await new Promise(resolve => setTimeout(resolve, 700));
+			const page = await this.agent({ action: 'look' });
+			return { navigated: true, ...(page as object) };
+		}
+		if (first === false) {
+			throw new Error('La page n\'a pas répondu en 45 s : une fenêtre de dialogue y est peut-être ouverte, ou elle est figée.');
+		}
+		if (first.error) {
+			throw new Error(first.error);
+		}
+		return first.result;
+	}
+
+	/**
+	 * `preview_screenshot`: a picture of the address shown, taken by a browser without a window.
+	 * It is a fresh visit: not signed in, none of what was typed in the live view.
+	 */
+	async agentScreenshot(): Promise<unknown> {
+		if (!this.panel || !this.target || !this.port) {
+			throw new Error('La vue vivante n\'est pas ouverte. Ouvre d\'abord l\'application avec open_url.');
+		}
+		let address = this.target.path;
+		try {
+			address = String((await this.agent({ action: 'look' }) as { address?: string }).address || address);
+		} catch {
+			// the page does not answer: the address it was opened on
+		}
+		const folder = path.join(os.tmpdir(), 'orbit-preview');
+		await fs.promises.mkdir(folder, { recursive: true });
+		const file = path.join(folder, `capture-${Date.now()}.png`);
+		if (!await screenshot(`http://127.0.0.1:${this.port}${address}`, file)) {
+			throw new Error('Capture impossible : ni Edge ni Chrome trouvé sur cette machine.');
+		}
+		return { file, address, note: 'Lis ce fichier pour voir la page. C\'est une visite neuve de la même adresse : sans connexion, sans ce qui a été saisi dans la vue vivante.' };
+	}
+
 	/** Whether the large view maximized the editor area (undone when it closes). */
 	private maximized = false;
 
 	private async open(target: Target): Promise<void> {
 		this.target = target;
 		this.stopServer();
-		const port = await this.startServer();
+		const port = this.port = await this.startServer();
 		const src = `http://127.0.0.1:${port}${target.path}`;
 		if (!this.panel) {
 			this.panel = vscode.window.createWebviewPanel('orbit.preview', 'Vue vivante', { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false }, { ...webviewOptions(this.extensionUri), retainContextWhenHidden: true });
@@ -338,11 +427,37 @@ export class LivePreview implements vscode.Disposable {
 			res.end(await fs.promises.readFile(vscode.Uri.joinPath(this.extensionUri, 'media', 'inspector.js').fsPath));
 			return;
 		}
-		if (url === '/__orbit/events') {
+		if (url === '/__orbit/agent' && req.method === 'POST') {
+			const chunks: Buffer[] = [];
+			for await (const chunk of req) {
+				chunks.push(chunk as Buffer);
+			}
+			try {
+				const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as { id: number; result?: unknown; error?: string };
+				this.answers.get(body.id)?.(body);
+				this.answers.delete(body.id);
+			} catch {
+				// not ours
+			}
+			res.writeHead(204).end();
+			return;
+		}
+		if (url === '/__orbit/events' || url === '/__orbit/events?page=1') {
 			res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', 'connection': 'keep-alive' });
 			res.write(': orbit\n\n');
 			this.listeners.add(res);
-			req.on('close', () => this.listeners.delete(res));
+			if (url.endsWith('?page=1')) {
+				this.pageStream = res;
+				for (const waiter of [...this.pageWaiters]) {
+					waiter();
+				}
+			}
+			req.on('close', () => {
+				this.listeners.delete(res);
+				if (this.pageStream === res) {
+					this.pageStream = undefined;
+				}
+			});
 			return;
 		}
 		const target = this.target;

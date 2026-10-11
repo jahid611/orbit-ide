@@ -228,6 +228,8 @@ export function activate(context: vscode.ExtensionContext): void {
 		vercelPublish: production => vercel.agentPublish(production),
 		vercelLogs: id => vercel.agentLogs(id),
 		stripeState: () => stripe.agentState(),
+		preview: command => preview.agent(command),
+		previewScreenshot: () => preview.agentScreenshot(),
 		stripeCreate: (name, price, currency, interval, description) => stripe.agentCreate(name, price, currency, interval, description),
 	};
 	// Everything the project is plugged into, behind one button.

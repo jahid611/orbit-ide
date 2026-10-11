@@ -43,6 +43,7 @@ Les consignes d'Orbit demandent à l'agent d'utiliser ces outils de lui-même : 
 | `vercel_state`, `vercel_publish`, `vercel_logs` | [Vercel](/docs/outils/vercel) : où en est la mise en ligne, publier (la mise en production te demande ton accord), lire le journal d'un déploiement. |
 | `supabase_state`, `supabase_sql`, `supabase_auth_urls` | [Supabase](/docs/outils/supabase) : tables, requêtes (une écriture te montre le SQL avant), adresses de redirection. |
 | `stripe_state`, `stripe_create_product` | [Stripe](/docs/outils/stripe) : produits, prix, liens de paiement, derniers paiements ; créer un produit après ton accord. |
+| `preview_look`, `preview_act`, `preview_screenshot` | La [Vue vivante](/docs/boucle/vue-vivante) : lire la page affichée et ses erreurs, y cliquer, écrire, valider, changer de page comme un humain, et en prendre une image. |
 
 ## Changer de projet
 

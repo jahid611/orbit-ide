@@ -71,6 +71,8 @@ export interface AgentDesk {
 	vercelPublish(production: boolean): Promise<unknown>;
 	vercelLogs(id: string | undefined): Promise<unknown>;
 	stripeState(): Promise<unknown>;
+	preview(command: Record<string, unknown>): Promise<unknown>;
+	previewScreenshot(): Promise<unknown>;
 	stripeCreate(name: string, price: number, currency: string, interval: string | undefined, description: string): Promise<unknown>;
 }
 
@@ -228,6 +230,9 @@ export class OrbitControl implements vscode.Disposable {
 				case '/vercel_logs': return reply(200, await this.desk?.vercelLogs(q.id || undefined));
 				case '/stripe_state': return reply(200, await this.desk?.stripeState());
 				case '/stripe_create_product': return reply(200, await this.desk?.stripeCreate(String(q.name ?? ''), Number(q.price), String(q.currency || 'eur'), q.interval || undefined, String(q.description ?? '')));
+				case '/preview_look': return reply(200, await this.desk?.preview({ action: 'look' }));
+				case '/preview_act': return reply(200, await this.desk?.preview({ action: String(q.action ?? ''), target: q.target, text: q.text, key: q.key, submit: q.submit === 'true' }));
+				case '/preview_screenshot': return reply(200, await this.desk?.previewScreenshot());
 				case '/find_commands': {
 					const words = String(q.query ?? '').toLowerCase().split(/\s+/).filter(Boolean);
 					const all = await vscode.commands.getCommands(true);

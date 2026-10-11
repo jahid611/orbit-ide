@@ -66,6 +66,16 @@ L'inspecteur capte les erreurs que la page produit : exceptions, promesses rejet
 
 Dans la vue : `S` active ou coupe la sélection, `F` ouvre ou ferme la vue en grand, `Échap` revient d'un cran.
 
+## L'agent teste dans la vue vivante
+
+L'agent se sert de la page affichée comme toi : il la lit, clique, remplit un formulaire, valide, change de page, et relit le résultat. Tu le vois faire dans la vue vivante. Il n'a pas besoin d'ouvrir un navigateur à lui.
+
+- `preview_look` : l'adresse, le titre, le texte visible, les erreurs de la page, et la liste numérotée de tout ce qui s'actionne (liens, boutons, champs, listes de choix). Un champ refusé par le navigateur est signalé avec son message.
+- `preview_act` : `click`, `type` (avec `submit` pour valider par Entrée), `press` (une touche), `select` (un choix dans une liste), `scroll`, `go` (un chemin de l'application), `back`, `reload`, `wait`. L'élément visé se donne par son numéro, son texte ou un sélecteur CSS. La réponse est la page telle qu'elle est après l'action, y compris quand l'action a mené à une autre page.
+- `preview_screenshot` : une image de l'adresse affichée, pour juger la mise en page. C'est une visite neuve de la même adresse par un navigateur sans fenêtre : sans connexion et sans ce qui a été saisi.
+
+Limites : l'agent n'agit que sur ce qui tourne sur ta machine (serveur local, page du projet) ; une page d'un vrai site ouverte ici est seulement lue. Il ne dépose pas de fichier dans un champ fichier, ne glisse-dépose pas, et n'entre pas dans les cadres d'un autre site inclus dans la page (paiement, vidéo). Une fenêtre `alert` ou `confirm` ouverte par la page le bloque tant que tu ne l'as pas fermée.
+
 ## Avec ChatGPT
 
 Rien ne change dans la vue elle-même. Le message part au terminal de l'agent courant, quel qu'il soit, et les textes de la page parlent de ChatGPT à la place de Claude.

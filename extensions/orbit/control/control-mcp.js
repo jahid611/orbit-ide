@@ -313,6 +313,24 @@ const TOOLS = [
 		inputSchema: obj({ name: { type: 'string' }, price: { type: 'number' }, currency: { type: 'string', enum: ['eur', 'usd', 'gbp', 'chf', 'cad'] }, interval: { type: 'string', enum: ['month', 'year'] }, description: { type: 'string' } }, ['name', 'price']), run: a => call('/stripe_create_product', { name: a.name, price: a.price, currency: a.currency, interval: a.interval, description: a.description }, 10 * 60 * 1000),
 	},
 	{
+		name: 'preview_look',
+		description: 'Lis la page affichée dans la vue vivante d\'Orbit, comme la voit l\'utilisateur : adresse, titre, texte visible, erreurs de la page, et la liste numérotée de tout ce qu\'on peut y actionner (liens, boutons, champs, listes). Ouvre d\'abord l\'application avec open_url. C\'est ta façon de tester ce que tu construis : n\'ouvre pas un navigateur à toi (Chrome, navigateur sans fenêtre, Playwright) pour une appli qui tourne en local.',
+		inputSchema: obj({}),
+		run: () => call('/preview_look', {}, 60000),
+	},
+	{
+		name: 'preview_act',
+		description: 'Agis dans la vue vivante comme un humain, sous les yeux de l\'utilisateur, et reçois la page telle qu\'elle est après. action : click (target), type (target, text ; submit=true valide avec Entrée), press (key : Enter, Escape, Tab, ArrowDown…), select (target, text = le choix), scroll (target, ou text = up / down / top / bottom), go (text = chemin, par exemple /login), back, reload, wait (text = millisecondes). target : le numéro donné par preview_look, sinon le texte de l\'élément ou un sélecteur CSS. Les numéros changent quand la page change : sers-toi de ceux de la dernière réponse. Enchaîne un vrai parcours (ouvrir, remplir, valider, vérifier le résultat et les erreurs) avant de dire qu\'une fonction marche.',
+		inputSchema: obj({ action: { type: 'string', enum: ['click', 'type', 'press', 'select', 'scroll', 'go', 'back', 'reload', 'wait'] }, target: { type: 'string', description: 'Numéro, texte ou sélecteur CSS' }, text: { type: 'string' }, key: { type: 'string' }, submit: { type: 'boolean' } }, ['action']),
+		run: a => call('/preview_act', { action: a.action, target: a.target === undefined ? undefined : String(a.target), text: a.text === undefined ? undefined : String(a.text), key: a.key, submit: a.submit ? 'true' : undefined }, 90000),
+	},
+	{
+		name: 'preview_screenshot',
+		description: 'Une image de l\'adresse affichée dans la vue vivante, à lire ensuite avec ton outil de lecture de fichiers, pour juger la mise en page. Attention : c\'est une visite neuve de la même adresse, sans connexion et sans ce que tu as saisi ; pour l\'état réel de la page, preview_look fait foi.',
+		inputSchema: obj({}),
+		run: () => call('/preview_screenshot', {}, 120000),
+	},
+	{
 		name: 'find_commands',
 		description: 'Cherche des commandes d\'Orbit/VS Code dont l\'identifiant contient tous les mots donnés (ex. « terminal split », « zen »).',
 		inputSchema: obj({ query: { type: 'string' } }, ['query']), run: a => call('/find_commands', { query: a.query }),
