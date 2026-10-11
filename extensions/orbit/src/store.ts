@@ -185,7 +185,7 @@ export class Store extends Page {
 			type: 'state',
 			connectors: CONNECTORS.map(c => c.craft
 				? { ...c, local: true, installed: !!findCraft(craftApp(c.id)!), listed: false }
-				: { ...c, local: !!c.command, installed: this.installed ? this.has(c.id) : undefined, listed: !!this.listed(c.id) }),
+				: { ...c, image: c.id === 'higgsfield' ? this.panel?.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'higgsfield.png')).toString() : undefined, local: !!c.command, installed: this.installed ? this.has(c.id) : undefined, listed: !!this.listed(c.id) }),
 			packs: PACKS.map(p => ({ id: p.id, name: p.name, description: p.description, recipes: p.recipes.map(r => ({ name: r.name, description: r.description, installed: mine.has(r.name) })) })),
 			working: this.working,
 			community: this.community,
