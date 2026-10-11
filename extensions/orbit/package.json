@@ -1176,6 +1176,11 @@
         "when": "!terminalFocus"
       },
       {
+        "command": "orbit.store.show",
+        "key": "ctrl+alt+b",
+        "mac": "cmd+alt+b"
+      },
+      {
         "command": "orbit.higgsfield.show",
         "key": "ctrl+alt+h",
         "mac": "cmd+alt+h"
@@ -1529,6 +1534,7 @@
         "orbit.team.start",
         "orbit.recipes.pick",
         "orbit.higgsfield.show",
+        "orbit.store.show",
         "orbit.queue.show",
         "orbit.vercel.show",
         "orbit.tools"

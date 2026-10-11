@@ -12,7 +12,7 @@ import { assistantId } from './assistant';
 import { claudeEnv, resolveClaudeExecutable } from './config';
 import { Page, requestJson } from './page';
 import { signInTerminal, waitSignedIn } from './signIn';
-import { craftApp, findCraft, installCraft, removeCraft } from './craft';
+import { craftApp, findCraft, installCraft, openCraft, removeCraft } from './craft';
 
 interface Connector {
 	id: string;
@@ -29,8 +29,20 @@ interface Connector {
 	craft?: boolean;
 	/** The application's own icon, loaded from its official repository and shown unmodified. */
 	image?: string;
+	/**
+	 * The service's own logo, in its own colours, as a file of `media`; `tile` is the plain
+	 * background it sits on (a white mark needs a dark one), `full` a picture that fills the tile.
+	 */
+	/** The page of Orbit that goes with this service: opened as soon as it is installed and signed in. */
+	page?: string;
+	art?: string;
+	tile?: string;
+	full?: boolean;
 	site: string;
 }
+
+/** The connectors last seen installed and signed in, kept for the menu of the project's tools. */
+const INSTALLED_KEY = 'orbit.store.installed';
 
 interface RecipeEntry {
 	name: string;
@@ -48,22 +60,22 @@ interface Pack {
 
 /** Connectors published by the tools themselves. Each address is the one its maker documents. */
 const CONNECTORS: Connector[] = [
-	{ id: 'github', name: 'GitHub', logo: 'github', color: '#181717', category: 'Code', description: 'Issues, pull requests, revues et recherche dans tes dépôts.', url: 'https://api.githubcopilot.com/mcp/', site: 'https://github.com' },
-	{ id: 'figma', name: 'Figma', logo: 'figma', color: '#1e1e1e', category: 'Design', description: 'Lit tes maquettes : structure, styles, variables, captures. Sert à « Figma vers code ».', url: 'https://mcp.figma.com/mcp', site: 'https://figma.com' },
-	{ id: 'supabase', name: 'Supabase', logo: 'supabase', color: '#1c1c1c', category: 'Données', description: 'Tables, requêtes SQL, migrations et journaux de ton projet Supabase.', url: 'https://mcp.supabase.com/mcp', site: 'https://supabase.com' },
-	{ id: 'stripe', name: 'Stripe', logo: 'stripe', color: '#635bff', category: 'Paiement', description: 'Produits, prix, clients, liens de paiement et documentation Stripe.', url: 'https://mcp.stripe.com', site: 'https://stripe.com' },
-	{ id: 'vercel', name: 'Vercel', logo: 'vercel', color: '#000000', category: 'Mise en ligne', description: 'Projets, déploiements et journaux de construction Vercel.', url: 'https://mcp.vercel.com', site: 'https://vercel.com' },
-	{ id: 'sentry', name: 'Sentry', logo: 'sentry', color: '#362d59', category: 'Qualité', description: 'Les erreurs de ton app en production, avec leur pile, pour les faire corriger.', url: 'https://mcp.sentry.dev/mcp', site: 'https://sentry.io' },
-	{ id: 'linear', name: 'Linear', logo: 'linear', color: '#5e6ad2', category: 'Organisation', description: 'Tickets, projets et cycles Linear : l\'agent lit le ticket et le met à jour.', url: 'https://mcp.linear.app/mcp', site: 'https://linear.app' },
-	{ id: 'notion', name: 'Notion', logo: 'notion', color: '#191919', category: 'Organisation', description: 'Recherche, lecture et écriture dans tes pages et bases Notion.', url: 'https://mcp.notion.com/mcp', site: 'https://notion.so' },
-	{ id: 'context7', name: 'Context7', logo: 'upstash', color: '#00c98d', category: 'Documentation', description: 'La documentation à jour des bibliothèques, pour que l\'agent n\'invente pas d\'API.', url: 'https://mcp.context7.com/mcp', site: 'https://context7.com' },
-	{ id: 'playwright', name: 'Playwright', logo: 'playwright', color: '#2ead33', category: 'Qualité', description: 'Un vrai navigateur piloté par l\'agent : cliquer, remplir, vérifier une page.', command: ['npx', '-y', '@playwright/mcp@latest'], site: 'https://playwright.dev' },
-	{ id: 'higgsfield', name: 'Higgsfield', logo: '', color: '#d1fe17', category: 'Création', description: 'Images, vidéos, modèles 3D et sons générés avec ton compte Higgsfield.', url: 'https://mcp.higgsfield.ai/mcp', site: 'https://higgsfield.ai' },
+	{ id: 'github', name: 'GitHub', logo: 'github', color: '#181717', category: 'Code', description: 'Issues, pull requests, revues et recherche dans tes dépôts.', url: 'https://api.githubcopilot.com/mcp/', art: 'logos/github.svg', tile: '#0d1117', site: 'https://github.com' },
+	{ id: 'figma', name: 'Figma', logo: 'figma', color: '#1e1e1e', category: 'Design', description: 'Lit tes maquettes : structure, styles, variables, captures. Sert à « Figma vers code ».', url: 'https://mcp.figma.com/mcp', art: 'figma.svg', tile: '#ffffff', page: 'orbit.figma.show', site: 'https://figma.com' },
+	{ id: 'supabase', name: 'Supabase', logo: 'supabase', color: '#1c1c1c', category: 'Données', description: 'Tables, requêtes SQL, migrations et journaux de ton projet Supabase.', url: 'https://mcp.supabase.com/mcp', art: 'supabase.svg', tile: '#ffffff', page: 'orbit.supabase.show', site: 'https://supabase.com' },
+	{ id: 'stripe', name: 'Stripe', logo: 'stripe', color: '#635bff', category: 'Paiement', description: 'Produits, prix, clients, liens de paiement et documentation Stripe.', url: 'https://mcp.stripe.com', art: 'stripe.svg', tile: '#ffffff', page: 'orbit.stripe.show', site: 'https://stripe.com' },
+	{ id: 'vercel', name: 'Vercel', logo: 'vercel', color: '#000000', category: 'Mise en ligne', description: 'Projets, déploiements et journaux de construction Vercel.', url: 'https://mcp.vercel.com', art: 'vercel.svg', tile: '#000000', page: 'orbit.vercel.show', site: 'https://vercel.com' },
+	{ id: 'sentry', name: 'Sentry', logo: 'sentry', color: '#362d59', category: 'Qualité', description: 'Les erreurs de ton app en production, avec leur pile, pour les faire corriger.', url: 'https://mcp.sentry.dev/mcp', art: 'logos/sentry.svg', tile: '#ffffff', site: 'https://sentry.io' },
+	{ id: 'linear', name: 'Linear', logo: 'linear', color: '#5e6ad2', category: 'Organisation', description: 'Tickets, projets et cycles Linear : l\'agent lit le ticket et le met à jour.', url: 'https://mcp.linear.app/mcp', art: 'logos/linear.svg', tile: '#ffffff', site: 'https://linear.app' },
+	{ id: 'notion', name: 'Notion', logo: 'notion', color: '#191919', category: 'Organisation', description: 'Recherche, lecture et écriture dans tes pages et bases Notion.', url: 'https://mcp.notion.com/mcp', art: 'logos/notion.svg', tile: '#ffffff', site: 'https://notion.so' },
+	{ id: 'context7', name: 'Context7', logo: 'upstash', color: '#00c98d', category: 'Documentation', description: 'La documentation à jour des bibliothèques, pour que l\'agent n\'invente pas d\'API.', url: 'https://mcp.context7.com/mcp', art: 'logos/context7.ico', tile: '#ffffff', site: 'https://context7.com' },
+	{ id: 'playwright', name: 'Playwright', logo: 'playwright', color: '#2ead33', category: 'Qualité', description: 'Un vrai navigateur piloté par l\'agent : cliquer, remplir, vérifier une page.', command: ['npx', '-y', '@playwright/mcp@latest'], art: 'logos/playwright.svg', tile: '#ffffff', site: 'https://playwright.dev' },
+	{ id: 'higgsfield', name: 'Higgsfield', logo: '', color: '#d1fe17', category: 'Création', description: 'Images, vidéos, modèles 3D et sons générés avec ton compte Higgsfield.', url: 'https://mcp.higgsfield.ai/mcp', art: 'higgsfield.png', full: true, page: 'orbit.higgsfield.show', site: 'https://higgsfield.ai' },
 	{ id: 'photocraft', name: 'PhotoCraft', logo: '', color: '#2f7bf5', category: 'Création', description: 'Retouche d\'images par l\'agent, sur ta machine : calques, filtres, réglages, recadrage, export, fichiers PSD. Libre et gratuit, encore en alpha.', craft: true, image: 'https://raw.githubusercontent.com/storytold/photocraft/HEAD/assets/app-icon/hicolor/128x128/apps/ai.storyteller.photocraft.png', site: 'https://getartcraft.com/apps/photocraft' },
-	{ id: 'cloudflare', name: 'Cloudflare', logo: 'cloudflare', color: '#f38020', category: 'Mise en ligne', description: 'La documentation Cloudflare (Workers, Pages, R2, D1) à portée de l\'agent.', url: 'https://docs.mcp.cloudflare.com/mcp', site: 'https://cloudflare.com' },
-	{ id: 'huggingface', name: 'Hugging Face', logo: 'huggingface', color: '#ffd21e', category: 'IA', description: 'Modèles, jeux de données et espaces du Hub Hugging Face.', url: 'https://huggingface.co/mcp', site: 'https://huggingface.co' },
-	{ id: 'canva', name: 'Canva', logo: 'canva', color: '#00c4cc', category: 'Design', description: 'Crée et retrouve tes visuels Canva depuis l\'agent.', url: 'https://mcp.canva.com/mcp', site: 'https://canva.com' },
-	{ id: 'atlassian', name: 'Jira et Confluence', logo: 'atlassian', color: '#0052cc', category: 'Organisation', description: 'Tickets Jira et pages Confluence de ton équipe.', url: 'https://mcp.atlassian.com/v1/sse', site: 'https://atlassian.com' },
+	{ id: 'cloudflare', name: 'Cloudflare', logo: 'cloudflare', color: '#f38020', category: 'Mise en ligne', description: 'La documentation Cloudflare (Workers, Pages, R2, D1) à portée de l\'agent.', url: 'https://docs.mcp.cloudflare.com/mcp', art: 'logos/cloudflare.svg', tile: '#ffffff', site: 'https://cloudflare.com' },
+	{ id: 'huggingface', name: 'Hugging Face', logo: 'huggingface', color: '#ffd21e', category: 'IA', description: 'Modèles, jeux de données et espaces du Hub Hugging Face.', url: 'https://huggingface.co/mcp', art: 'logos/huggingface.svg', tile: '#ffffff', site: 'https://huggingface.co' },
+	{ id: 'canva', name: 'Canva', logo: 'canva', color: '#00c4cc', category: 'Design', description: 'Crée et retrouve tes visuels Canva depuis l\'agent.', url: 'https://mcp.canva.com/mcp', art: 'logos/canva.svg', tile: '#ffffff', site: 'https://canva.com' },
+	{ id: 'atlassian', name: 'Jira et Confluence', logo: 'atlassian', color: '#0052cc', category: 'Organisation', description: 'Tickets Jira et pages Confluence de ton équipe.', url: 'https://mcp.atlassian.com/v1/sse', art: 'logos/atlassian.svg', tile: '#ffffff', site: 'https://atlassian.com' },
 ];
 
 /** Recipe packs that ship with Orbit: installed into the user's own recipes, where they can be edited. */
@@ -120,6 +132,30 @@ export class Store extends Page {
 	constructor(context: vscode.ExtensionContext, private readonly reloadRecipes: () => void) {
 		super(context, 'store', 'Magasin de compétences');
 		this.disposables.push(vscode.commands.registerCommand('orbit.store.show', () => this.show()));
+		// One command per service, for the menu of the project's tools: its page in Orbit when it
+		// has one, its own site otherwise.
+		for (const connector of CONNECTORS.filter(c => !c.craft)) {
+			this.disposables.push(vscode.commands.registerCommand(`orbit.connector.open.${connector.id}`, () => connector.page
+				? vscode.commands.executeCommand(connector.page)
+				: vscode.env.openExternal(vscode.Uri.parse(connector.site))));
+		}
+		// The assistant takes a while to list its connectors: the menu shows what was last known.
+		setTimeout(() => this.loadInstalled().catch(() => undefined), 15000);
+	}
+
+	/**
+	 * The services installed and signed in that have no page of their own in Orbit, for the menu
+	 * of the project's tools (those with a page are already there).
+	 */
+	installedTools(): { label: string; detail: string; command: string; image?: string; icon?: string }[] {
+		const ids = this.context.globalState.get<string[]>(INSTALLED_KEY, []);
+		return CONNECTORS.filter(c => !c.craft && !c.page && ids.includes(c.id)).map(c => ({
+			label: c.name,
+			detail: `${c.category} · relié à tes agents`,
+			command: `orbit.connector.open.${c.id}`,
+			image: c.art ? path.join(this.context.extensionPath, 'media', ...c.art.split('/')) : undefined,
+			icon: c.art ? undefined : 'plug',
+		}));
 	}
 
 	private cli(args: string[], timeout: number): Promise<{ ok: boolean; out: string }> {
@@ -155,6 +191,7 @@ export class Store extends Page {
 				.filter((m): m is RegExpMatchArray => !!m)
 				.map(m => ({ name: m[1].trim(), connected: /connected/i.test(m[2]) && !/needs|failed|not/i.test(m[2]) }));
 		}
+		this.context.globalState.update(INSTALLED_KEY, CONNECTORS.filter(c => !c.craft && this.has(c.id)).map(c => c.id));
 	}
 
 	private userRecipes(): RecipeEntry[] {
@@ -184,8 +221,8 @@ export class Store extends Page {
 		this.post({
 			type: 'state',
 			connectors: CONNECTORS.map(c => c.craft
-				? { ...c, local: true, installed: !!findCraft(craftApp(c.id)!), listed: false }
-				: { ...c, image: c.id === 'higgsfield' ? this.panel?.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', 'higgsfield.png')).toString() : undefined, local: !!c.command, installed: this.installed ? this.has(c.id) : undefined, listed: !!this.listed(c.id) }),
+				? { ...c, full: true, local: true, installed: !!findCraft(craftApp(c.id)!), listed: false }
+				: { ...c, image: c.art ? this.panel?.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'media', ...c.art.split('/'))).toString() : undefined, local: !!c.command, installed: this.installed ? this.has(c.id) : undefined, listed: !!this.listed(c.id) }),
 			packs: PACKS.map(p => ({ id: p.id, name: p.name, description: p.description, recipes: p.recipes.map(r => ({ name: r.name, description: r.description, installed: mine.has(r.name) })) })),
 			working: this.working,
 			community: this.community,
@@ -212,7 +249,7 @@ export class Store extends Page {
 		const existing = this.listed(connector.id);
 		if (existing && !existing.connected) {
 			await this.signIn(connector, existing.name);
-			return this.has(connector.id);
+			return this.opened(connector);
 		}
 		const chat = assistantId() === 'chatgpt';
 		const add = connector.url
@@ -235,7 +272,17 @@ export class Store extends Page {
 		}
 		this.working = undefined;
 		await this.refresh();
+		this.opened(connector);
 		return true;
+	}
+
+	/** Just installed and signed in: the user is taken to it at once, instead of having to look for it. */
+	private opened(connector: Connector): boolean {
+		const ready = this.has(connector.id);
+		if (ready && connector.page) {
+			vscode.commands.executeCommand(connector.page).then(undefined, () => undefined);
+		}
+		return ready;
 	}
 
 	/** An application of the Crafting Apps: fetched from its project's releases, checked, kept by Orbit. */
@@ -258,7 +305,9 @@ export class Store extends Page {
 			});
 			this.working = undefined;
 			this.send();
-			vscode.window.showInformationMessage(`${connector.name} ${version} est installé. Ouvre un nouvel agent : il aura ses outils pour retoucher les images du projet.`);
+			// Shown at once: the application opens, where its window came with the download.
+			const shown = openCraft(app);
+			vscode.window.showInformationMessage(`${connector.name} ${version} est installé${shown ? ' et ouvert' : ''}. Il est dans « Outils du projet », et tout nouvel agent aura ses outils pour retoucher les images du projet.`);
 			return true;
 		} catch (err) {
 			this.working = undefined;

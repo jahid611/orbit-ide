@@ -37,7 +37,9 @@
 		const letter = `<b>${escape(c.name.slice(0, 1))}</b>`;
 		// An application's own icon is shown as it is, whole, never tinted.
 		if (c.image) {
-			return `<div class="logo" style="background:transparent;box-shadow:none;color:var(--fg)"><img class="keep" src="${escape(c.image)}" alt="" />${letter}</div>`;
+			return c.full
+				? `<div class="logo" style="background:transparent;box-shadow:none;color:var(--fg)"><img class="keep" src="${escape(c.image)}" alt="" />${letter}</div>`
+				: `<div class="logo" style="background:${escape(c.tile || '#ffffff')};color:${/^#(0|1)/.test(c.tile || '') ? '#fff' : '#0a0a0a'}"><img class="art" src="${escape(c.image)}" alt="" />${letter}</div>`;
 		}
 		return `<div class="logo" style="background:${escape(c.color)};color:${light ? '#0a0a0a' : '#fff'}">${c.logo ? `<img src="https://cdn.simpleicons.org/${escape(c.logo)}/${light ? '0a0a0a' : 'ffffff'}" alt="" />` : ''}${letter}</div>`;
 	}

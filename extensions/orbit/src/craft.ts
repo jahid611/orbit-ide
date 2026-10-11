@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { createHash } from 'crypto';
-import { execFile } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
@@ -182,11 +182,42 @@ export async function installCraft(app: CraftApp, say: (step: string) => void): 
 				await fs.promises.rm(path.join(TOOLS, app.id, other), { recursive: true, force: true });
 			}
 		}
+		ensureCraftIcon(app);
 		return version;
 	} catch (err) {
 		await fs.promises.rm(target, { recursive: true, force: true });
 		throw err;
 	}
+}
+
+/** The application's own icon, kept beside what Orbit installed (fetched once from its repository). */
+export function craftIcon(app: CraftApp): string | undefined {
+	const file = path.join(TOOLS, `${app.id}.png`);
+	return fs.existsSync(file) ? file : undefined;
+}
+
+export function ensureCraftIcon(app: CraftApp): void {
+	if (craftIcon(app) || !findCraft(app)) {
+		return;
+	}
+	fetch(`https://raw.githubusercontent.com/${app.repo}/HEAD/assets/app-icon/hicolor/128x128/apps/ai.storyteller.${app.id}.png`, { signal: AbortSignal.timeout(30000) })
+		.then(answer => answer.ok ? answer.arrayBuffer() : undefined)
+		.then(data => data && fs.promises.writeFile(path.join(TOOLS, `${app.id}.png`), Buffer.from(data)))
+		.catch(() => undefined);
+}
+
+/**
+ * Opens the application itself, on a picture when one is given. Only where its window comes
+ * with what Orbit installed (the Windows archive): elsewhere the command-line program is alone.
+ */
+export function openCraft(app: CraftApp, file?: string): boolean {
+	const cli = findCraft(app);
+	const program = cli && path.join(path.dirname(cli), WINDOWS ? `${app.id}.exe` : app.id);
+	if (!program || !fs.existsSync(program)) {
+		return false;
+	}
+	spawn(program, file ? [file] : [], { detached: true, stdio: 'ignore' }).unref();
+	return true;
 }
 
 /** Removes what Orbit installed of an app. A copy the user installed elsewhere is not touched. */

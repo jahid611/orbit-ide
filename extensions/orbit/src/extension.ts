@@ -36,6 +36,7 @@ import { EnvVars } from './envVars';
 import { Board } from './board';
 import { VisualCheck } from './visualCheck';
 import { Store } from './store';
+import { CRAFT_APPS, craftIcon, ensureCraftIcon, findCraft, openCraft } from './craft';
 import { Figma } from './figma';
 import { Supabase } from './supabase';
 import { Stripe } from './stripe';
@@ -240,7 +241,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	// A service is shown by its own logo, anything else by an icon that says what it is.
 	interface Tool { label: string; detail: string; command: string; image?: string; icon?: string; keys?: string }
 	const logo = (file: string) => path.join(context.extensionPath, 'media', file);
-	const toolGroups: { title: string; items: Tool[] }[] = [
+	const builtInTools: { title: string; items: Tool[] }[] = [
 		{
 			title: 'Travail', items: [
 				{ label: 'Tableau de tâches', detail: 'Des cartes que tes agents prennent et traitent', command: 'orbit.board.show', icon: 'checklist' },
@@ -263,13 +264,33 @@ export function activate(context: vscode.ExtensionContext): void {
 			title: 'Création', items: [
 				{ label: 'Figma vers code', detail: 'Coller un lien, l\'agent construit l\'écran', command: 'orbit.figma.show', image: logo('figma.svg') },
 				{ label: 'Higgsfield', detail: 'Images, vidéos, 3D et sons', command: 'orbit.higgsfield.show', image: logo('higgsfield.png'), keys: 'Ctrl+Alt+H' },
-				{ label: 'Magasin de compétences', detail: 'Connecteurs et recettes en un clic', command: 'orbit.store.show', icon: 'extensions' },
+				{ label: 'Magasin de compétences', detail: 'Connecteurs et recettes en un clic', command: 'orbit.store.show', icon: 'extensions', keys: 'Ctrl+Alt+B' },
 			],
 		},
 	];
+	// What the user installed from the shop sits with the tools of the project, under its own icon.
+	const toolGroupsNow = () => [...builtInTools.map(group => group.title !== 'Création' ? group : {
+		...group,
+		items: [
+			...group.items.slice(0, -1),
+			...CRAFT_APPS.filter(app => findCraft(app)).map((app): Tool => ({ label: app.name, detail: 'Ouvrir l\'application ; tes agents en ont aussi les outils', command: `orbit.craft.open.${app.id}`, image: craftIcon(app), icon: craftIcon(app) ? undefined : 'paintcan' })),
+			...group.items.slice(-1),
+		],
+	}), { title: 'Installés', items: skills.installedTools() as Tool[] }].filter(group => group.items.length);
+	for (const app of CRAFT_APPS) {
+		ensureCraftIcon(app);
+		context.subscriptions.push(vscode.commands.registerCommand(`orbit.craft.open.${app.id}`, async () => {
+			// The picture in front, if there is one, opens with the application.
+			const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+			const file = input instanceof vscode.TabInputCustom || input instanceof vscode.TabInputText ? input.uri.fsPath : undefined;
+			if (!openCraft(app, file && /\.(png|jpe?g|gif|webp|bmp|tiff?|psd|psb|avif|heic|svg)$/i.test(file) ? file : undefined)) {
+				await vscode.commands.executeCommand('orbit.store.show');
+			}
+		}));
+	}
 	// The whole list with its search field (Ctrl+Alt+K).
 	const tools = vscode.commands.registerCommand('orbit.tools', async () => {
-		const items: (vscode.QuickPickItem & { command: string })[] = toolGroups.flatMap(group => [
+		const items: (vscode.QuickPickItem & { command: string })[] = toolGroupsNow().flatMap(group => [
 			{ label: group.title, kind: vscode.QuickPickItemKind.Separator, command: '' },
 			...group.items.map(tool => ({ label: tool.image ? tool.label : `$(${tool.icon}) ${tool.label}`, description: tool.detail, iconPath: tool.image ? vscode.Uri.file(tool.image) : undefined, command: tool.command })),
 		]);
@@ -284,7 +305,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	const toolsMenu = vscode.commands.registerCommand('orbit.tools.menu', async () => {
 		const picked = await vscode.commands.executeCommand<string | undefined>('_orbit.menu', {
 			anchor: 'Outils du projet',
-			groups: toolGroups.map(group => ({ title: group.title, items: group.items.map(tool => ({ id: tool.command, label: tool.label, detail: tool.detail, image: tool.image, icon: tool.icon, keys: tool.keys })) })),
+			groups: toolGroupsNow().map(group => ({ title: group.title, items: group.items.map(tool => ({ id: tool.command, label: tool.label, detail: tool.detail, image: tool.image, icon: tool.icon, keys: tool.keys })) })),
 		}).then(undefined, () => 'orbit.tools');
 		if (picked) {
 			await vscode.commands.executeCommand(picked);
@@ -543,6 +564,13 @@ export function activate(context: vscode.ExtensionContext): void {
 	project.tooltip = `Changer de projet ou en créer un (${keys('⌥⌘P', 'Ctrl+Alt+P')})`;
 	project.command = 'orbit.project.switch';
 	project.show();
+	const shop = vscode.window.createStatusBarItem('orbit.store', vscode.StatusBarAlignment.Left, 998);
+	shop.name = 'Magasin';
+	shop.text = '$(extensions) Magasin';
+	shop.tooltip = `Connecteurs, applications et recettes pour tes agents (${keys('⌥⌘B', 'Ctrl+Alt+B')})`;
+	shop.command = 'orbit.store.show';
+	shop.show();
+	context.subscriptions.push(shop);
 	const lead = vscode.window.createStatusBarItem('orbit.team', vscode.StatusBarAlignment.Left, 999);
 	lead.name = 'Chef d\'équipe';
 	lead.text = `$(${assistant().icon}) Chef d'équipe`;

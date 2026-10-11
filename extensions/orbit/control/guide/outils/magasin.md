@@ -42,6 +42,18 @@ La connexion se fait dans un terminal d'Orbit nommé « Connexion · » suivi du
 
 Tous sont des serveurs hébergés où tu te connectes depuis le navigateur, sauf Playwright et PhotoCraft, des programmes qui tournent chez toi.
 
+## Où le trouver, et où va ce que tu installes
+
+Le magasin s'ouvre par le bouton **Magasin** de la barre du bas, par `Ctrl+Alt+B` (`⌥⌘B` sur macOS), ou par « Outils du projet ».
+
+Chaque service y porte son vrai logo, dans ses couleurs.
+
+Ce que tu installes rejoint **Outils du projet** (le bouton outils de la barre du terminal, ou `Ctrl+Alt+K`) :
+
+- un service qui a sa page dans Orbit (Figma, Supabase, Stripe, Vercel, Higgsfield) y est déjà, et **sa page s'ouvre toute seule** dès qu'il est installé et connecté ;
+- PhotoCraft s'y ajoute dans « Création » et **s'ouvre dès la fin de l'installation** ; un clic l'ouvre ensuite, sur l'image affichée s'il y en a une ;
+- les autres services installés (Canva, GitHub, Notion, Linear, Sentry…) apparaissent dans un bloc « Installés » ; un clic ouvre leur site. Cette liste est celle vue la dernière fois que le magasin a interrogé ton assistant : elle se met à jour quelques secondes après l'ouverture d'Orbit et à chaque ouverture du magasin.
+
 ## PhotoCraft : la retouche d'images par l'agent
 
 PhotoCraft est un logiciel libre de retouche d'images, du projet ArtCraft, qui se pilote entièrement par des commandes. Une fois installé, tu demandes à l'agent « recadre cette photo en carré », « passe le logo en blanc sur fond transparent », « exporte ce PSD en PNG » : il le fait sur ta machine, sans abonnement, et le fichier arrive dans ton projet.
