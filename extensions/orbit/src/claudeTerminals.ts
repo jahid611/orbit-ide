@@ -411,7 +411,16 @@ export class ClaudeTerminals implements vscode.Disposable {
 
 	/** Submit a message to Claude; bracketed paste keeps a multi-line message in one prompt. */
 	sendMessage(terminal: vscode.Terminal, text: string): void {
-		this.sendCommand(terminal, text.includes('\n') ? `\x1b[200~${text}\x1b[201~` : text);
+		const message = text.includes('\n') ? `\x1b[200~${text}\x1b[201~` : text;
+		if (this.assistantOf(terminal) !== 'claude') {
+			this.sendCommand(terminal, message);
+			return;
+		}
+		// The user may have a message half written in the prompt: typed after it, ours would be
+		// glued to theirs and both sent. Claude Code's Ctrl+S puts what is in the prompt aside
+		// and gives it back once the next message is sent.
+		terminal.sendText('\x13', false);
+		setTimeout(() => this.sendCommand(terminal, message), 150);
 	}
 
 	/** Type an @-mention of the current file/selection into the active Claude prompt. */

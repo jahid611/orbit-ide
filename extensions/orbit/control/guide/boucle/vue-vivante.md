@@ -51,6 +51,8 @@ Le cadre est réduit pour tenir dans l'onglet, jamais agrandi, et les barres de 
 
 Le message dit aussi à l'agent sur quel affichage tu étais : ordinateur (avec la largeur de la page), ou le téléphone ou la tablette choisi, avec sa taille et son orientation. Il règle donc ta demande pour cet affichage sans toucher aux autres, sauf si tu le lui demandes.
 
+Si tu avais un message en cours d'écriture dans le terminal de l'agent, il n'est ni mélangé à la demande ni envoyé : Orbit le met de côté le temps d'envoyer la demande, puis l'agent le remet dans le champ (« Draft restored »), prêt à être envoyé quand tu le décides. Cela vaut pour tous les messages qu'une page d'Orbit envoie à Claude. Avec ChatGPT, vide le champ avant d'envoyer depuis une page : cette mise de côté n'existe pas.
+
 ### Un vrai téléphone pour la page
 
 Choisir un appareil ne fait pas que rétrécir le cadre : la page est rechargée et se comporte comme sur cet appareil, à la manière du mode appareil des outils de développement d'un navigateur (F12).
