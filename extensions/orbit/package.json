@@ -30,7 +30,8 @@
     "onWebviewPanel:orbit.store",
     "onWebviewPanel:orbit.figma",
     "onWebviewPanel:orbit.supabase",
-    "onWebviewPanel:orbit.stripe"
+    "onWebviewPanel:orbit.stripe",
+    "onWebviewPanel:orbit.craft"
   ],
   "main": "./out/extension",
   "scripts": {

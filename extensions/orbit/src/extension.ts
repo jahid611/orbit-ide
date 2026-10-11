@@ -36,7 +36,8 @@ import { EnvVars } from './envVars';
 import { Board } from './board';
 import { VisualCheck } from './visualCheck';
 import { Store } from './store';
-import { CRAFT_APPS, craftIcon, ensureCraftIcon, findCraft, openCraft } from './craft';
+import { CRAFT_APPS, craftGui, craftIcon, ensureCraftIcon, findCraft, openCraft } from './craft';
+import { CraftView } from './craftView';
 import { Figma } from './figma';
 import { Supabase } from './supabase';
 import { Stripe } from './stripe';
@@ -273,12 +274,13 @@ export function activate(context: vscode.ExtensionContext): void {
 		...group,
 		items: [
 			...group.items.slice(0, -1),
-			...CRAFT_APPS.filter(app => findCraft(app)).map((app): Tool => ({ label: app.name, detail: 'Ouvrir l\'application ; tes agents en ont aussi les outils', command: `orbit.craft.open.${app.id}`, image: craftIcon(app), icon: craftIcon(app) ? undefined : 'paintcan' })),
+			...CRAFT_APPS.filter(app => findCraft(app)).map((app): Tool => ({ label: app.name, detail: 'Dans Orbit, en direct : tes agents agissent dessus', command: craftGui(app) ? `orbit.craft.show.${app.id}` : `orbit.craft.open.${app.id}`, image: craftIcon(app), icon: craftIcon(app) ? undefined : 'paintcan' })),
 			...group.items.slice(-1),
 		],
 	}), { title: 'Installés', items: skills.installedTools() as Tool[] }].filter(group => group.items.length);
 	for (const app of CRAFT_APPS) {
 		ensureCraftIcon(app);
+		context.subscriptions.push(new CraftView(context, app, () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath));
 		context.subscriptions.push(vscode.commands.registerCommand(`orbit.craft.open.${app.id}`, async () => {
 			// The picture in front, if there is one, opens with the application.
 			const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;

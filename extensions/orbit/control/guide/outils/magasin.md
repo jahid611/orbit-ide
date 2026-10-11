@@ -51,7 +51,7 @@ Chaque service y porte son vrai logo, dans ses couleurs.
 Ce que tu installes rejoint **Outils du projet** (le bouton outils de la barre du terminal, ou `Ctrl+Alt+K`) :
 
 - un service qui a sa page dans Orbit (Figma, Supabase, Stripe, Vercel, Higgsfield) y est déjà, et **sa page s'ouvre toute seule** dès qu'il est installé et connecté ;
-- PhotoCraft s'y ajoute dans « Création » et **s'ouvre dès la fin de l'installation** ; un clic l'ouvre ensuite, sur l'image affichée s'il y en a une ;
+- PhotoCraft s'y ajoute dans « Création » et **s'ouvre dans Orbit dès la fin de l'installation** ; un clic l'y rouvre ensuite ;
 - les autres services installés (Canva, GitHub, Notion, Linear, Sentry…) apparaissent dans un bloc « Installés » ; un clic ouvre leur site. Cette liste est celle vue la dernière fois que le magasin a interrogé ton assistant : elle se met à jour quelques secondes après l'ouverture d'Orbit et à chaque ouverture du magasin.
 
 ## PhotoCraft : la retouche d'images par l'agent
@@ -62,6 +62,18 @@ PhotoCraft est un logiciel libre de retouche d'images, du projet ArtCraft, qui s
 - **Pour qui** : les agents ouverts **après** l'installation. Ouvre un nouvel agent.
 - **Ce qu'il peut toucher** : seulement le dossier du projet où l'agent travaille. PhotoCraft refuse de lire ou d'écrire ailleurs.
 - **Retirer** : la croix de sa carte supprime la copie installée par Orbit.
+
+### PhotoCraft dans Orbit, en direct
+
+« PhotoCraft » dans **Outils du projet** ouvre l'application dans un onglet d'Orbit. C'est la vraie application : elle tourne sur ta machine, sa fenêtre est tenue hors de l'écran, et l'onglet montre ce qu'elle affiche.
+
+- **Tes agents agissent dessus sous tes yeux.** Dis à l'agent « ouvre le logo dans PhotoCraft et détoure-le » : tu vois l'image s'ouvrir, les menus et les calques changer.
+- **Tu peux cliquer et taper** : menus, boutons, panneaux, raccourcis clavier, clic droit.
+- **Ouvrir une image** propose les images du projet.
+- **Sa propre fenêtre** sort l'application sur ton écran, à pleine vitesse ; **Le ramener dans Orbit** la remet dans l'onglet. Tes agents continuent d'agir dessus dans les deux cas.
+- Fermer l'onglet ne ferme pas l'application : elle revient devant toi, pour que tu enregistres ce que tu veux garder.
+
+Ce n'est pas la fenêtre elle-même mais son image, rafraîchie environ deux fois par seconde. On ne peut donc pas y peindre, faire glisser un curseur ou une sélection, ni utiliser la molette : pour ces gestes, passe par « Sa propre fenêtre ». Cette vue n'existe que sous Windows pour l'instant.
 
 PhotoCraft est en alpha : son éditeur dit lui-même qu'il ne remplace pas encore Photoshop au quotidien. Des commandes peuvent manquer ou échouer ; l'agent a pour consigne de le dire et de passer par un autre moyen. Les autres applications du même projet (vectoriel, montage, PDF…) ne sont pas encore branchées.
 

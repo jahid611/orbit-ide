@@ -98,7 +98,13 @@ export function craftMcpConfigs(cwd: string | undefined): string[] {
 		const file = path.join(os.homedir(), '.orbit', 'mcp', `${app.id}-${createHash('sha1').update(cwd.toLowerCase()).digest('hex').slice(0, 10)}.json`);
 		try {
 			fs.mkdirSync(path.dirname(file), { recursive: true });
-			fs.writeFileSync(file, JSON.stringify({ mcpServers: { [app.id]: { command: program, args: ['mcp', '--automation-read-root', cwd, '--automation-write-root', cwd] } } }, undefined, '\t'));
+			// Two servers: the application without a window, always there, and the one shown in
+			// Orbit (`<app>_live`), which answers only while its page is open.
+			const servers: Record<string, { command: string; args: string[] }> = { [app.id]: { command: program, args: ['mcp', '--automation-read-root', cwd, '--automation-write-root', cwd] } };
+			if (craftGui(app)) {
+				servers[`${app.id}_live`] = { command: program, args: ['mcp', '--bridge', `127.0.0.1:${craftPort(cwd)}`, '--control-token-file', craftTokenFile(app, cwd)] };
+			}
+			fs.writeFileSync(file, JSON.stringify({ mcpServers: servers }, undefined, '\t'));
 			files.push(file);
 		} catch {
 			// the agent starts without this app
@@ -188,6 +194,23 @@ export async function installCraft(app: CraftApp, say: (step: string) => void): 
 		await fs.promises.rm(target, { recursive: true, force: true });
 		throw err;
 	}
+}
+
+/** The application's window program, where it comes with what Orbit installed (the Windows archive). */
+export function craftGui(app: CraftApp): string | undefined {
+	const cli = findCraft(app);
+	const program = cli && path.join(path.dirname(cli), WINDOWS ? `${app.id}.exe` : app.id);
+	return program && fs.existsSync(program) ? program : undefined;
+}
+
+/** The port of the application's control channel for a project: always the same, so agents find it. */
+export function craftPort(cwd: string): number {
+	return 45500 + parseInt(createHash('sha1').update(cwd.toLowerCase()).digest('hex').slice(0, 6), 16) % 400;
+}
+
+/** Where the application keeps the secret of that channel (it writes the file itself). */
+export function craftTokenFile(app: CraftApp, cwd: string): string {
+	return path.join(TOOLS, `${app.id}-control-${createHash('sha1').update(cwd.toLowerCase()).digest('hex').slice(0, 10)}.token`);
 }
 
 /** The application's own icon, kept beside what Orbit installed (fetched once from its repository). */

@@ -47,8 +47,12 @@ export abstract class Page implements vscode.Disposable {
 		this.panel.onDidDispose(() => {
 			listener.dispose();
 			this.panel = undefined;
+			this.closed();
 		});
 	}
+
+	/** The user closed the page. */
+	protected closed(): void { }
 
 	get visible(): boolean {
 		return !!this.panel?.visible;

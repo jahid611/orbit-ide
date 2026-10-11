@@ -15,7 +15,7 @@ export interface WebviewSources {
 }
 
 /** The pages of Orbit: each is `media/<id>.js` and `media/<id>.css`. */
-export type PageId = 'studio' | 'chat' | 'map' | 'preview' | 'database' | 'unity' | 'community' | 'higgsfield' | 'queue' | 'phone' | 'vercel' | 'env' | 'board' | 'visual' | 'store' | 'figma' | 'supabase' | 'stripe';
+export type PageId = 'studio' | 'chat' | 'map' | 'preview' | 'database' | 'unity' | 'community' | 'higgsfield' | 'queue' | 'phone' | 'vercel' | 'env' | 'board' | 'visual' | 'store' | 'figma' | 'supabase' | 'stripe' | 'craft';
 
 export function renderWebview(webview: vscode.Webview, extensionUri: vscode.Uri, page: PageId, sources: WebviewSources = {}): string {
 	const nonce = randomBytes(16).toString('base64');

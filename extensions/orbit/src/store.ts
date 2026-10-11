@@ -306,7 +306,7 @@ export class Store extends Page {
 			this.working = undefined;
 			this.send();
 			// Shown at once: the application opens, where its window came with the download.
-			const shown = openCraft(app);
+			const shown = await vscode.commands.executeCommand(`orbit.craft.show.${app.id}`).then(() => true, () => openCraft(app));
 			vscode.window.showInformationMessage(`${connector.name} ${version} est installé${shown ? ' et ouvert' : ''}. Il est dans « Outils du projet », et tout nouvel agent aura ses outils pour retoucher les images du projet.`);
 			return true;
 		} catch (err) {
