@@ -34,12 +34,24 @@ La connexion se fait dans un terminal d'Orbit nommé « Connexion · » suivi du
 | Context7 | Documentation | La documentation à jour des bibliothèques |
 | Playwright | Qualité | Un navigateur piloté par l'agent (programme lancé sur ta machine avec `npx`) |
 | Higgsfield | Création | Images, vidéos, 3D et sons (voir [Higgsfield](/docs/outils/higgsfield)) |
+| PhotoCraft | Création | Retouche d'images par l'agent, sur ta machine (voir plus bas) |
 | Cloudflare | Mise en ligne | La documentation Cloudflare |
 | Hugging Face | IA | Modèles, jeux de données et espaces du Hub |
 | Canva | Design | Créer et retrouver des visuels |
 | Jira et Confluence | Organisation | Tickets et pages de ton équipe |
 
-Tous sont des serveurs hébergés où tu te connectes depuis le navigateur, sauf Playwright, un programme qui tourne chez toi.
+Tous sont des serveurs hébergés où tu te connectes depuis le navigateur, sauf Playwright et PhotoCraft, des programmes qui tournent chez toi.
+
+## PhotoCraft : la retouche d'images par l'agent
+
+PhotoCraft est un logiciel libre de retouche d'images, du projet ArtCraft, qui se pilote entièrement par des commandes. Une fois installé, tu demandes à l'agent « recadre cette photo en carré », « passe le logo en blanc sur fond transparent », « exporte ce PSD en PNG » : il le fait sur ta machine, sans abonnement, et le fichier arrive dans ton projet.
+
+- **Installation** : le bouton **Installer** de sa carte. Orbit télécharge la dernière version officielle depuis le dépôt du projet sur GitHub (environ 75 Mo), vérifie son empreinte et, sous Windows, sa signature, puis la range dans `~/.orbit/tools/photocraft`. Rien n'est installé si une vérification échoue. Orbit ne contient pas PhotoCraft et n'en est pas l'éditeur.
+- **Pour qui** : les agents ouverts **après** l'installation. Ouvre un nouvel agent.
+- **Ce qu'il peut toucher** : seulement le dossier du projet où l'agent travaille. PhotoCraft refuse de lire ou d'écrire ailleurs.
+- **Retirer** : la croix de sa carte supprime la copie installée par Orbit.
+
+PhotoCraft est en alpha : son éditeur dit lui-même qu'il ne remplace pas encore Photoshop au quotidien. Des commandes peuvent manquer ou échouer ; l'agent a pour consigne de le dire et de passer par un autre moyen. Les autres applications du même projet (vectoriel, montage, PDF…) ne sont pas encore branchées.
 
 ## Les paquets de recettes
 

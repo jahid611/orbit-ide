@@ -11,6 +11,7 @@ import { HOOK_SETTINGS, ORBIT_DIR, TERMINAL_ID_ENV } from './agentTracker';
 import { AssistantMode, AssistantModel, assistant, assistantId } from './assistant';
 import { controlMcpConfig } from './orbitControl';
 import { unityMcpConfig } from './unity';
+import { craftMcpConfigs } from './craft';
 
 /** Models and permission modes of the assistant in use: read when needed, the choice can change. */
 export function models(): AssistantModel[] {
@@ -57,6 +58,7 @@ You control Orbit itself through the orbit tools (mcp__orbit__*), and you use th
 - When the project uses Supabase, Orbit holds the access and you act through it: mcp__orbit__supabase_state (tables, protection), mcp__orbit__supabase_sql (read at once; with write=true the user sees the SQL in Orbit and accepts) and mcp__orbit__supabase_auth_urls (redirect addresses). Run migrations and checks yourself with these tools instead of telling the user to paste SQL into the Supabase dashboard. Orbit does not rotate keys: regenerating an API key or a secret stays the user's own action, in the dashboard.
 - Orbit is your workbench, not a window around a plain terminal: when Orbit has a tool for something, use it rather than a hand-typed command or an instruction to the user. mcp__orbit__verify runs the project's checks (call it after changing code, before saying you are done); mcp__orbit__checkpoint marks a point to come back to before a risky change; mcp__orbit__vercel_state, mcp__orbit__vercel_publish and mcp__orbit__vercel_logs put the project online and explain a failed build; mcp__orbit__stripe_state and mcp__orbit__stripe_create_product handle payments; mcp__orbit__queue_add leaves work for the night queue. Show your work in Orbit as you go (open_file, show_view, open_url on the running app).
 - You test what you build in Orbit's live view, in front of the user, the way a person would: mcp__orbit__open_url on the running app, mcp__orbit__preview_look to read the page and its errors, mcp__orbit__preview_act to click, type, submit and move from page to page, mcp__orbit__preview_screenshot to judge the layout. Do a real walk through the feature before saying it works. Never start a browser of your own (Chrome tools, a headless browser, Playwright, Puppeteer) for an app that runs on this machine, unless the user asks for it or the live view cannot do what the test needs; in that case say why.
+- When the PhotoCraft tools are there (mcp__photocraft__*), they are how you edit images of the project: crop, resize, convert, retouch, filters, adjustments, layers, PSD files. Use them instead of writing a script or asking the user to open an editor. Paths are relative to the project folder, the only place the tools may read and write. mcp__photocraft__command_list with a filter finds the command you need and its parameters; open with doc_open, act with command_run, write the result with doc_export (never over the original unless asked), and look at it with render_preview before saying it is done. PhotoCraft is in alpha: when a command fails, say so plainly and fall back on another way.
 - The project has a task board (mcp__orbit__board_list). When the user tells you to work through the board or to take a task, call mcp__orbit__board_take, do that task only, then mcp__orbit__board_move it to "review" with a short account of what you did. Never move a card to "done": that is the user's decision.`;
 
 export interface ClaudeLaunch {
@@ -94,7 +96,7 @@ export function claudeCommandLine(launch: ClaudeLaunch = {}): string {
 	// In a Unity project, Claude gets tools to see and drive the open Unity Editor.
 	// Every Claude also gets the orbit tools, to drive the IDE (explorer, projects, views).
 	// Orbit's own extensions (StarCapture…) hand Claude their tools through ~/.orbit/mcp/ext-*.json.
-	const mcpConfigs = [controlMcpConfig(), unityMcpConfig(launch.cwd), ...extensionMcpConfigs(), ...(launch.mcpConfigs ?? [])].filter((f): f is string => !!f);
+	const mcpConfigs = [controlMcpConfig(), unityMcpConfig(launch.cwd), ...extensionMcpConfigs(), ...craftMcpConfigs(launch.cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath), ...(launch.mcpConfigs ?? [])].filter((f): f is string => !!f);
 	if (mcpConfigs.length) {
 		args.push('--mcp-config', ...mcpConfigs);
 	}
@@ -173,7 +175,7 @@ function writeCodexProfile(config: ReturnType<typeof readConfig>, launch: Claude
 		`developer_instructions = ${JSON.stringify(instructions)}`,
 		'',
 	];
-	const mcpConfigs = [controlMcpConfig(), unityMcpConfig(launch.cwd), ...extensionMcpConfigs(), ...(launch.mcpConfigs ?? [])].filter((f): f is string => !!f);
+	const mcpConfigs = [controlMcpConfig(), unityMcpConfig(launch.cwd), ...extensionMcpConfigs(), ...craftMcpConfigs(launch.cwd ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath), ...(launch.mcpConfigs ?? [])].filter((f): f is string => !!f);
 	for (const file of mcpConfigs) {
 		let servers: Record<string, { command?: string; args?: string[]; env?: Record<string, string> }> = {};
 		try {

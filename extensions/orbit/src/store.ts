@@ -12,6 +12,7 @@ import { assistantId } from './assistant';
 import { claudeEnv, resolveClaudeExecutable } from './config';
 import { Page, requestJson } from './page';
 import { signInTerminal, waitSignedIn } from './signIn';
+import { craftApp, findCraft, installCraft, removeCraft } from './craft';
 
 interface Connector {
 	id: string;
@@ -24,6 +25,10 @@ interface Connector {
 	/** A hosted server (the user signs in from the browser), or a program run on this machine. */
 	url?: string;
 	command?: string[];
+	/** An application Orbit fetches and keeps itself (see `craft.ts`), not a server added to the assistant. */
+	craft?: boolean;
+	/** The application's own icon, loaded from its official repository and shown unmodified. */
+	image?: string;
 	site: string;
 }
 
@@ -54,6 +59,7 @@ const CONNECTORS: Connector[] = [
 	{ id: 'context7', name: 'Context7', logo: 'upstash', color: '#00c98d', category: 'Documentation', description: 'La documentation à jour des bibliothèques, pour que l\'agent n\'invente pas d\'API.', url: 'https://mcp.context7.com/mcp', site: 'https://context7.com' },
 	{ id: 'playwright', name: 'Playwright', logo: 'playwright', color: '#2ead33', category: 'Qualité', description: 'Un vrai navigateur piloté par l\'agent : cliquer, remplir, vérifier une page.', command: ['npx', '-y', '@playwright/mcp@latest'], site: 'https://playwright.dev' },
 	{ id: 'higgsfield', name: 'Higgsfield', logo: '', color: '#d1fe17', category: 'Création', description: 'Images, vidéos, modèles 3D et sons générés avec ton compte Higgsfield.', url: 'https://mcp.higgsfield.ai/mcp', site: 'https://higgsfield.ai' },
+	{ id: 'photocraft', name: 'PhotoCraft', logo: '', color: '#2f7bf5', category: 'Création', description: 'Retouche d\'images par l\'agent, sur ta machine : calques, filtres, réglages, recadrage, export, fichiers PSD. Libre et gratuit, encore en alpha.', craft: true, image: 'https://raw.githubusercontent.com/storytold/photocraft/HEAD/assets/app-icon/hicolor/128x128/apps/ai.storyteller.photocraft.png', site: 'https://getartcraft.com/apps/photocraft' },
 	{ id: 'cloudflare', name: 'Cloudflare', logo: 'cloudflare', color: '#f38020', category: 'Mise en ligne', description: 'La documentation Cloudflare (Workers, Pages, R2, D1) à portée de l\'agent.', url: 'https://docs.mcp.cloudflare.com/mcp', site: 'https://cloudflare.com' },
 	{ id: 'huggingface', name: 'Hugging Face', logo: 'huggingface', color: '#ffd21e', category: 'IA', description: 'Modèles, jeux de données et espaces du Hub Hugging Face.', url: 'https://huggingface.co/mcp', site: 'https://huggingface.co' },
 	{ id: 'canva', name: 'Canva', logo: 'canva', color: '#00c4cc', category: 'Design', description: 'Crée et retrouve tes visuels Canva depuis l\'agent.', url: 'https://mcp.canva.com/mcp', site: 'https://canva.com' },
@@ -177,7 +183,9 @@ export class Store extends Page {
 		const mine = new Set(this.userRecipes().map(r => r.name));
 		this.post({
 			type: 'state',
-			connectors: CONNECTORS.map(c => ({ ...c, local: !!c.command, installed: this.installed ? this.has(c.id) : undefined, listed: !!this.listed(c.id) })),
+			connectors: CONNECTORS.map(c => c.craft
+				? { ...c, local: true, installed: !!findCraft(craftApp(c.id)!), listed: false }
+				: { ...c, local: !!c.command, installed: this.installed ? this.has(c.id) : undefined, listed: !!this.listed(c.id) }),
 			packs: PACKS.map(p => ({ id: p.id, name: p.name, description: p.description, recipes: p.recipes.map(r => ({ name: r.name, description: r.description, installed: mine.has(r.name) })) })),
 			working: this.working,
 			community: this.community,
@@ -196,6 +204,9 @@ export class Store extends Page {
 	async install(connector: Connector): Promise<boolean> {
 		if (this.working) {
 			return false;
+		}
+		if (connector.craft) {
+			return this.installCraft(connector);
 		}
 		// Already there but not signed in (it came with a plugin, or was added earlier): only the sign-in is missing.
 		const existing = this.listed(connector.id);
@@ -225,6 +236,36 @@ export class Store extends Page {
 		this.working = undefined;
 		await this.refresh();
 		return true;
+	}
+
+	/** An application of the Crafting Apps: fetched from its project's releases, checked, kept by Orbit. */
+	private async installCraft(connector: Connector): Promise<boolean> {
+		const app = craftApp(connector.id);
+		if (!app) {
+			return false;
+		}
+		const go = await vscode.window.showInformationMessage(`Installer ${connector.name} ?`, {
+			modal: true,
+			detail: `Orbit télécharge la dernière version officielle depuis le dépôt du projet (github.com/${app.repo}, environ 75 Mo), vérifie son empreinte et sa signature, puis la range dans ~/.orbit/tools. Tes agents reçoivent alors ses outils, limités au dossier du projet où ils travaillent.\n\nC'est un logiciel libre encore en alpha, édité par un tiers : des fonctions peuvent manquer ou échouer.`,
+		}, 'Installer');
+		if (!go) {
+			return false;
+		}
+		try {
+			const version = await installCraft(app, step => {
+				this.working = step;
+				this.send();
+			});
+			this.working = undefined;
+			this.send();
+			vscode.window.showInformationMessage(`${connector.name} ${version} est installé. Ouvre un nouvel agent : il aura ses outils pour retoucher les images du projet.`);
+			return true;
+		} catch (err) {
+			this.working = undefined;
+			this.send();
+			vscode.window.showErrorMessage(`${connector.name} : ${err instanceof Error ? err.message : String(err)}`);
+			return false;
+		}
 	}
 
 	/** The sign-in runs in a terminal of Orbit (the assistant's tool needs one), and the page follows it. */
@@ -274,6 +315,13 @@ export class Store extends Page {
 			}
 			case 'remove': {
 				const connector = this.connector(String(msg.id));
+				if (connector?.craft) {
+					if (await vscode.window.showWarningMessage(`Retirer ${connector.name} ?`, { modal: true, detail: 'Orbit supprime la copie qu\'il a installée. Les agents déjà ouverts gardent ses outils jusqu\'à leur fermeture.' }, 'Retirer')) {
+						await removeCraft(craftApp(connector.id)!);
+						this.send();
+					}
+					break;
+				}
 				const name = this.listed(String(msg.id))?.name ?? String(msg.id);
 				if (connector && await vscode.window.showWarningMessage(`Retirer ${connector.name} ?`, { modal: true, detail: 'Le connecteur est retiré de ton assistant. Ton compte chez l\'outil n\'est pas touché.' }, 'Retirer')) {
 					this.working = `Retrait de ${connector.name}…`;
