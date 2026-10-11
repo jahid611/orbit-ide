@@ -704,6 +704,8 @@ export class ClaudeTerminals implements vscode.Disposable {
 			if (known.mode && !this.launchModes.has(terminal)) {
 				this.launchModes.set(terminal, known.mode);
 			}
+			// Written down again, under this project: what the next opening brings back.
+			this.remember();
 			if (fresh || known.id) {
 				this.updateStatus();
 				this._onDidChange.fire();
