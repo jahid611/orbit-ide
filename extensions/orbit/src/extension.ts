@@ -274,7 +274,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		...group,
 		items: [
 			...group.items.slice(0, -1),
-			...CRAFT_APPS.filter(app => findCraft(app)).map((app): Tool => ({ label: app.name, detail: 'Dans Orbit, en direct : tes agents agissent dessus', command: craftGui(app) ? `orbit.craft.show.${app.id}` : `orbit.craft.open.${app.id}`, image: craftIcon(app), icon: craftIcon(app) ? undefined : 'paintcan' })),
+			...CRAFT_APPS.filter(app => findCraft(app)).map((app): Tool => ({ label: app.name, detail: craftGui(app) ? `Comme ${app.like}, dans Orbit : tes agents agissent dessus` : `Comme ${app.like} : ses outils sont chez tes agents`, command: craftGui(app) ? `orbit.craft.show.${app.id}` : `orbit.craft.open.${app.id}`, image: craftIcon(app), icon: craftIcon(app) ? undefined : 'paintcan' })),
 			...group.items.slice(-1),
 		],
 	}), { title: 'Installés', items: skills.installedTools() as Tool[] }].filter(group => group.items.length);
@@ -282,12 +282,14 @@ export function activate(context: vscode.ExtensionContext): void {
 		ensureCraftIcon(app);
 		// The agents' reference follows the installed version (written once, a few seconds after starting).
 		setTimeout(() => writeCraftGuide(app).catch(() => undefined), 8000);
-		context.subscriptions.push(new CraftView(context, app, () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath));
+		if (app.window) {
+			context.subscriptions.push(new CraftView(context, app, () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath));
+		}
 		context.subscriptions.push(vscode.commands.registerCommand(`orbit.craft.open.${app.id}`, async (given?: vscode.Uri | string) => {
 			// The file handed over, else the picture in front, opens with the application.
 			const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
 			const front = input instanceof vscode.TabInputCustom || input instanceof vscode.TabInputText ? input.uri.fsPath : undefined;
-			const file = given instanceof vscode.Uri ? given.fsPath : typeof given === 'string' ? given : front && /\.(png|jpe?g|gif|webp|bmp|tiff?|psd|psb|pcraft|avif|heic|svg)$/i.test(front) ? front : undefined;
+			const file = given instanceof vscode.Uri ? given.fsPath : typeof given === 'string' ? given : front && app.open?.includes(path.extname(front).slice(1).toLowerCase()) ? front : undefined;
 			// Where Orbit shows the application, it is that one: a second window of it, beside,
 			// would hold another copy of the work (agents asked for this command again and again).
 			if (craftGui(app)) {

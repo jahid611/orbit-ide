@@ -31,7 +31,17 @@
     "onWebviewPanel:orbit.figma",
     "onWebviewPanel:orbit.supabase",
     "onWebviewPanel:orbit.stripe",
-    "onWebviewPanel:orbit.craft"
+    "onWebviewPanel:orbit.craft-photocraft",
+    "onWebviewPanel:orbit.craft-vectorcraft",
+    "onWebviewPanel:orbit.craft-lightcraft",
+    "onWebviewPanel:orbit.craft-filmcraft",
+    "onWebviewPanel:orbit.craft-effectcraft",
+    "onWebviewPanel:orbit.craft-designcraft",
+    "onWebviewPanel:orbit.craft-soundcraft",
+    "onWebviewPanel:orbit.craft-wordcraft",
+    "onWebviewPanel:orbit.craft-gridcraft",
+    "onWebviewPanel:orbit.craft-deckcraft",
+    "onWebviewPanel:orbit.craft-cadcraft"
   ],
   "main": "./out/extension",
   "scripts": {
@@ -1177,21 +1187,6 @@
         "when": "!terminalFocus"
       },
       {
-        "command": "orbit.craft.palette",
-        "key": "ctrl+shift+p",
-        "when": "orbit.craftDocked"
-      },
-      {
-        "command": "orbit.craft.palette",
-        "key": "f1",
-        "when": "orbit.craftDocked"
-      },
-      {
-        "command": "orbit.craft.files",
-        "key": "ctrl+p",
-        "when": "orbit.craftDocked"
-      },
-      {
         "command": "orbit.store.show",
         "key": "ctrl+alt+b",
         "mac": "cmd+alt+b"
@@ -1550,8 +1545,6 @@
         "orbit.team.start",
         "orbit.recipes.pick",
         "orbit.higgsfield.show",
-        "orbit.craft.palette",
-        "orbit.craft.files",
         "orbit.store.show",
         "orbit.queue.show",
         "orbit.vercel.show",

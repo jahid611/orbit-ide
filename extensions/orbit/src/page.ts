@@ -15,7 +15,11 @@ export abstract class Page implements vscode.Disposable {
 	protected panel: vscode.WebviewPanel | undefined;
 	protected readonly disposables: vscode.Disposable[] = [];
 
-	constructor(protected readonly context: vscode.ExtensionContext, private readonly page: PageId, private readonly title: string, private readonly image?: string) {
+	/**
+	 * `page` names the kind of panel (what the window remembers it by). It is usually also the
+	 * name of the page's script and style; several panels drawn by the same script give it as `drawnBy`.
+	 */
+	constructor(protected readonly context: vscode.ExtensionContext, private readonly page: string, private readonly title: string, private readonly image?: string, private readonly drawnBy?: PageId) {
 		// A page open when the window is reloaded, or when Orbit is closed, is there again afterwards.
 		this.disposables.push(vscode.window.registerWebviewPanelSerializer(`orbit.${page}`, {
 			deserializeWebviewPanel: async panel => this.panel ? panel.dispose() : this.attach(panel),
@@ -28,6 +32,12 @@ export abstract class Page implements vscode.Disposable {
 			this.refresh();
 			return;
 		}
+		// A tab the window brought back after a reload has no panel behind it until it is shown:
+		// it is replaced by the page opened now, not doubled.
+		const stale = vscode.window.tabGroups.all.flatMap(group => group.tabs).filter(tab => tab.input instanceof vscode.TabInputWebview && tab.input.viewType.endsWith(`orbit.${this.page}`));
+		if (stale.length) {
+			vscode.window.tabGroups.close(stale, true).then(undefined, () => undefined);
+		}
 		this.attach(vscode.window.createWebviewPanel(`orbit.${this.page}`, this.title, vscode.ViewColumn.Active, { ...webviewOptions(this.context.extensionUri), retainContextWhenHidden: true }));
 	}
 
@@ -38,7 +48,7 @@ export abstract class Page implements vscode.Disposable {
 		if (this.image) {
 			this.panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, 'media', this.image);
 		}
-		this.panel.webview.html = renderWebview(this.panel.webview, this.context.extensionUri, this.page);
+		this.panel.webview.html = renderWebview(this.panel.webview, this.context.extensionUri, this.drawnBy ?? this.page as PageId);
 		const listener = this.panel.webview.onDidReceiveMessage(msg => Promise.resolve(msg?.type === 'ready' ? this.refresh() : this.onMessage(msg)).catch(err => {
 			vscode.window.showErrorMessage(`${this.title} : ${err instanceof Error ? err.message : String(err)}`);
 			this.send();

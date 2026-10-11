@@ -12,7 +12,7 @@ import { assistantId } from './assistant';
 import { claudeEnv, resolveClaudeExecutable } from './config';
 import { Page, requestJson } from './page';
 import { signInTerminal, waitSignedIn } from './signIn';
-import { craftApp, findCraft, installCraft, openCraft, removeCraft } from './craft';
+import { CRAFT_APPS, craftApp, findCraft, installCraft, openCraft, removeCraft } from './craft';
 
 interface Connector {
 	id: string;
@@ -71,7 +71,8 @@ const CONNECTORS: Connector[] = [
 	{ id: 'context7', name: 'Context7', logo: 'upstash', color: '#00c98d', category: 'Documentation', description: 'La documentation à jour des bibliothèques, pour que l\'agent n\'invente pas d\'API.', url: 'https://mcp.context7.com/mcp', art: 'logos/context7.ico', tile: '#ffffff', site: 'https://context7.com' },
 	{ id: 'playwright', name: 'Playwright', logo: 'playwright', color: '#2ead33', category: 'Qualité', description: 'Un vrai navigateur piloté par l\'agent : cliquer, remplir, vérifier une page.', command: ['npx', '-y', '@playwright/mcp@latest'], art: 'logos/playwright.svg', tile: '#ffffff', site: 'https://playwright.dev' },
 	{ id: 'higgsfield', name: 'Higgsfield', logo: '', color: '#d1fe17', category: 'Création', description: 'Images, vidéos, modèles 3D et sons générés avec ton compte Higgsfield.', url: 'https://mcp.higgsfield.ai/mcp', art: 'higgsfield.png', full: true, page: 'orbit.higgsfield.show', site: 'https://higgsfield.ai' },
-	{ id: 'photocraft', name: 'PhotoCraft', logo: '', color: '#2f7bf5', category: 'Création', description: 'Retouche d\'images par l\'agent, sur ta machine : calques, filtres, réglages, recadrage, export, fichiers PSD. Libre et gratuit, encore en alpha.', craft: true, image: 'https://raw.githubusercontent.com/storytold/photocraft/HEAD/assets/app-icon/hicolor/128x128/apps/ai.storyteller.photocraft.png', site: 'https://getartcraft.com/apps/photocraft' },
+	// The Crafting Apps: one card each, written from what `craft.ts` says of the application.
+	...CRAFT_APPS.map((app): Connector => ({ id: app.id, name: app.name, logo: '', color: '#2f7bf5', category: 'Création', description: `${app.about} L'équivalent libre de ${app.like}, sur ta machine, piloté par tes agents${app.window ? ' et affiché dans Orbit' : ''}. Encore en alpha.`, craft: true, image: `https://raw.githubusercontent.com/${app.repo}/HEAD/assets/app-icon/hicolor/128x128/apps/ai.storyteller.${app.id}.png`, site: `https://getartcraft.com/apps/${app.id}` })),
 	{ id: 'cloudflare', name: 'Cloudflare', logo: 'cloudflare', color: '#f38020', category: 'Mise en ligne', description: 'La documentation Cloudflare (Workers, Pages, R2, D1) à portée de l\'agent.', url: 'https://docs.mcp.cloudflare.com/mcp', art: 'logos/cloudflare.svg', tile: '#ffffff', site: 'https://cloudflare.com' },
 	{ id: 'huggingface', name: 'Hugging Face', logo: 'huggingface', color: '#ffd21e', category: 'IA', description: 'Modèles, jeux de données et espaces du Hub Hugging Face.', url: 'https://huggingface.co/mcp', art: 'logos/huggingface.svg', tile: '#ffffff', site: 'https://huggingface.co' },
 	{ id: 'canva', name: 'Canva', logo: 'canva', color: '#00c4cc', category: 'Design', description: 'Crée et retrouve tes visuels Canva depuis l\'agent.', url: 'https://mcp.canva.com/mcp', art: 'logos/canva.svg', tile: '#ffffff', site: 'https://canva.com' },
@@ -293,7 +294,7 @@ export class Store extends Page {
 		}
 		const go = await vscode.window.showInformationMessage(`Installer ${connector.name} ?`, {
 			modal: true,
-			detail: `Orbit télécharge la dernière version officielle depuis le dépôt du projet (github.com/${app.repo}, environ 75 Mo), vérifie son empreinte et sa signature, puis la range dans ~/.orbit/tools. Tes agents reçoivent alors ses outils, limités au dossier du projet où ils travaillent.\n\nC'est un logiciel libre encore en alpha, édité par un tiers : des fonctions peuvent manquer ou échouer.`,
+			detail: `Orbit télécharge la dernière version officielle depuis le dépôt du projet (github.com/${app.repo}, de 15 à 100 Mo selon l'application), vérifie son empreinte et sa signature, puis la range dans ~/.orbit/tools. Tes agents reçoivent alors ses outils${app.confined ? ', limités au dossier du projet où ils travaillent' : '. Cette application ne sait pas encore se limiter à un dossier : ses outils lisent et écrivent là où tu le peux toi-même'}.\n\nC'est un logiciel libre encore en alpha, édité par un tiers : des fonctions peuvent manquer ou échouer.`,
 		}, 'Installer');
 		if (!go) {
 			return false;
@@ -309,7 +310,7 @@ export class Store extends Page {
 			// The agents already open do not have its tools: the user is offered to start them again.
 			vscode.commands.executeCommand('orbit.claude.checkOutdated').then(undefined, () => undefined);
 			const shown = await vscode.commands.executeCommand(`orbit.craft.show.${app.id}`).then(() => true, () => openCraft(app));
-			vscode.window.showInformationMessage(`${connector.name} ${version} est installé${shown ? ' et ouvert' : ''}. Il est dans « Outils du projet », et tout nouvel agent aura ses outils pour retoucher les images du projet.`);
+			vscode.window.showInformationMessage(`${connector.name} ${version} est installé${shown ? ' et ouvert' : ''}. Il est dans « Outils du projet », et tout nouvel agent aura ses outils.`);
 			return true;
 		} catch (err) {
 			this.working = undefined;

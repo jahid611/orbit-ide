@@ -19,7 +19,7 @@ PhotoCraft est un logiciel libre de retouche d'images, du projet ArtCraft, que l
 2. Ouvre un **nouvel** agent : les agents déjà ouverts n'ont pas ses outils.
 3. Demande ta retouche en donnant le fichier : « redimensionne `public/hero.png` à 1600 px de large et exporte-le en WebP ».
 
-Pour regarder l'agent travailler, ouvre « PhotoCraft » dans **Outils du projet** : l'application s'affiche dans un onglet d'Orbit et l'agent agit dessus (voir le [Magasin](/docs/outils/magasin)).
+Pour regarder l'agent travailler, ouvre « PhotoCraft » dans **Outils du projet** : sa vraie fenêtre se tient dans un onglet d'Orbit, tu t'en sers à pleine vitesse et l'agent agit dessus (voir le [Magasin](/docs/outils/magasin)). Les onze autres applications de la même suite sont dans [Crafting Apps](/docs/outils/crafting-apps).
 
 ## Ce que l'agent a en main
 

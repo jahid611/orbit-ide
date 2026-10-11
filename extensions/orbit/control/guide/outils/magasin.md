@@ -34,13 +34,13 @@ La connexion se fait dans un terminal d'Orbit nommé « Connexion · » suivi du
 | Context7 | Documentation | La documentation à jour des bibliothèques |
 | Playwright | Qualité | Un navigateur piloté par l'agent (programme lancé sur ta machine avec `npx`) |
 | Higgsfield | Création | Images, vidéos, 3D et sons (voir [Higgsfield](/docs/outils/higgsfield)) |
-| PhotoCraft | Création | Retouche d'images par l'agent, sur ta machine (voir plus bas) |
+| Les Crafting Apps (PhotoCraft, VectorCraft, FilmCraft… douze applications) | Création | La suite créative libre d'ArtCraft, pilotée par l'agent sur ta machine (voir plus bas) |
 | Cloudflare | Mise en ligne | La documentation Cloudflare |
 | Hugging Face | IA | Modèles, jeux de données et espaces du Hub |
 | Canva | Design | Créer et retrouver des visuels |
 | Jira et Confluence | Organisation | Tickets et pages de ton équipe |
 
-Tous sont des serveurs hébergés où tu te connectes depuis le navigateur, sauf Playwright et PhotoCraft, des programmes qui tournent chez toi.
+Tous sont des serveurs hébergés où tu te connectes depuis le navigateur, sauf Playwright et les Crafting Apps, des programmes qui tournent chez toi.
 
 ## Où le trouver, et où va ce que tu installes
 
@@ -51,35 +51,55 @@ Chaque service y porte son vrai logo, dans ses couleurs.
 Ce que tu installes rejoint **Outils du projet** (le bouton outils de la barre du terminal, ou `Ctrl+Alt+K`) :
 
 - un service qui a sa page dans Orbit (Figma, Supabase, Stripe, Vercel, Higgsfield) y est déjà, et **sa page s'ouvre toute seule** dès qu'il est installé et connecté ;
-- PhotoCraft s'y ajoute dans « Création » et **s'ouvre dans Orbit dès la fin de l'installation** ; un clic l'y rouvre ensuite ;
+- une Crafting App s'y ajoute dans « Création », sous sa propre icône, et **s'ouvre dans Orbit dès la fin de l'installation** ; un clic l'y rouvre ensuite ;
 - les autres services installés (Canva, GitHub, Notion, Linear, Sentry…) apparaissent dans un bloc « Installés » ; un clic ouvre leur site. Cette liste est celle vue la dernière fois que le magasin a interrogé ton assistant : elle se met à jour quelques secondes après l'ouverture d'Orbit et à chaque ouverture du magasin.
 
-## PhotoCraft : la retouche d'images par l'agent
+## Les Crafting Apps : la suite créative pilotée par l'agent
 
-PhotoCraft est un logiciel libre de retouche d'images, du projet ArtCraft, qui se pilote entièrement par des commandes. Une fois installé, tu demandes à l'agent « recadre cette photo en carré », « passe le logo en blanc sur fond transparent », « exporte ce PSD en PNG » : il le fait sur ta machine, sans abonnement, et le fichier arrive dans ton projet.
+Les Crafting Apps sont douze logiciels libres du projet ArtCraft, chacun l'équivalent d'un logiciel connu, et chacun entièrement pilotable par des commandes. Une fois l'un d'eux installé, tu demandes à l'agent « recadre cette photo en carré », « dessine le logo en SVG », « monte ces trois clips », « assemble ces deux PDF » : il le fait sur ta machine, sans abonnement, et le fichier arrive dans ton projet.
 
-- **Installation** : le bouton **Installer** de sa carte. Orbit télécharge la dernière version officielle depuis le dépôt du projet sur GitHub (environ 75 Mo), vérifie son empreinte et, sous Windows, sa signature, puis la range dans `~/.orbit/tools/photocraft`. Rien n'est installé si une vérification échoue. Orbit ne contient pas PhotoCraft et n'en est pas l'éditeur.
-- **Pour qui** : les agents ouverts **après** l'installation. Ouvre un nouvel agent.
-- **Ce qu'il peut toucher** : seulement le dossier du projet où l'agent travaille. PhotoCraft refuse de lire ou d'écrire ailleurs.
-- **Retirer** : la croix de sa carte supprime la copie installée par Orbit.
+| Application | Comme | Pour quoi |
+|---|---|---|
+| PhotoCraft | Photoshop | Retouche d'images, calques, détourage, fichiers PSD (voir [PhotoCraft](/docs/outils/photocraft)) |
+| VectorCraft | Illustrator | Logos, icônes, illustrations ; SVG, PDF, AI, EPS |
+| LightCraft | Lightroom | Développement photo, fichiers RAW, export en série |
+| FilmCraft | Premiere Pro | Montage vidéo, export H.264, HEVC, ProRes |
+| EffectCraft | After Effects | Animation, images clés, effets, rendu |
+| DesignCraft | InDesign | Mise en page, documents à plusieurs pages, PDF |
+| PdfCraft | Acrobat | Lire, assembler, découper, modifier des PDF |
+| SoundCraft | Pro Tools | Sessions multipistes, mixage, export |
+| WordCraft | Word | Documents texte, fichiers Word |
+| GridCraft | Excel | Tableurs, formules, graphiques |
+| DeckCraft | PowerPoint | Présentations |
+| CADCraft | AutoCAD | Plans en 2D, fichiers DXF et DWG |
 
-### PhotoCraft dans Orbit, en direct
+Le détail de chacune, pour toi comme pour l'agent, est dans [Crafting Apps](/docs/outils/crafting-apps).
 
-« PhotoCraft » dans **Outils du projet** ouvre l'application dans un onglet d'Orbit. Demander à l'agent d'ouvrir un fichier dans PhotoCraft l'ouvre dans ce même onglet, jamais une seconde fenêtre. C'est la vraie application, qui tourne sur ta machine.
+- **Installation** : le bouton **Installer** de sa carte. Orbit télécharge la dernière version officielle depuis le dépôt du projet sur GitHub (de 15 à 100 Mo selon l'application), vérifie son empreinte et, sous Windows, sa signature, puis la range dans `~/.orbit/tools/<application>`. Rien n'est installé si une vérification échoue. Orbit ne contient aucune de ces applications et n'en est pas l'éditeur.
+- **Pour qui** : les agents ouverts **après** l'installation. Orbit te propose de relancer ceux qui étaient déjà ouverts.
+- **Ce qu'elle peut toucher** : PhotoCraft, VectorCraft, EffectCraft et PdfCraft sont tenues au dossier du projet où l'agent travaille. Les autres ne savent pas encore se limiter à un dossier : leurs outils lisent et écrivent là où tu le peux toi-même. La fenêtre d'installation te le dit.
+- **N'installe que celles dont tu te sers** : chaque application installée ajoute ses outils à tous tes agents, donc deux petits programmes de plus par agent ouvert.
+- **Retirer** : la croix de sa carte supprime la copie installée par Orbit. Ferme d'abord l'application si elle est ouverte.
 
-- **Tes agents agissent dessus sous tes yeux.** Dis à l'agent « ouvre le logo dans PhotoCraft et détoure-le » : tu vois l'image s'ouvrir, les menus et les calques changer.
-- **Ouvrir une image** propose les images du projet.
-- **Sa propre fenêtre** sort l'application sur ton écran, à pleine vitesse ; **Le ramener dans Orbit** la remet dans l'onglet. Tes agents continuent d'agir dessus dans les deux cas.
-- Fermer l'onglet ne ferme pas l'application : elle revient devant toi, pour que tu enregistres ce que tu veux garder.
+### Une application dans Orbit, en direct
 
-L'onglet a deux façons de montrer l'application, l'une après l'autre :
+Chaque application installée (sauf PdfCraft, dont Orbit affiche déjà les fichiers) a sa ligne dans **Outils du projet** et s'ouvre **dans un onglet d'Orbit**. C'est la vraie application, sa vraie fenêtre, tenue exactement sur l'onglet : tu t'en sers à pleine vitesse, avec tous les gestes, comme si elle était ouverte à côté.
 
-- **Son image**, tant que ta souris n'est pas dessus : rafraîchie deux à trois fois par seconde (PhotoCraft n'en fournit pas plus). Elle suffit pour regarder un agent travailler.
-- **Sa vraie fenêtre**, dès que tu poses la souris sur l'image : Orbit vient la coller exactement sur l'onglet. Tu travailles alors à pleine vitesse, avec tous les gestes (peindre, faire glisser, molette). Elle suit la fenêtre d'Orbit quand tu la déplaces, et se retire quand tu changes d'onglet ou redimensionnes la page.
+- **Tes agents agissent dessus sous tes yeux.** Dis à l'agent « ouvre le logo dans PhotoCraft et détoure-le » : tu vois l'image s'ouvrir, les menus et les calques changer. Tu peux reprendre la main à tout moment, dans la même fenêtre.
+- **Elle ne bouge pas de son onglet.** Tu déplaces Orbit, tu le redimensionnes, tu changes la largeur des panneaux : elle suit et prend la nouvelle taille de l'onglet. Tu changes d'onglet ou tu réduis Orbit : elle s'efface, et revient avec l'onglet.
+- **Ce qu'Orbit affiche par-dessus passe devant.** Une liste, la palette de commandes, un menu, une notification : l'application leur laisse la place à cet endroit précis, et tu cliques dessus normalement.
+- **Ouvrir un fichier** propose les fichiers du projet que l'application sait ouvrir (PhotoCraft, VectorCraft, GridCraft, DeckCraft, CADCraft ; pour les autres, passe par leur menu Fichier ou demande à l'agent).
+- **Sa propre fenêtre** sort l'application sur ton écran ; **Le ramener dans Orbit** la remet dans l'onglet. Tes agents continuent d'agir dessus dans les deux cas.
+- **Rien n'est perdu.** Fermer l'onglet, recharger ou quitter Orbit ne ferme jamais l'application : elle revient devant toi, à l'écran, pour que tu enregistres ce que tu veux garder. Si tu la fermes toi-même, l'onglet le dit et propose de la rouvrir.
 
-Une fenêtre collée par-dessus Orbit cache ce qu'Orbit ouvre à cet endroit. Pour la palette de commandes (`Ctrl+Maj+P`, `F1`) et l'ouverture rapide (`Ctrl+P`), Orbit la retire d'abord ; pour le reste (une notification, un menu), change d'onglet ou clique « Sa propre fenêtre ». Cette vue n'existe que sous Windows pour l'instant.
+À savoir :
 
-PhotoCraft est en alpha : son éditeur dit lui-même qu'il ne remplace pas encore Photoshop au quotidien. Des commandes peuvent manquer ou échouer ; l'agent a pour consigne de le dire et de passer par un autre moyen. Les autres applications du même projet (vectoriel, montage, PDF…) ne sont pas encore branchées.
+- Cette vue n'existe que sous Windows pour l'instant. Sur macOS et Linux, les agents ont les outils sans fenêtre.
+- Après un rechargement d'Orbit, seule l'application de l'onglet affiché est reprise tout de suite ; les autres reviennent en fenêtres ordinaires et reprennent leur place quand tu affiches leur onglet.
+- L'application s'efface une fraction de seconde après un changement d'onglet fait par un agent pendant que tu ne touches à rien (Orbit regarde alors la page une fois par seconde).
+- Essayé sur un écran à 100 %. Les écrans à mise à l'échelle différente et les installations à plusieurs écrans ne l'ont pas été.
+
+Toutes sont en alpha : leur éditeur dit lui-même qu'elles ne remplacent pas encore les logiciels qu'elles imitent. Des commandes peuvent manquer ou échouer ; l'agent a pour consigne de le dire et de passer par un autre moyen.
 
 ## Les paquets de recettes
 
