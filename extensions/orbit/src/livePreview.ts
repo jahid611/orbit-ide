@@ -479,7 +479,7 @@ export class LivePreview implements vscode.Disposable {
 				break;
 			}
 			case 'ask':
-				await this.ask(msg.info as Selection, String(msg.instruction ?? ''));
+				await this.ask(msg.info as Selection, String(msg.instruction ?? ''), Number(msg.width) || 0, Number(msg.height) || 0);
 				break;
 			case 'errors':
 				this.sendErrors(msg.errors as PageError[], String(msg.path ?? '/'));
@@ -512,7 +512,7 @@ export class LivePreview implements vscode.Disposable {
 		this.panel?.webview.postMessage({ type: 'sent', terminal: terminal?.name ?? 'Claude' });
 	}
 
-	private async ask(info: Selection, instruction: string): Promise<void> {
+	private async ask(info: Selection, instruction: string, width = 0, height = 0): Promise<void> {
 		if (!instruction.trim()) {
 			return;
 		}
@@ -532,7 +532,15 @@ export class LivePreview implements vscode.Disposable {
 		if (info.component) {
 			lines.push(`- composant : ${info.component}${info.framework ? ` (${info.framework})` : ''}`);
 		}
-		lines.push(`- code : ${where}`, `- sélecteur CSS : ${info.selector}`, '', `Demande : ${instruction.trim()}`, '', 'Modifie le code source (pas le DOM) : la vue se met à jour toute seule.');
+		lines.push(`- code : ${where}`, `- sélecteur CSS : ${info.selector}`);
+		// What the user was looking at: the same element is often right on a computer and wrong on a phone.
+		if (emulated) {
+			const kind = emulated.kind === 'mobile' ? 'téléphone' : 'tablette';
+			lines.push(`- affichage : ${kind} (${emulated.name}, ${emulated.width} × ${emulated.height} px, ${emulated.width > emulated.height ? 'paysage' : 'portrait'}, tactile). Ma demande porte sur cet affichage : règle-la pour cette largeur d'écran sans changer ce que l'on voit sur ordinateur, sauf si je le demande.`);
+		} else if (width) {
+			lines.push(`- affichage : ordinateur, page large de ${width} px (haute de ${height} px). Ma demande porte sur cet affichage : ne casse pas les affichages téléphone et tablette.`);
+		}
+		lines.push('', `Demande : ${instruction.trim()}`, '', 'Modifie le code source (pas le DOM) : la vue se met à jour toute seule.');
 		const message = lines.join('\n');
 		if (!terminal) {
 			// A Claude still starting would drop typed text: the message is its first prompt.

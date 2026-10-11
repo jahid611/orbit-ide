@@ -282,7 +282,7 @@
 			$('ask').focus();
 			return;
 		}
-		vscode.postMessage({ type: 'ask', info: selected, instruction });
+		vscode.postMessage({ type: 'ask', info: selected, instruction, width: frame.clientWidth, height: frame.clientHeight });
 		$('ask').value = '';
 		$('status').textContent = 'Envoi à Claude…';
 	}

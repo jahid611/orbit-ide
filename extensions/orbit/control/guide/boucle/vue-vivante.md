@@ -49,6 +49,8 @@ Les boutons **Ordinateur**, **Tablette** et **Mobile** changent la taille de l'�
 
 Le cadre est réduit pour tenir dans l'onglet, jamais agrandi, et les barres de défilement sont masquées comme sur un vrai appareil. Orbit se souvient du modèle choisi pour chaque type.
 
+Le message dit aussi à l'agent sur quel affichage tu étais : ordinateur (avec la largeur de la page), ou le téléphone ou la tablette choisi, avec sa taille et son orientation. Il règle donc ta demande pour cet affichage sans toucher aux autres, sauf si tu le lui demandes.
+
 ### Un vrai téléphone pour la page
 
 Choisir un appareil ne fait pas que rétrécir le cadre : la page est rechargée et se comporte comme sur cet appareil, à la manière du mode appareil des outils de développement d'un navigateur (F12).
