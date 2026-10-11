@@ -17,6 +17,8 @@ Orbit n'a pas de serveur à lui et ne détient aucun jeton. Un connecteur est aj
 2. Pour un connecteur, clique pour l'ajouter. Orbit lance `mcp add` en portée utilisateur (le connecteur vaut pour tous tes projets), puis `mcp login` : la page de connexion de l'outil s'ouvre, tu valides, et la carte passe à « connecté ». Tout se fait en arrière-plan, sans terminal. Un connecteur déjà présent mais non connecté (venu d'une extension ou ajouté plus tôt) n'a besoin que de la connexion.
 3. Pour retirer un connecteur, utilise « Retirer » : Orbit le déconnecte et le supprime de l'outil d'agent, après confirmation. Ton compte chez l'outil n'est pas touché. Un connecteur qui vient de ton compte claude.ai ou d'une extension se retire là où il a été ajouté.
 
+La connexion se fait dans un terminal d'Orbit nommé « Connexion · » suivi du nom du service, parce que l'outil d'agent ne se connecte que depuis un terminal. Tu valides dans le navigateur ; si le terminal te le demande, colle-lui l'adresse de la page sur laquelle tu arrives. Le terminal se range tout seul une fois la connexion faite. La page Figma et le studio Higgsfield passent par le même chemin.
+
 ## Les connecteurs
 
 | Connecteur | Catégorie | Sert à |

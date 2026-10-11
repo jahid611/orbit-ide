@@ -11,6 +11,7 @@ import { execFile } from 'child_process';
 import { assistantId } from './assistant';
 import { claudeEnv, resolveClaudeExecutable } from './config';
 import { Page, requestJson } from './page';
+import { signInTerminal, waitSignedIn } from './signIn';
 
 interface Connector {
 	id: string;
@@ -199,15 +200,7 @@ export class Store extends Page {
 		// Already there but not signed in (it came with a plugin, or was added earlier): only the sign-in is missing.
 		const existing = this.listed(connector.id);
 		if (existing && !existing.connected) {
-			this.working = `${connector.name} : valide la connexion dans le navigateur…`;
-			this.send();
-			const signed = await this.cli(['mcp', 'login', existing.name], 5 * 60 * 1000);
-			this.working = undefined;
-			await this.refresh();
-			if (!signed.ok && !this.has(connector.id)) {
-				const last = signed.out.split(/\r?\n/).map(l => l.trim()).filter(Boolean).pop();
-				vscode.window.showErrorMessage(`${connector.name} : ${last ?? 'la connexion a échoué.'}`);
-			}
+			await this.signIn(connector, existing.name);
 			return this.has(connector.id);
 		}
 		const chat = assistantId() === 'chatgpt';
@@ -224,15 +217,27 @@ export class Store extends Page {
 			vscode.window.showErrorMessage(`${connector.name} : ${last ?? 'l\'ajout a échoué.'}`);
 			return false;
 		}
-		if (connector.url) {
-			this.working = `${connector.name} : valide la connexion dans le navigateur…`;
-			this.send();
-			// Not every server asks for a sign-in: a refusal here leaves the connector added all the same.
-			await this.cli(['mcp', 'login', connector.id], 5 * 60 * 1000);
+		await this.loadInstalled();
+		// Not every server asks for a sign-in: one that is connected once added is left alone.
+		if (connector.url && !this.has(connector.id)) {
+			await this.signIn(connector, this.listed(connector.id)?.name ?? connector.id);
 		}
 		this.working = undefined;
 		await this.refresh();
 		return true;
+	}
+
+	/** The sign-in runs in a terminal of Orbit (the assistant's tool needs one), and the page follows it. */
+	private async signIn(connector: Connector, name: string): Promise<void> {
+		this.working = `${connector.name} : valide la connexion dans le navigateur. Si le terminal « Connexion · ${connector.name} » te le demande, colle-lui l'adresse de la page sur laquelle tu arrives.`;
+		this.send();
+		const terminal = signInTerminal(name, connector.name);
+		await waitSignedIn(terminal, async () => {
+			await this.loadInstalled();
+			return this.has(connector.id);
+		});
+		this.working = undefined;
+		await this.refresh();
 	}
 
 	connector(id: string): Connector | undefined {

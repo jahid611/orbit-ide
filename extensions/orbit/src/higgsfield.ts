@@ -14,6 +14,7 @@ import { assistantId } from './assistant';
 import { runCodex } from './headless';
 import { deliverToAgent } from './deliver';
 import { claudeEnv, resolveClaudeExecutable, workspaceRoot } from './config';
+import { signInTerminal } from './signIn';
 import { renderWebview } from './webview';
 
 const MEDIA = /\.(png|jpe?g|webp|gif|mp4|webm|mov|mp3|wav|m4a|ogg|glb|gltf|fbx|obj)$/i;
@@ -199,9 +200,9 @@ export class HiggsfieldStudio implements vscode.Disposable {
 
 	/** The assistant's tool opens Higgsfield's sign-in page in the browser and waits for the user there. */
 	private async signIn(): Promise<void> {
+		// The assistant's tool only signs in from a terminal; the page watches for the result.
 		this.watchConnection();
-		await this.quiet('Valide la connexion dans le navigateur qui vient de s\'ouvrir…', ['mcp', 'login', 'higgsfield'], 5 * 60 * 1000);
-		this.checkConnection();
+		signInTerminal('higgsfield', 'Higgsfield');
 	}
 
 	/** Claude Code lists its connectors: Higgsfield is there once the user has linked the account. */
