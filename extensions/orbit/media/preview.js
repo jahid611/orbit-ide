@@ -127,6 +127,7 @@
 		wrap.classList.toggle('device', !!model);
 		$('models').hidden = !model;
 		toFrame({ type: 'device', on: !!model });
+		emulate();
 		if (!model) {
 			shell.removeAttribute('style');
 			screen.removeAttribute('style');
@@ -162,6 +163,26 @@
 		screen.style.height = `${h}px`;
 		screen.style.borderRadius = `${model.r}px`;
 		$('size').textContent = `${model.name} · ${w} × ${h}${scale < 1 ? ` · ${Math.round(scale * 100)} %` : ''}`;
+	}
+
+	/**
+	 * What the page must believe it runs on. Orbit's relay hands it to the page before any of
+	 * its scripts, so the page is loaded again when the device changes; turning the device
+	 * only changes the size of its screen.
+	 */
+	let emulated = 'null';
+	function emulate() {
+		const model = modelOf();
+		const info = model ? {
+			id: model.id, name: model.name, kind: model.kind,
+			width: choice.landscape ? model.h : model.w, height: choice.landscape ? model.w : model.h,
+			ratio: /^iPhone SE|^iPad|Tab/.test(model.name) ? 2 : 3,
+		} : null;
+		const key = JSON.stringify(info);
+		if (key !== emulated) {
+			emulated = key;
+			vscode.postMessage({ type: 'device', device: info });
+		}
 	}
 
 	function fillModels() {
@@ -439,6 +460,10 @@
 					$('whereText').textContent = 'Code introuvable : Claude le retrouvera';
 					$('where').className = 'where missing';
 				}
+				break;
+			case 'device':
+				// Orbit now answers the page as that device: load it again, or just turn its screen.
+				toFrame(msg.reload ? { type: 'navigate', action: 'reload' } : { type: 'screen', width: msg.device?.width, height: msg.device?.height });
 				break;
 			case 'sent':
 				$('status').textContent = `Envoyé à ${msg.terminal} : la vue se mettra à jour dès que le code change.`;

@@ -21,6 +21,152 @@
 
 	const post = message => window.parent.postMessage({ source: 'orbit-inspector', ...message }, '*');
 
+	// --- the device the page is shown on. A frame as narrow as a phone is still a computer to
+	// the page: Orbit's relay sets `__orbitDevice` before any script of the application, and
+	// the page then reports that device (user agent, screen, touch) as the device mode of a
+	// browser's developer tools does.
+	const device = window.__orbitDevice;
+	/** Media features of a pointing device, answered as a finger would. */
+	const FINGER = [
+		[/\(\s*(any-)?hover\s*:\s*hover\s*\)/g, '(max-width: 0px)'], [/\(\s*(any-)?hover\s*:\s*none\s*\)/g, '(min-width: 0px)'],
+		[/\(\s*(any-)?pointer\s*:\s*fine\s*\)/g, '(max-width: 0px)'], [/\(\s*(any-)?pointer\s*:\s*coarse\s*\)/g, '(min-width: 0px)'],
+		[/\(\s*(any-)?pointer\s*:\s*none\s*\)/g, '(max-width: 0px)'],
+	];
+	const asFinger = query => FINGER.reduce((text, [feature, answer]) => text.replace(feature, answer), String(query));
+	if (device) {
+		const define = (object, values) => {
+			for (const [name, value] of Object.entries(values)) {
+				try {
+					Object.defineProperty(object, name, { configurable: true, get: typeof value === 'function' ? value : () => value });
+				} catch {
+					// a browser that seals this one: the page keeps the real value
+				}
+			}
+		};
+		const size = { width: device.width, height: device.height };
+		define(navigator, {
+			userAgent: device.userAgent, appVersion: device.userAgent.replace(/^Mozilla\//, ''), platform: device.platform, vendor: device.vendor, maxTouchPoints: 5,
+			userAgentData: /^iP/.test(device.name) ? undefined : { mobile: device.mobile, platform: 'Android', brands: [{ brand: 'Chromium', version: '130' }, { brand: 'Google Chrome', version: '130' }], getHighEntropyValues: () => Promise.resolve({ mobile: device.mobile, platform: 'Android', model: '' }) },
+		});
+		define(screen, { width: () => size.width, height: () => size.height, availWidth: () => size.width, availHeight: () => size.height });
+		define(window, { devicePixelRatio: device.ratio, outerWidth: () => size.width, outerHeight: () => size.height });
+		if (screen.orientation) {
+			define(screen.orientation, { type: () => size.width > size.height ? 'landscape-primary' : 'portrait-primary', angle: () => size.width > size.height ? 90 : 0 });
+		}
+		// What scripts test to know whether fingers are used.
+		window.ontouchstart = null;
+		document.ontouchstart = null;
+		const match = window.matchMedia.bind(window);
+		window.matchMedia = query => match(asFinger(query));
+
+		// Style sheets ask the same questions (`@media (hover: hover)`): their rules are answered too.
+		const answerRules = rules => {
+			for (const rule of rules) {
+				if (rule.media && rule.media.mediaText !== asFinger(rule.media.mediaText)) {
+					rule.media.mediaText = asFinger(rule.media.mediaText);
+				}
+				if (rule.cssRules) {
+					answerRules(rule.cssRules);
+				}
+			}
+		};
+		let answering = 0;
+		const answerSheets = () => {
+			cancelAnimationFrame(answering);
+			answering = requestAnimationFrame(() => {
+				for (const sheet of document.styleSheets) {
+					try {
+						if (sheet.media.mediaText !== asFinger(sheet.media.mediaText)) {
+							sheet.media.mediaText = asFinger(sheet.media.mediaText);
+						}
+						answerRules(sheet.cssRules);
+					} catch {
+						// a sheet of another site cannot be read
+					}
+				}
+			});
+		};
+		new MutationObserver(answerSheets).observe(document, { childList: true, subtree: true, characterData: true });
+		addEventListener('load', answerSheets, true);
+
+		// A finger: pressing, dragging and lifting the mouse are also sent as touches, a drag
+		// scrolls the page as a thumb does, and the pointer is drawn as a fingertip.
+		const style = document.createElement('style');
+		style.textContent = '*, *::before, *::after { cursor: url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'26\' height=\'26\'%3E%3Ccircle cx=\'13\' cy=\'13\' r=\'10\' fill=\'rgba(120,120,130,.35)\' stroke=\'rgba(255,255,255,.8)\' stroke-width=\'1.5\'/%3E%3C/svg%3E") 13 13, auto !important; }';
+		(document.head || document.documentElement).appendChild(style);
+		let finger = null;
+		const touch = (type, e, ended) => {
+			if (typeof Touch !== 'function' || !finger) {
+				return true;
+			}
+			const point = new Touch({ identifier: 1, target: finger.target, clientX: e.clientX, clientY: e.clientY, screenX: e.screenX, screenY: e.screenY, pageX: e.pageX, pageY: e.pageY, radiusX: 11, radiusY: 11, force: ended ? 0 : 1 });
+			const list = ended ? [] : [point];
+			return finger.target.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, composed: true, touches: list, targetTouches: list, changedTouches: [point] }));
+		};
+		const scrollable = (start, dx, dy) => {
+			for (let el = start; el && el !== document.documentElement; el = el.parentElement) {
+				const look = getComputedStyle(el);
+				if (dy && /auto|scroll/.test(look.overflowY) && el.scrollHeight > el.clientHeight + 1 || dx && /auto|scroll/.test(look.overflowX) && el.scrollWidth > el.clientWidth + 1) {
+					return el;
+				}
+			}
+			return document.scrollingElement || document.documentElement;
+		};
+		addEventListener('mousedown', e => {
+			if (selecting || e.button !== 0 || !e.isTrusted || !(e.target instanceof Element) || e.composedPath().includes(host)) {
+				return;
+			}
+			finger = { target: e.target, x: e.clientX, y: e.clientY, moved: false, free: true };
+			finger.free = touch('touchstart', e);
+		}, true);
+		addEventListener('mousemove', e => {
+			if (!finger || !e.isTrusted) {
+				return;
+			}
+			const dx = finger.x - e.clientX;
+			const dy = finger.y - e.clientY;
+			if (!finger.moved && Math.hypot(e.clientX - finger.x, e.clientY - finger.y) < 6) {
+				return;
+			}
+			if (!finger.moved) {
+				finger.moved = true;
+				// A drag is a scroll, never a text selection or a dragged picture.
+				const field = finger.target.closest('input, textarea, select, [contenteditable]');
+				finger.scroll = field ? null : scrollable(finger.target, dx, dy);
+				getSelection()?.removeAllRanges();
+			}
+			if (touch('touchmove', e) && finger.free && finger.scroll) {
+				e.preventDefault();
+				finger.scroll.scrollBy(dx, dy);
+				getSelection()?.removeAllRanges();
+			}
+			finger.x = e.clientX;
+			finger.y = e.clientY;
+		}, true);
+		addEventListener('mouseup', e => {
+			if (!finger || !e.isTrusted) {
+				return;
+			}
+			touch('touchend', e, true);
+			const dragged = finger.moved;
+			finger = null;
+			if (dragged) {
+				// Lifting the finger after a scroll does not press what is under it.
+				const swallow = click => { click.preventDefault(); click.stopPropagation(); };
+				addEventListener('click', swallow, { capture: true, once: true });
+				setTimeout(() => removeEventListener('click', swallow, true), 0);
+			}
+		}, true);
+		addEventListener('dragstart', e => { if (finger) { e.preventDefault(); } }, true);
+		addEventListener('message', e => {
+			if (e.data?.source === 'orbit-preview' && e.data.type === 'screen' && e.data.width) {
+				size.width = e.data.width;
+				size.height = e.data.height;
+				dispatchEvent(new Event('orientationchange'));
+			}
+		});
+	}
+
 	// --- runtime errors of the page, reported to Orbit so Claude can fix them
 	const seen = new Set();
 	/** The same errors, kept for the agent when it reads the page. */

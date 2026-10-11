@@ -26,6 +26,38 @@ const SOURCE_GLOB = '**/*.{tsx,jsx,ts,js,mjs,vue,svelte,astro,html,htm,php,erb,h
 const SOURCE_EXCLUDE = '**/{node_modules,dist,build,out,.next,.nuxt,.svelte-kit,.git,.orbit,coverage,.turbo}/**';
 const INJECT = '<script src="/__orbit/inspector.js"></script>';
 
+/** The phone or tablet the view shows, as the page of the view describes it. */
+interface Device {
+	id: string;
+	name: string;
+	kind: string;
+	width: number;
+	height: number;
+	ratio: number;
+}
+
+/**
+ * The device the application is answered as. A frame of the right size is not a phone: the
+ * application still sees a computer (user agent, mouse, screen). The relay sends the device's
+ * user agent with every request, and tells the page, before its scripts, what to report.
+ */
+let emulated: (Device & { userAgent: string; platform: string; vendor: string; mobile: boolean }) | undefined;
+
+function describe(device: Device | undefined): typeof emulated {
+	if (!device) {
+		return undefined;
+	}
+	const phone = device.kind === 'mobile';
+	if (/^iPhone/.test(device.name)) {
+		return { ...device, mobile: true, platform: 'iPhone', vendor: 'Apple Computer, Inc.', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' };
+	}
+	if (/^iPad/.test(device.name)) {
+		// An iPad says it is a Mac; only its touch screen tells them apart.
+		return { ...device, mobile: false, platform: 'MacIntel', vendor: 'Apple Computer, Inc.', userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15' };
+	}
+	return { ...device, mobile: phone, platform: 'Linux armv81', vendor: 'Google Inc.', userAgent: `Mozilla/5.0 (Linux; Android 15; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 ${phone ? 'Mobile ' : ''}Safari/537.36` };
+}
+
 interface Target {
 	/** `http://localhost:5173` for a dev server, or a folder served as-is. */
 	origin?: string;
@@ -324,6 +356,7 @@ export class LivePreview implements vscode.Disposable {
 				listener.dispose();
 				this.panel = undefined;
 				this.pip = false;
+				emulated = undefined;
 				attention.large = false;
 				if (this.maximized) {
 					this.maximized = false;
@@ -396,6 +429,8 @@ export class LivePreview implements vscode.Disposable {
 	private async onMessage(msg: any): Promise<void> {
 		switch (msg.type) {
 			case 'ready':
+				// A page of the view that just loaded shows the application without a device.
+				emulated = undefined;
 				// The first `ready` follows the `load` already sent; any later one is a reloaded page.
 				if (this.restoring && this.loaded) {
 					this.panel?.webview.postMessage({ ...this.loaded, restore: true, pip: this.pip });
@@ -408,6 +443,12 @@ export class LivePreview implements vscode.Disposable {
 			case 'pip':
 				await this.togglePip();
 				break;
+			case 'device': {
+				const before = emulated?.id;
+				emulated = describe(msg.device as Device | undefined);
+				this.panel?.webview.postMessage({ type: 'device', device: emulated, reload: before !== emulated?.id });
+				break;
+			}
 			case 'pick':
 				await this.show();
 				break;
@@ -687,7 +728,12 @@ export class LivePreview implements vscode.Disposable {
 function proxy(origin: string, req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
 	const upstream = new URL(origin);
 	return new Promise((resolve, reject) => {
-		const headers = { ...req.headers, host: upstream.host, 'accept-encoding': 'identity' };
+		const headers: http.OutgoingHttpHeaders = { ...req.headers, host: upstream.host, 'accept-encoding': 'identity' };
+		if (emulated) {
+			headers['user-agent'] = emulated.userAgent;
+			headers['sec-ch-ua-mobile'] = emulated.mobile ? '?1' : '?0';
+			headers['sec-ch-ua-platform'] = /^iP/.test(emulated.name) ? '"iOS"' : '"Android"';
+		}
 		if (headers.origin) {
 			headers.origin = upstream.origin;
 		}
@@ -730,7 +776,8 @@ function proxy(origin: string, req: http.IncomingMessage, res: http.ServerRespon
 }
 
 function inject(html: string): string {
-	return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, match => `${match}${INJECT}`) : `${INJECT}${html}`;
+	const added = emulated ? `<script>window.__orbitDevice=${JSON.stringify(emulated).replace(/</g, '\\u003c')}</script>${INJECT}` : INJECT;
+	return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, match => `${match}${added}`) : `${added}${html}`;
 }
 
 const MIME: Record<string, string> = {

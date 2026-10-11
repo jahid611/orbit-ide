@@ -49,6 +49,19 @@ Les boutons **Ordinateur**, **Tablette** et **Mobile** changent la taille de l'�
 
 Le cadre est réduit pour tenir dans l'onglet, jamais agrandi, et les barres de défilement sont masquées comme sur un vrai appareil. Orbit se souvient du modèle choisi pour chaque type.
 
+### Un vrai téléphone pour la page
+
+Choisir un appareil ne fait pas que rétrécir le cadre : la page est rechargée et se comporte comme sur cet appareil, à la manière du mode appareil des outils de développement d'un navigateur (F12).
+
+- **Identité** : le serveur et la page reçoivent l'identité du téléphone ou de la tablette (`User-Agent` d'un iPhone, d'un Android, d'un iPad). Un site qui sert une version mobile d'après cette identité la sert.
+- **Écran** : `screen.width`, `screen.height`, l'orientation et la densité de pixels (`devicePixelRatio`) sont ceux de l'appareil. Pivoter l'appareil les met à jour sans recharger.
+- **Tactile** : la page se sait tactile (`ontouchstart`, `navigator.maxTouchPoints`), et les règles `hover` et `pointer` des feuilles de style et de `matchMedia` répondent comme pour un doigt : plus d'effets de survol.
+- **Doigt** : le pointeur devient un rond. Un appui envoie aussi les événements `touchstart` et `touchend`, et faire glisser la page la fait défiler comme avec le pouce.
+
+Revenir à l'affichage libre recharge la page en mode ordinateur.
+
+Ce que la simulation ne fait pas : le pincement à deux doigts, le clavier virtuel qui pousse la page, les zones réservées de l'écran (`safe-area-inset`), et le moteur du navigateur, qui reste celui d'Orbit (Chromium) même pour un iPhone. Une page sans balise `viewport` s'affiche à la largeur de l'appareil, alors qu'un vrai téléphone la dézoome.
+
 ## Vue en grand
 
 Le bouton d'agrandissement (ou la touche `F`) fait flotter le même cadre, sans le recharger, au centre sur un fond flouté, avec la zone d'éditeur maximisée. `Échap`, le bouton de fermeture ou un clic à côté la referment. `Échap` recule d'un cran à la fois : d'abord la sélection, puis le panneau de l'élément, puis la vue en grand.
