@@ -37,6 +37,8 @@ Orbit lit la connexion que Claude Code garde sur ta machine (un fichier dans `~/
 
 Orbit lit le dernier enregistrement de limites que Codex écrit dans ses journaux de session. Aucun service n'est appelé.
 
+Le service qui donne ces chiffres limite le nombre de demandes, et ce quota est partagé avec Claude Code lui-même. Quand il refuse de répondre (erreur 429), la carte garde les derniers chiffres connus et indique leur âge à côté de la formule (« il y a 6 min ») ; Orbit le laisse alors tranquille quelques minutes avant de redemander. Les fenêtres d'Orbit se partagent la même réponse au lieu de demander chacune.
+
 ## Réglages
 
 | Réglage | Défaut | Effet |

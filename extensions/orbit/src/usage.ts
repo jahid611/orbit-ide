@@ -19,6 +19,10 @@ const SETTINGS_URL = 'https://claude.ai/settings/usage';
 const REFRESH_MS = 5 * 60 * 1000;
 /** Never ask more often than this, however many agents finish at once. */
 const MIN_INTERVAL_MS = 45 * 1000;
+/** After the service said it was asked too often (429), it is left alone this long at least. */
+const BACK_OFF_MS = 3 * 60 * 1000;
+/** The last answer, shared by every window of Orbit so they do not each ask for the same thing. */
+const SHARED_FILE = path.join(os.homedir(), '.orbit', 'usage.json');
 const BAR_WIDTH = 28;
 
 interface UsageLimit {
@@ -39,7 +43,7 @@ interface Credentials {
 	subscriptionType?: string;
 }
 
-type UsageState = { report: UsageReport; plan: string; at: number } | { error: string; at: number };
+type UsageState = { report: UsageReport; plan: string; at: number } | { error: string; at: number; transient?: boolean; busy?: number };
 
 /**
  * The plan usage Claude Code shows with `/usage` (current session, week, per model), read
@@ -52,6 +56,9 @@ export class UsageMonitor implements vscode.Disposable {
 	private readonly timer: NodeJS.Timeout;
 	private state: UsageState | undefined;
 	private inFlight: Promise<void> | undefined;
+	/** The last figures the service gave: shown, with their age, while it refuses to answer. */
+	private good: Extract<UsageState, { report: UsageReport }> | undefined;
+	private quietUntil = 0;
 
 	constructor() {
 		this.item.name = 'Claude Usage';
@@ -79,12 +86,15 @@ export class UsageMonitor implements vscode.Disposable {
 
 	/** The usage card, in Claude's colours, dropping from the toolbar button. */
 	async show(): Promise<void> {
-		await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: `Utilisation de ${assistant().name}…` }, () => this.refresh());
+		// Opening the card twice in a row does not ask the service twice.
+		if (!this.state || 'error' in this.state || Date.now() - this.state.at > MIN_INTERVAL_MS) {
+			await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: `Utilisation de ${assistant().name}…` }, () => this.refresh());
+		}
 		const state = this.state;
 		const failed = !state || 'error' in state;
 		const card = {
 			title: `Utilisation de ${assistant().name}`,
-			plan: failed ? undefined : capitalize(state.plan) || undefined,
+			plan: failed ? undefined : [capitalize(state.plan), ageLabel(state.at)].filter(Boolean).join(' · ') || undefined,
 			error: failed ? state?.error ?? 'Aucune donnée' : undefined,
 			rows: failed ? [] : (state.report.limits ?? []).map(l => ({ label: limitLabel(l), percent: l.percent, detail: resetLabel(l) })),
 			breakdownTitle: 'Répartition de la semaine',
@@ -140,7 +150,27 @@ export class UsageMonitor implements vscode.Disposable {
 	}
 
 	private async load(): Promise<void> {
-		this.state = await fetchUsage();
+		const claude = assistantId() !== 'chatgpt';
+		const shared = claude ? readShared() : undefined;
+		if (shared && Date.now() - shared.at < MIN_INTERVAL_MS) {
+			// Another window of Orbit just asked.
+			this.state = this.good = shared;
+		} else if (claude && Date.now() < this.quietUntil && this.good) {
+			this.state = this.good;
+		} else {
+			const state = await fetchUsage();
+			if ('report' in state) {
+				this.good = state;
+				if (claude) {
+					writeShared(state);
+				}
+			} else if (state.busy) {
+				this.quietUntil = Date.now() + Math.max(BACK_OFF_MS, state.busy);
+			}
+			// A refusal or a network hiccup does not erase figures that were right minutes ago.
+			const kept = 'error' in state && state.transient ? this.good ?? (claude ? shared : undefined) : undefined;
+			this.state = kept ?? state;
+		}
 		this.render();
 	}
 
@@ -187,13 +217,42 @@ async function fetchUsage(): Promise<UsageState> {
 		if (response.status === 401) {
 			return { error: 'Connexion expirée : ouvre un terminal Claude pour la renouveler, puis actualise.', at };
 		}
+		if (response.status === 429) {
+			// Asked too often: Claude Code and every window of Orbit share the same allowance.
+			const wait = Number(response.headers.get('retry-after')) * 1000 || 0;
+			return { error: 'Le service limite les demandes pour l\'instant : réessaie dans quelques minutes.', at, transient: true, busy: wait || 1 };
+		}
 		if (!response.ok) {
-			return { error: `Le service a répondu ${response.status}.`, at };
+			return { error: `Le service a répondu ${response.status}.`, at, transient: response.status >= 500 };
 		}
 		return { report: await response.json() as UsageReport, plan: credentials.subscriptionType ?? '', at };
 	} catch (err) {
-		return { error: `Impossible de joindre le service (${err instanceof Error ? err.message : String(err)}).`, at };
+		return { error: `Impossible de joindre le service (${err instanceof Error ? err.message : String(err)}).`, at, transient: true };
 	}
+}
+
+function readShared(): Extract<UsageState, { report: UsageReport }> | undefined {
+	try {
+		const kept = JSON.parse(fs.readFileSync(SHARED_FILE, 'utf8'));
+		return kept?.report && typeof kept.at === 'number' ? kept : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function writeShared(state: UsageState): void {
+	try {
+		fs.mkdirSync(path.dirname(SHARED_FILE), { recursive: true });
+		fs.writeFileSync(SHARED_FILE, JSON.stringify(state));
+	} catch {
+		// each window keeps asking for itself
+	}
+}
+
+/** Says how old the figures are once they are no longer fresh. */
+function ageLabel(at: number): string {
+	const minutes = Math.round((Date.now() - at) / 60000);
+	return minutes < 2 ? '' : minutes < 60 ? `il y a ${minutes} min` : `il y a ${Math.round(minutes / 60)} h`;
 }
 
 /**
