@@ -21,6 +21,15 @@ const execFileAsync = promisify(execFile);
 const PENDING_LAUNCH_KEY = 'orbit.launchClaudeIn';
 /** What Orbit knows of each agent terminal, kept across a reload of the window (see `revive`). */
 const KNOWN_TERMINALS_KEY = 'orbit.agentTerminals';
+/**
+ * Each project keeps its own list: this state is shared by every window of Orbit, and one
+ * list for all had each window erase the agents of the others (and would bring the agents of
+ * one project back in another).
+ */
+function knownTerminalsKey(): string {
+	const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+	return root ? `${KNOWN_TERMINALS_KEY}:${root.toLowerCase()}` : KNOWN_TERMINALS_KEY;
+}
 
 interface KnownTerminal {
 	/** The shell of the terminal: it lives through a reload of the window, not through a restart. */
@@ -28,6 +37,9 @@ interface KnownTerminal {
 	id?: string;
 	session?: { id: string; cwd: string };
 	mode?: string;
+	/** What its tab says, and whether it is the team lead: how it is opened again after a restart. */
+	name?: string;
+	lead?: boolean;
 }
 // Unity (Library, Temp, Logs, obj) and other tools write build output nobody wants opened in front of them.
 const IGNORED_PATH = /[\\/](node_modules|\.git|dist|build|out|\.next|\.turbo|\.cache|coverage|\.venv|__pycache__|Library|Temp|Logs|obj|\.orbit)[\\/]/;
@@ -85,6 +97,8 @@ export class ClaudeTerminals implements vscode.Disposable {
 
 	constructor(private readonly state: vscode.Memento, extensionUri?: vscode.Uri) {
 		this.extensionUri = extensionUri;
+		// Read before anything changes it: the agents that were open when the window closed.
+		this.wereOpen = state.get<KnownTerminal[]>(knownTerminalsKey(), []);
 		// Terminals that come back with the window: those recognised at once, then those that only
 		// their shell identifies.
 		for (const t of vscode.window.terminals) {
@@ -148,6 +162,7 @@ export class ClaudeTerminals implements vscode.Disposable {
 			cwd,
 			location: options.location ?? vscode.TerminalLocation.Panel,
 		});
+		this.createdHere.add(terminal);
 		if (sessionId) {
 			this.sessions.set(terminal, { id: sessionId, cwd });
 		}
@@ -499,15 +514,54 @@ export class ClaudeTerminals implements vscode.Disposable {
 		}
 	}
 
+	private readonly wereOpen: KnownTerminal[];
+	/** Terminals this window started itself, as opposed to those that came back with it. */
+	private readonly createdHere = new WeakSet<vscode.Terminal>();
+	private leadSupport: { is: (terminal: vscode.Terminal) => boolean; reopen: (sessionId: string) => unknown; inherit: (formerKey: string, terminal: vscode.Terminal) => void } | undefined;
+
+	/** The team lead is opened again with its own tools: the team says which terminal it is and how. */
+	setLeadSupport(is: (terminal: vscode.Terminal) => boolean, reopen: (sessionId: string) => unknown, inherit: (formerKey: string, terminal: vscode.Terminal) => void): void {
+		this.leadSupport = { is, reopen, inherit };
+		this.remember();
+	}
+
+	/**
+	 * Orbit was closed with agents open: each one comes back on its own discussion, the team
+	 * lead as the team lead. Only discussions that were actually started (they have a file).
+	 */
+	private reopenAgents(): boolean {
+		const back = this.wereOpen.filter(known => known.session && fs.existsSync(path.join(projectSessionsDir(known.session.cwd), `${known.session.id}.jsonl`)));
+		const seen = new Set<string>();
+		for (const known of back) {
+			const id = known.session!.id;
+			if (seen.has(id)) {
+				continue;
+			}
+			seen.add(id);
+			if (known.lead && this.leadSupport) {
+				this.leadSupport.reopen(id);
+			} else {
+				const terminal = this.create({ flags: ['--resume', id], label: known.name && !/^(Claude|ChatGPT)( \d+)?$|^(powershell|pwsh|bash|zsh|fish|cmd|sh)(\.exe)?$/i.test(known.name) ? known.name : undefined, preserveFocus: seen.size > 1 });
+				// An agent of the team keeps the role it had.
+				if (known.id) {
+					this.leadSupport?.inherit(known.id, terminal);
+				}
+			}
+		}
+		return seen.size > 0;
+	}
+
 	private goneProvider: ((terminal: vscode.Terminal) => boolean) | undefined;
 	private lastDiscussion: (() => { id: string; name?: string; title: string } | undefined) | undefined;
 
 	/** How to tell a terminal whose agent is gone, and which discussion the project was last on. */
-	setReopening(gone: (terminal: vscode.Terminal) => boolean, lastDiscussion: () => { id: string; name?: string; title: string } | undefined, known: Promise<unknown>): void {
+	setReopening(gone: (terminal: vscode.Terminal) => boolean, lastDiscussion: () => { id: string; name?: string; title: string } | undefined, known: Promise<unknown>, inspect?: () => Promise<unknown>): void {
+		this.inspectGhosts = inspect;
 		this.goneProvider = gone;
 		this.lastDiscussion = lastDiscussion;
 		this.ghostsKnown = known;
 	}
+	private inspectGhosts: (() => Promise<unknown>) | undefined;
 	/** Settles once every terminal that came back with the window has been looked at. */
 	private ghostsKnown: Promise<unknown> = Promise.resolve();
 
@@ -537,16 +591,26 @@ export class ClaudeTerminals implements vscode.Disposable {
 			for (const t of vscode.window.terminals) {
 				this.adopt(t);
 			}
+			// Terminals that came back since the first look are examined too.
+			await Promise.race([this.inspectGhosts?.(), new Promise(resolve => setTimeout(resolve, 25000))]);
 			// The user changed assistant: terminals of the other one do not come back with the window.
 			this.closeOtherAssistants();
 			// Terminals that came back without their agent (the window was closed) are shells with
 			// an old conversation on screen: they go, and the discussion itself comes back below.
-			for (const ghost of [...this.terminals].filter(t => this.goneProvider?.(t))) {
+			// Orbit was closed in between: the shells are new ones, none is on the list it kept.
+			// (Asking the system what a shell runs times out on a busy machine: this does not.)
+			const pids = new Map(await Promise.all([...this.terminals].map(async t => [t, await Promise.resolve(t.processId).then(pid => pid, () => undefined)] as const)));
+			const fromBefore = (t: vscode.Terminal) => !this.createdHere.has(t) && this.wereOpen.length > 0 && pids.get(t) !== undefined && !this.wereOpen.some(known => known.pid === pids.get(t));
+			for (const ghost of [...this.terminals].filter(t => this.goneProvider?.(t) || fromBefore(t))) {
 				this.terminals.delete(ghost);
 				ghost.dispose();
 			}
 			if (!this.terminals.size) {
-				const last = readConfig().resumeOnOpen && assistantId() === 'claude' ? this.lastDiscussion?.() : undefined;
+				const resume = readConfig().resumeOnOpen && assistantId() === 'claude';
+				if (resume && this.reopenAgents()) {
+					return;
+				}
+				const last = resume ? this.lastDiscussion?.() : undefined;
 				if (last) {
 					this.resume(last.id, last.name);
 					vscode.window.showInformationMessage(`Discussion reprise : « ${last.title} »`, 'Nouvelle discussion').then(choice => choice && this.create());
@@ -624,7 +688,7 @@ export class ClaudeTerminals implements vscode.Disposable {
 	 */
 	private revive(terminal: vscode.Terminal): void {
 		Promise.resolve(terminal.processId).then(pid => {
-			const known = pid === undefined ? undefined : this.state.get<KnownTerminal[]>(KNOWN_TERMINALS_KEY, []).find(k => k.pid === pid);
+			const known = pid === undefined ? undefined : [...this.state.get<KnownTerminal[]>(knownTerminalsKey(), []), ...this.state.get<KnownTerminal[]>(KNOWN_TERMINALS_KEY, [])].find(k => k.pid === pid);
 			if (!known) {
 				return;
 			}
@@ -653,10 +717,10 @@ export class ClaudeTerminals implements vscode.Disposable {
 		for (const terminal of this.terminals) {
 			const pid = this.pids.get(terminal);
 			if (pid !== undefined) {
-				known.push({ pid, id: this.ids.get(terminal), session: this.sessions.get(terminal), mode: this.launchModes.get(terminal) });
+				known.push({ pid, id: this.ids.get(terminal), session: this.sessions.get(terminal), mode: this.launchModes.get(terminal), name: terminal.creationOptions.name ?? terminal.name, lead: this.leadSupport?.is(terminal) || undefined });
 			}
 		}
-		this.state.update(KNOWN_TERMINALS_KEY, known);
+		this.state.update(knownTerminalsKey(), known);
 	}
 
 	private adopt(terminal: vscode.Terminal, force = false): void {

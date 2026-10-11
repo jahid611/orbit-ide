@@ -15,7 +15,12 @@ export abstract class Page implements vscode.Disposable {
 	protected panel: vscode.WebviewPanel | undefined;
 	protected readonly disposables: vscode.Disposable[] = [];
 
-	constructor(protected readonly context: vscode.ExtensionContext, private readonly page: PageId, private readonly title: string, private readonly image?: string) { }
+	constructor(protected readonly context: vscode.ExtensionContext, private readonly page: PageId, private readonly title: string, private readonly image?: string) {
+		// A page open when the window is reloaded, or when Orbit is closed, is there again afterwards.
+		this.disposables.push(vscode.window.registerWebviewPanelSerializer(`orbit.${page}`, {
+			deserializeWebviewPanel: async panel => this.panel ? panel.dispose() : this.attach(panel),
+		}));
+	}
 
 	show(): void {
 		if (this.panel) {
@@ -23,7 +28,13 @@ export abstract class Page implements vscode.Disposable {
 			this.refresh();
 			return;
 		}
-		this.panel = vscode.window.createWebviewPanel(`orbit.${this.page}`, this.title, vscode.ViewColumn.Active, { ...webviewOptions(this.context.extensionUri), retainContextWhenHidden: true });
+		this.attach(vscode.window.createWebviewPanel(`orbit.${this.page}`, this.title, vscode.ViewColumn.Active, { ...webviewOptions(this.context.extensionUri), retainContextWhenHidden: true }));
+	}
+
+	/** Takes a panel as the page: one just created, or one the window brought back after a reload. */
+	private attach(panel: vscode.WebviewPanel): void {
+		this.panel = panel;
+		panel.webview.options = webviewOptions(this.context.extensionUri);
 		if (this.image) {
 			this.panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, 'media', this.image);
 		}
@@ -59,7 +70,7 @@ export abstract class Page implements vscode.Disposable {
 	protected abstract onMessage(msg: any): Promise<void>;
 
 	dispose(): void {
-		this.panel?.dispose();
+		// The panel is left alone: closed here, when Orbit quits, it would not be saved with the window.
 		this.disposables.forEach(d => d.dispose());
 	}
 }

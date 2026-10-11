@@ -288,12 +288,14 @@ export class LivePreview implements vscode.Disposable {
 		const watcher = vscode.workspace.createFileSystemWatcher('**/*');
 		const changed = (uri: vscode.Uri) => this.fileChanged(uri);
 		this.disposables.push(watcher, watcher.onDidChange(changed), watcher.onDidCreate(changed), watcher.onDidDelete(changed));
+		this.disposables.push(vscode.window.registerWebviewPanelSerializer('orbit.preview', { deserializeWebviewPanel: (panel, state) => this.restore(panel, state as { target?: Target; path?: string } | undefined) }));
 	}
 
 	dispose(): void {
 		clearTimeout(this.reloadTimer);
 		this.stopServer();
-		this.panel?.dispose();
+		// The panel is left alone: closing it here, when Orbit quits, took the view out of what
+		// the window saves, and it was not there at the next opening.
 		this.flash.dispose();
 		this.disposables.forEach(d => d.dispose());
 	}
@@ -422,35 +424,56 @@ export class LivePreview implements vscode.Disposable {
 	/** Whether the large view maximized the editor area (undone when it closes). */
 	private maximized = false;
 
-	private async open(target: Target): Promise<void> {
+	/** Takes a panel as the view: one just created, or one the window brought back. */
+	private attach(panel: vscode.WebviewPanel): void {
+		this.panel = panel;
+		panel.iconPath = new vscode.ThemeIcon('eye');
+		panel.webview.options = webviewOptions(this.extensionUri);
+		this.restoring = false;
+		panel.webview.html = renderWebview(panel.webview, this.extensionUri, 'preview', { frame: 'http://127.0.0.1:*' });
+		const listener = panel.webview.onDidReceiveMessage(msg => this.onMessage(msg));
+		panel.onDidDispose(() => {
+			listener.dispose();
+			this.panel = undefined;
+			this.pip = false;
+			emulated = undefined;
+			attention.large = false;
+			if (this.maximized) {
+				this.maximized = false;
+				vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup').then(undefined, () => undefined);
+			}
+			this.stopServer();
+		});
+	}
+
+	/**
+	 * The window was reloaded, or Orbit closed and opened again: the view comes back where it
+	 * was, on the application and the page it showed (the page of the view keeps both).
+	 */
+	private async restore(panel: vscode.WebviewPanel, state: { target?: Target; path?: string } | undefined): Promise<void> {
+		const target = state?.target;
+		if (this.panel || !target || typeof target.label !== 'string' || !(target.origin || target.folder)) {
+			panel.dispose();
+			return;
+		}
+		this.attach(panel);
+		await this.open({ ...target, path: typeof state.path === 'string' && state.path.startsWith('/') ? state.path : target.path }, true);
+	}
+
+	private async open(target: Target, quiet = false): Promise<void> {
 		this.target = target;
 		this.stopServer();
 		const port = this.port = await this.startServer();
 		const src = `http://127.0.0.1:${port}${target.path}`;
 		if (!this.panel) {
-			this.panel = vscode.window.createWebviewPanel('orbit.preview', 'Vue vivante', { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false }, { ...webviewOptions(this.extensionUri), retainContextWhenHidden: true });
-			this.panel.iconPath = new vscode.ThemeIcon('eye');
-			this.panel.webview.html = renderWebview(this.panel.webview, this.extensionUri, 'preview', { frame: 'http://127.0.0.1:*' });
-			const listener = this.panel.webview.onDidReceiveMessage(msg => this.onMessage(msg));
-			this.restoring = false;
-			this.panel.onDidDispose(() => {
-				listener.dispose();
-				this.panel = undefined;
-				this.pip = false;
-				emulated = undefined;
-				attention.large = false;
-				if (this.maximized) {
-					this.maximized = false;
-					vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup').then(undefined, () => undefined);
-				}
-				this.stopServer();
-			});
-		} else {
+			this.attach(vscode.window.createWebviewPanel('orbit.preview', 'Vue vivante', { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false }, { ...webviewOptions(this.extensionUri), retainContextWhenHidden: true }));
+		} else if (!quiet) {
 			this.panel.reveal();
 		}
-		this.panel.title = `Vue vivante · ${target.label}`;
-		this.loaded = { type: 'load', src, label: target.label, base: `http://127.0.0.1:${port}` };
-		this.panel.webview.postMessage({ ...this.loaded, pip: this.pip });
+		const panel = this.panel!;
+		panel.title = `Vue vivante · ${target.label}`;
+		this.loaded = { type: 'load', src, label: target.label, base: `http://127.0.0.1:${port}`, target };
+		panel.webview.postMessage({ ...this.loaded, pip: this.pip });
 		this.sendPages(target);
 	}
 
@@ -503,7 +526,7 @@ export class LivePreview implements vscode.Disposable {
 	}
 
 	/** What the view shows, sent again when its page reloads (the view moved to another window). */
-	private loaded: { type: 'load'; src: string; label: string; base: string } | undefined;
+	private loaded: { type: 'load'; src: string; label: string; base: string; target: Target } | undefined;
 	private restoring = false;
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any

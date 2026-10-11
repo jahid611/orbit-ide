@@ -77,7 +77,11 @@ export class FollowAgent implements vscode.Disposable {
 			}
 			const previous = this.before.get(id);
 			this.before.delete(id);
-			this.followFolder(file, true, event.cwd);
+			// Only for an agent of this window: the events of every window of Orbit arrive here, and
+			// an agent writing in another window used to add its project to this one as well.
+			if (this.claude.byKey(event.key)) {
+				this.followFolder(file, true, event.cwd);
+			}
 			if (enabled() && this.follows(event.key)) {
 				this.show(file, previous).catch(() => undefined);
 			}

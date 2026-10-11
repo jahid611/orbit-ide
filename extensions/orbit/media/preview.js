@@ -316,6 +316,8 @@
 	$('pip').addEventListener('click', () => vscode.postMessage({ type: 'pip' }));
 
 	/** Pages found in the project's files, and those visited since the view opened. */
+	/** The application shown, as Orbit described it. */
+	let target;
 	let known = /** @type {string[]} */ ([]);
 	const visited = /** @type {string[]} */ ([]);
 	const text = (/** @type {string} */ s) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] || c);
@@ -411,7 +413,7 @@
 					// keep the previous address
 				}
 				$('address').title = msg.title || '';
-				vscode.setState({ base, path: $('address').value });
+				vscode.setState({ base, path: $('address').value, target });
 				if (!visited.includes($('address').value)) {
 					visited.push($('address').value);
 					visited.splice(0, visited.length - 30);
@@ -437,6 +439,9 @@
 		switch (msg?.type) {
 			case 'load': {
 				base = msg.base;
+				// Kept with the page: what Orbit shows again when the window comes back.
+				target = msg.target;
+				vscode.setState({ ...vscode.getState(), target });
 				// The page itself was reloaded (the view moved to another window): back to where it was.
 				const kept = msg.restore ? vscode.getState() : undefined;
 				const path = kept?.base === base && kept.path ? kept.path : msg.src.slice(base.length) || '/';

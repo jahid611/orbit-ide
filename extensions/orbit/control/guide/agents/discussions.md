@@ -27,7 +27,19 @@ Le titre vient du titre donné par l'agent, sinon du début de ton premier messa
 
 Quand tu ouvres un projet, Orbit reprend sa dernière discussion au lieu de commencer un agent neuf. Une notification annonce « Discussion reprise : <titre> » avec un bouton **Nouvelle discussion** si tu préfères repartir de zéro.
 
-Les terminaux revenus sans agent après une fermeture d'Orbit sont fermés ; la dernière discussion est alors reprise à leur place.
+### Retrouver ton espace de travail
+
+Tu peux fermer Orbit, éteindre l'ordinateur et revenir le lendemain : le projet se rouvre là où tu l'as laissé.
+
+- **Tous les agents ouverts** reviennent, chacun sur sa propre discussion, pas seulement le dernier. Le chef d'équipe revient en chef d'équipe, avec ses outils. Un agent que tu as fermé toi-même avant de quitter ne revient pas.
+- **Les fichiers ouverts** et la disposition de l'éditeur reviennent, comme dans tout éditeur.
+- **La vue vivante** revient sur la même application et la même page, et ta session y est toujours ouverte. Les pages d'outils bâties sur le même modèle reviennent aussi : variables d'environnement, tableau de tâches, relecture visuelle, magasin, Figma, Supabase, Stripe.
+
+« Reload Window » garde les mêmes choses, et en plus les agents continuent de tourner pendant le rechargement.
+
+Ce qui ne revient pas : un travail qu'un agent était en train de faire au moment de la fermeture (il reprend sa discussion, à l'arrêt : dis-lui de continuer) ; la disposition des terminaux en grille ou côte à côte (ils reviennent en onglets) ; les pages Vercel, Higgsfield, Base de données, Orbite, Studio, File de nuit et NovaGame, à rouvrir à la main ; l'appareil choisi dans la vue vivante. Avec ChatGPT, les discussions ne sont pas reprises : un agent neuf démarre.
+
+Les terminaux revenus sans agent après une fermeture d'Orbit sont fermés ; les discussions sont reprises à leur place.
 
 ## Projet déplacé ou renommé
 

@@ -150,12 +150,15 @@ export function activate(context: vscode.ExtensionContext): void {
 		}
 	});
 	// Kept: what opens when a project opens waits for this answer (see `setReopening`).
-	const ghostsKnown = Promise.all(vscode.window.terminals.map(terminal => Promise.resolve(terminal.processId).then(async pid => {
+	// Asked again when the project decides what to open: the terminals of the previous session
+	// often come back after this first look, and were then never told from live agents.
+	const inspectGhosts = () => Promise.all(vscode.window.terminals.map(terminal => Promise.resolve(terminal.processId).then(async pid => {
 		const key = claude.isClaude(terminal) ? claude.keyOf(terminal) : undefined;
 		if (key && pid && !tracker.get(key)?.ended && !await runsSomething(pid)) {
 			tracker.markEnded(key);
 		}
 	}).catch(() => undefined)));
+	const ghostsKnown = inspectGhosts();
 	claude.setWaitingProvider(t => tracker.get(claude.keyOf(t))?.status === 'waiting');
 	// Before any Claude starts: it writes the MCP config every Claude terminal receives.
 	const control = new OrbitControl(context.extensionPath, claude, tracker);
@@ -171,6 +174,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	const activity = new AgentActivity(tracker, claude);
 	const map = new MapPanel(context.extensionUri, activity, claude);
 	const team = new Team(context, claude, tracker, activity);
+	claude.setLeadSupport(terminal => team.isLead(terminal), session => team.reopenLead(session), (former, terminal) => team.inherit(former, terminal));
 	const community = new CommunityPanel(context.extensionUri, claude);
 	// An empty window becomes a workspace without a reload, so running agents keep going.
 	const follow = new FollowAgent(context.extensionUri, tracker, claude, dir => vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders?.length ?? 0, 0, { uri: vscode.Uri.file(dir) }));
@@ -561,6 +565,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			return last && { id: last.id, name: last.customName, title: last.title };
 		},
 		ghostsKnown,
+		inspectGhosts,
 	);
 	claude.autoStart();
 	// Whatever the start-up settings, agents of another assistant than the one in use do not stay.

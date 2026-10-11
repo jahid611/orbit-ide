@@ -22,7 +22,15 @@
     }
   },
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onWebviewPanel:orbit.preview",
+    "onWebviewPanel:orbit.env",
+    "onWebviewPanel:orbit.board",
+    "onWebviewPanel:orbit.visual",
+    "onWebviewPanel:orbit.store",
+    "onWebviewPanel:orbit.figma",
+    "onWebviewPanel:orbit.supabase",
+    "onWebviewPanel:orbit.stripe"
   ],
   "main": "./out/extension",
   "scripts": {

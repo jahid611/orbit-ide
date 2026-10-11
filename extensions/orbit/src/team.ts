@@ -155,6 +155,31 @@ export class Team implements vscode.TreeDataProvider<vscode.Terminal>, vscode.Di
 		vscode.commands.executeCommand('orbit.team.focus');
 	}
 
+	/** Orbit was closed with the lead open: it comes back on its discussion, with its tools and its role. */
+	async reopenLead(sessionId: string): Promise<void> {
+		const config = await this.ensureServer();
+		const terminal = this.claude.create({
+			label: LEAD_NAME,
+			color: 'terminal.ansiMagenta',
+			mcpConfigs: [config],
+			instructions: { name: 'lead', text: LEAD_PROMPT },
+			flags: ['--resume', sessionId],
+		});
+		this.assign(terminal, { name: LEAD_NAME, role: 'Ton interlocuteur : découpe le travail, crée et pilote les autres agents, te rapporte les résultats.', icon: 'orbit-claude', color: 'terminal.ansiMagenta', lead: true, cwd: workspaceRoot() });
+	}
+
+	/** An agent opened again after a restart takes the role its former terminal had. */
+	inherit(formerKey: string, terminal: vscode.Terminal): void {
+		const role = this.roles.get(formerKey);
+		if (role && !role.lead) {
+			this.assign(terminal, role);
+		}
+	}
+
+	isLead(terminal: vscode.Terminal): boolean {
+		return !!this.roleOf(this.claude.keyOf(terminal))?.lead;
+	}
+
 	// --- tree
 
 	getChildren(element?: vscode.Terminal): vscode.Terminal[] {
