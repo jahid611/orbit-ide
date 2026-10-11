@@ -531,6 +531,62 @@
 		}
 		throw new Error(`Aucun élément « ${target} » sur la page.`);
 	};
+	// The agent's hand, shown: a pointer that travels to what it is about to use and marks the
+	// press, so the person watching follows the test as if someone held the mouse. It is only
+	// drawn (in the inspector's own layer): the page never receives it.
+	let pointer;
+	let pointerAt = { x: innerWidth / 2, y: innerHeight / 2 };
+	let pointerGone;
+	const showPointer = () => {
+		if (!pointer) {
+			const style = document.createElement('style');
+			style.textContent = `
+				.agent { position: fixed; left: 0; top: 0; z-index: 2147483647; pointer-events: none; opacity: 0; transition: transform .42s cubic-bezier(.3, .7, .2, 1), opacity .25s ease; will-change: transform; }
+				.agent.on { opacity: 1; }
+				.agent svg { display: block; filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .45)); }
+				.agent span { position: absolute; left: 16px; top: 18px; font: 600 11px/1 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; color: #fff; background: ${ACCENT}; padding: 4px 7px; border-radius: 4px 8px 8px 8px; white-space: nowrap; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+				.agent i { position: absolute; left: -14px; top: -14px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid ${ACCENT}; opacity: 0; }
+				.agent.tap i { animation: agent-tap .45s ease-out; }
+				@keyframes agent-tap { from { opacity: .9; transform: scale(.3); } to { opacity: 0; transform: scale(1.5); } }
+			`;
+			pointer = document.createElement('div');
+			pointer.className = 'agent';
+			pointer.innerHTML = `<i></i><svg width="20" height="22" viewBox="0 0 20 22"><path d="M2 1.5v16.2l4.6-4.3 3 7 3-1.3-3-6.9h6.3z" fill="${ACCENT}" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg><span>Agent</span>`;
+			shadow.append(style, pointer);
+			pointer.style.transform = `translate(${pointerAt.x}px, ${pointerAt.y}px)`;
+		}
+		mount();
+		void pointer.offsetWidth;
+		pointer.classList.add('on');
+		clearTimeout(pointerGone);
+		pointerGone = setTimeout(() => pointer.classList.remove('on'), 5000);
+	};
+	/** Travels to the middle of an element, as a hand would, and waits to be there. */
+	const reach = async el => {
+		el.scrollIntoView({ block: 'center', inline: 'center' });
+		const r = el.getBoundingClientRect();
+		const to = { x: Math.min(innerWidth - 4, Math.max(0, r.left + r.width / 2)), y: Math.min(innerHeight - 4, Math.max(0, r.top + r.height / 2)) };
+		showPointer();
+		const far = Math.hypot(to.x - pointerAt.x, to.y - pointerAt.y);
+		pointerAt = to;
+		pointer.style.transform = `translate(${to.x}px, ${to.y}px)`;
+		await pause(far < 4 ? 60 : 460);
+	};
+	const tap = async () => {
+		pointer?.classList.remove('tap');
+		void pointer?.offsetWidth;
+		pointer?.classList.add('tap');
+		await pause(140);
+	};
+	/** Types a text as fingers do, a few characters at a time (a long text in at most a second and a half). */
+	const typed = async (text, each) => {
+		const step = Math.max(1, Math.ceil(text.length / 45));
+		for (let i = step; i < text.length + step; i += step) {
+			each(text.slice(0, Math.min(i, text.length)), text.slice(Math.max(0, i - step), Math.min(i, text.length)));
+			await pause(32);
+		}
+	};
+
 	const click = el => {
 		el.scrollIntoView({ block: 'center', inline: 'center' });
 		const r = el.getBoundingClientRect();
@@ -542,12 +598,12 @@
 		el.dispatchEvent(new MouseEvent('mouseup', init));
 		el.click();
 	};
-	const write = (el, text) => {
-		el.scrollIntoView({ block: 'center' });
+	const write = async (el, text) => {
 		el.focus();
 		if (el.isContentEditable) {
 			document.execCommand('selectAll');
-			document.execCommand('insertText', false, text);
+			document.execCommand('delete');
+			await typed(text, (_all, piece) => document.execCommand('insertText', false, piece));
 			return;
 		}
 		if (!/^(INPUT|TEXTAREA)$/.test(el.tagName)) {
@@ -555,8 +611,14 @@
 		}
 		// Frameworks watch the element's own setter: going through the prototype's is what typing does.
 		const setter = Object.getOwnPropertyDescriptor(el.tagName === 'INPUT' ? HTMLInputElement.prototype : HTMLTextAreaElement.prototype, 'value').set;
-		setter.call(el, text);
-		el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
+		if (!text) {
+			setter.call(el, '');
+			el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }));
+		}
+		await typed(text, (all, piece) => {
+			setter.call(el, all);
+			el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: piece }));
+		});
 		el.dispatchEvent(new Event('change', { bubbles: true }));
 	};
 	const press = key => {
@@ -580,10 +642,18 @@
 	const act = async command => {
 		switch (command.action) {
 			case 'look': break;
-			case 'click': click(find(command.target)); break;
+			case 'click': {
+				const el = find(command.target);
+				await reach(el);
+				await tap();
+				click(el);
+				break;
+			}
 			case 'type': {
 				const el = find(command.target);
-				write(el, String(command.text ?? ''));
+				await reach(el);
+				await tap();
+				await write(el, String(command.text ?? ''));
 				if (command.submit) {
 					press('Enter');
 				}
@@ -595,6 +665,8 @@
 				if (el.tagName !== 'SELECT') {
 					throw new Error('Cet élément n\'est pas une liste de choix.');
 				}
+				await reach(el);
+				await tap();
 				const wanted = squeeze(command.text, 200).toLowerCase();
 				const option = Array.from(el.options).find(o => o.value.toLowerCase() === wanted || squeeze(o.text, 200).toLowerCase() === wanted) || Array.from(el.options).find(o => squeeze(o.text, 200).toLowerCase().includes(wanted));
 				if (!option) {

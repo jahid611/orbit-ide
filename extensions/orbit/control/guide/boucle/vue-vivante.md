@@ -105,6 +105,10 @@ Dans la vue : `S` active ou coupe la sélection, `F` ouvre ou ferme la vue en gr
 
 L'agent se sert de la page affichée comme toi : il la lit, clique, remplit un formulaire, valide, change de page, et relit le résultat. Tu le vois faire dans la vue vivante. Il n'a pas besoin d'ouvrir un navigateur à lui.
 
+Chaque geste se voit : un pointeur marqué « Agent » se déplace jusqu'à l'élément, marque l'appui, et le texte s'écrit lettre par lettre. Ce pointeur est seulement dessiné par-dessus la page : ce n'est pas ta souris, tu gardes la main sur ton ordinateur pendant que l'agent teste.
+
+Un agent ouvert avant une mise à jour d'Orbit garde ses anciens outils : s'il répond qu'il ne peut pas piloter la vue vivante, ferme son terminal et rouvre-le (la discussion reprend), ou ouvre un nouveau chef d'équipe.
+
 - `preview_look` : l'adresse, le titre, le texte visible, les erreurs de la page, et la liste numérotée de tout ce qui s'actionne (liens, boutons, champs, listes de choix). Un champ refusé par le navigateur est signalé avec son message.
 - `preview_act` : `click`, `type` (avec `submit` pour valider par Entrée), `press` (une touche), `select` (un choix dans une liste), `scroll`, `go` (un chemin de l'application), `back`, `reload`, `wait`. L'élément visé se donne par son numéro, son texte ou un sélecteur CSS. La réponse est la page telle qu'elle est après l'action, y compris quand l'action a mené à une autre page.
 - `preview_screenshot` : une image de l'adresse affichée, pour juger la mise en page. C'est une visite neuve de la même adresse par un navigateur sans fenêtre : sans connexion et sans ce qui a été saisi.
