@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { execFile } from 'child_process';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
@@ -32,6 +33,21 @@ interface Target {
 	/** Page to open first, e.g. `/` or `/index.html`. */
 	path: string;
 	label: string;
+}
+
+/**
+ * Opens an address in the computer's browser (or mail application). The user just clicked that
+ * link in their own application: the editor's "open this external website?" question, asked
+ * by `openExternal` for every unknown domain, would only stand in the way.
+ */
+function openInBrowser(address: string): void {
+	const [program, args] = process.platform === 'win32' ? ['rundll32', ['url.dll,FileProtocolHandler', address]]
+		: process.platform === 'darwin' ? ['open', [address]] : ['xdg-open', [address]];
+	execFile(program, args, { windowsHide: true }, error => {
+		if (error) {
+			vscode.env.openExternal(vscode.Uri.parse(address, true)).then(undefined, () => undefined);
+		}
+	});
 }
 
 const ROUTE_FILES = '**/{app,pages,routes}/**/*.{tsx,jsx,ts,js,vue,svelte,astro,md,mdx}';
@@ -557,6 +573,28 @@ export class LivePreview implements vscode.Disposable {
 		if (url === '/__orbit/inspector.js') {
 			res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });
 			res.end(await fs.promises.readFile(vscode.Uri.joinPath(this.extensionUri, 'media', 'inspector.js').fsPath));
+			return;
+		}
+		if (url === '/__orbit/external' && req.method === 'POST') {
+			const chunks: Buffer[] = [];
+			for await (const chunk of req) {
+				chunks.push(chunk as Buffer);
+			}
+			let go: string | undefined;
+			try {
+				const address = new URL(String(JSON.parse(Buffer.concat(chunks).toString('utf8')).url));
+				const own = this.target?.origin ? new URL(this.target.origin) : undefined;
+				const local = (host: string) => host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+				if (own && address.port === own.port && address.protocol === own.protocol && (address.hostname === own.hostname || local(address.hostname) && local(own.hostname))) {
+					// The application's own address, written in full: stay in the view.
+					go = `${address.pathname}${address.search}${address.hash}`;
+				} else if (/^(https?|mailto|tel|sms):$/.test(address.protocol)) {
+					openInBrowser(address.href);
+				}
+			} catch {
+				// not an address
+			}
+			res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ go }));
 			return;
 		}
 		if (url === '/__orbit/agent' && req.method === 'POST') {

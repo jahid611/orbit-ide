@@ -502,6 +502,55 @@
 		request.setRequestHeader('content-type', 'application/json');
 		request.send(JSON.stringify({ id, ...body }));
 	};
+	// Links that leave the application. The view only shows what runs through Orbit's relay:
+	// another site would not load in this frame, and a new tab has nowhere to open. Orbit is
+	// asked instead: it opens the address in the computer's browser, or, when the address is
+	// the application's own under its real origin, answers with the path to go to here.
+	const leave = (/** @type {string} */ address) => {
+		const request = new XMLHttpRequest();
+		request.open('POST', '/__orbit/external');
+		request.setRequestHeader('content-type', 'application/json');
+		request.onload = () => {
+			try {
+				const inside = JSON.parse(request.responseText).go;
+				if (inside) {
+					location.href = inside;
+				}
+			} catch {
+				// opened outside
+			}
+		};
+		request.send(JSON.stringify({ url: address }));
+	};
+	const outside = (/** @type {string | URL | undefined | null} */ address) => {
+		try {
+			const url = new URL(String(address ?? ''), location.href);
+			return /^(https?|mailto|tel|sms):$/.test(url.protocol) && url.origin !== location.origin ? url.href : undefined;
+		} catch {
+			return undefined;
+		}
+	};
+	addEventListener('click', e => {
+		if (selecting || e.defaultPrevented || e.button !== 0) {
+			return;
+		}
+		const link = e.composedPath().find(el => el instanceof Element && el.matches('a[href], area[href]'));
+		const address = link && outside(/** @type {Element} */ (link).getAttribute('href'));
+		if (address) {
+			e.preventDefault();
+			leave(address);
+		}
+	});
+	const openWindow = window.open;
+	window.open = function (address, ...rest) {
+		const target = outside(address);
+		if (target) {
+			leave(target);
+			return null;
+		}
+		return openWindow.call(window, address, ...rest);
+	};
+
 	const onAgent = e => {
 		let command;
 		try {

@@ -57,6 +57,10 @@ Le bouton d'agrandissement (ou la touche `F`) fait flotter le même cadre, sans 
 
 La flèche au bout de la barre d'adresse ouvre la liste des pages du site : un clic y va. Orbit la dresse d'après les fichiers du projet (pages HTML d'un dossier, dossiers de routes de Next, Nuxt, Astro et SvelteKit, chemins déclarés à un routeur comme React Router ou Vue Router), et y ajoute sous « Visitées » les pages par lesquelles tu es passé depuis l'ouverture de la vue. Une route à paramètre (`/produit/[id]`) n'a pas d'adresse à proposer : elle n'apparaît qu'une fois visitée. Tu peux toujours taper une adresse à la main.
 
+## Liens vers un autre site
+
+La vue n'affiche que ton application. Un lien qui en sort (un autre site, `mailto:`, `tel:`, un lien « nouvel onglet », un `window.open`) s'ouvre dans le navigateur de ton ordinateur, ou dans ton application de messagerie. Un lien qui redonne l'adresse complète de ton application (`http://localhost:3000/contact`) reste dans la vue. Pendant la sélection d'un élément, un clic sur un lien sélectionne le lien au lieu de le suivre.
+
 ## Mini fenêtre
 
 Le bouton de mini fenêtre (ou la touche `P`) sort la vue de la zone d'éditeur et la pose dans une petite fenêtre sans barre d'onglets, qui reste au-dessus des autres : tu la déplaces où tu veux, tu la redimensionnes, et tu gardes le site sous les yeux pendant que l'agent travaille dans Orbit. Sa barre ne garde que la navigation, l'adresse et la liste des pages. Le même bouton la ramène dans Orbit. Le passage recharge la page (même adresse).
