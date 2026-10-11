@@ -9,7 +9,6 @@ import * as path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { ORBIT_DIR } from './agentTracker';
-import { ClaudeTerminals } from './claudeTerminals';
 
 const execFileAsync = promisify(execFile);
 const PASTES = path.join(ORBIT_DIR, 'pastes');
@@ -71,14 +70,21 @@ export async function saveDataUrl(dataUrl: string): Promise<string> {
 }
 
 /**
- * Ctrl+V in a Claude terminal: text pastes as usual; a screenshot (or copied image files)
+ * Ctrl+V in a terminal: text pastes as usual; a screenshot (or copied image files)
  * reaches Claude as image files it can see. The integrated terminal only pastes text.
  */
-export function registerImagePaste(claude: ClaudeTerminals): vscode.Disposable {
+export function registerImagePaste(): vscode.Disposable {
 	return vscode.commands.registerCommand('orbit.claude.paste', async (): Promise<void> => {
 		const terminal = vscode.window.activeTerminal;
 		const text = await vscode.env.clipboard.readText();
-		const images = !terminal || !claude.isClaude(terminal) || text ? [] : await clipboardImages();
+		// Any terminal, not only those Orbit knows as agents: an agent that outlived an update,
+		// or was started by hand, is not on that list, and its Ctrl+V pasted nothing at all.
+		let images: string[] = [];
+		if (terminal && !text) {
+			// Reading a picture from the clipboard takes a few seconds: say so at once.
+			const reading = vscode.window.setStatusBarMessage('$(loading~spin) Lecture de la capture…');
+			images = await clipboardImages().finally(() => reading.dispose());
+		}
 		if (!terminal || !images.length) {
 			await vscode.commands.executeCommand('workbench.action.terminal.paste');
 			return;

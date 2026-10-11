@@ -161,7 +161,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	const control = new OrbitControl(context.extensionPath, claude, tracker);
 	const recipes = new Recipes(claude);
 	const verifier = new Verifier(tracker, claude);
-	context.subscriptions.push(control, registerImagePaste(claude), registerSmartCommit(), verifier, ...registerFixWithClaude(claude), recipes, ...recipes.register());
+	context.subscriptions.push(control, registerImagePaste(), registerSmartCommit(), verifier, ...registerFixWithClaude(claude), recipes, ...recipes.register());
 	const store = new SessionStore(context.globalState);
 	const sessionsView = new SessionsView(store, tracker);
 	const chat = new ChatViewProvider(context.extensionUri, claude, tracker);

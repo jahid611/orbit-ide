@@ -18,7 +18,7 @@ Montrer un bug visuel, une maquette ou un message d'erreur à l'agent sans enreg
 3. Une confirmation brève apparaît dans la barre d'état (« Capture collée » ou « N images collées »). Claude Code joint l'image à ton message sous la forme `[Image #1]`.
 4. Écris ta question et envoie.
 
-Si le presse-papiers contient du texte, c'est le texte qui est collé, comme d'habitude. Dans un terminal qui n'est pas un terminal d'agent, `Ctrl+V` se comporte normalement.
+Si le presse-papiers contient du texte, c'est le texte qui est collé, comme d'habitude. Une image met environ trois secondes à arriver (« Lecture de la capture… » s'affiche en bas de la fenêtre). Cela vaut dans tous les terminaux d'Orbit : dans un terminal sans agent, c'est le chemin du fichier image qui est collé. `Alt+V`, le collage d'image propre à Claude Code, continue de marcher à côté.
 
 ## Dans la vue discussion
 
