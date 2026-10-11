@@ -12,6 +12,26 @@
 	}
 	window.__orbitInspector = true;
 
+	// Cookies. In this frame the browser refuses them all, so an application that signs its
+	// users in with a cookie could never sign anyone in. Orbit's relay keeps the cookies and
+	// sends them with each request; `document.cookie` reads and writes that same jar.
+	try {
+		const jar = (method, body) => {
+			const request = new XMLHttpRequest();
+			request.open(method, `/__orbit/cookie?path=${encodeURIComponent(location.pathname)}`, false);
+			request.setRequestHeader('content-type', 'application/json');
+			request.send(body);
+			return request.responseText;
+		};
+		Object.defineProperty(document, 'cookie', {
+			configurable: true,
+			get: () => jar('GET'),
+			set: value => { jar('POST', JSON.stringify({ cookie: String(value), path: location.pathname })); },
+		});
+	} catch {
+		// the page keeps the browser's own (empty) cookies
+	}
+
 	const ACCENT = '#8b7bff';
 	const PICKED = '#5eead4';
 	let selecting = false;

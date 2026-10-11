@@ -72,6 +72,15 @@ Le bouton d'agrandissement (ou la touche `F`) fait flotter le même cadre, sans 
 
 La flèche au bout de la barre d'adresse ouvre la liste des pages du site : un clic y va. Orbit la dresse d'après les fichiers du projet (pages HTML d'un dossier, dossiers de routes de Next, Nuxt, Astro et SvelteKit, chemins déclarés à un routeur comme React Router ou Vue Router), et y ajoute sous « Visitées » les pages par lesquelles tu es passé depuis l'ouverture de la vue. Une route à paramètre (`/produit/[id]`) n'a pas d'adresse à proposer : elle n'apparaît qu'une fois visitée. Tu peux toujours taper une adresse à la main.
 
+## Rester connecté
+
+Ce que ton application garde dans le navigateur survit à la fermeture de la vue et d'Orbit : la session d'un compte, un panier, un thème. Tu te connectes une fois, tu retrouves ton compte à la prochaine ouverture.
+
+- **Stockage du navigateur** (`localStorage`, IndexedDB) : chaque application a toujours la même adresse dans la vue, donc le même stockage.
+- **Cookies** : Orbit les garde lui-même et les renvoie à ton application à chaque requête, y compris les cookies de session protégés (`HttpOnly`). Ils sont rangés par application dans `~/.orbit/preview/`. Pour repartir de zéro, déconnecte-toi dans ton application, ou supprime ce dossier.
+
+Limite : seuls les cookies de l'application affichée sont gérés. Une API appelée sur une autre adresse (un autre port, un autre domaine) ne reçoit pas de cookie depuis la vue.
+
 ## Liens vers un autre site
 
 La vue n'affiche que ton application. Un lien qui en sort (un autre site, `mailto:`, `tel:`, un lien « nouvel onglet », un `window.open`) s'ouvre dans le navigateur de ton ordinateur, ou dans ton application de messagerie. Un lien qui redonne l'adresse complète de ton application (`http://localhost:3000/contact`) reste dans la vue. Pendant la sélection d'un élément, un clic sur un lien sélectionne le lien au lieu de le suivre.

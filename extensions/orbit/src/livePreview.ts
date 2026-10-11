@@ -82,6 +82,87 @@ function openInBrowser(address: string): void {
 	});
 }
 
+/**
+ * The cookies of the application shown. The page lives in a frame of the editor, where the
+ * browser treats it as a third party and refuses its cookies outright: no session cookie, so
+ * no signing in. The relay keeps them instead: it takes the cookies the application sets out
+ * of its answers, sends them back with every request, and answers the page's own
+ * `document.cookie`. They are kept on disk per application, as a browser profile would.
+ */
+class CookieJar {
+
+	private cookies: { name: string; value: string; path: string; expires?: number; httpOnly: boolean }[] = [];
+
+	constructor(private readonly file: string) {
+		try {
+			this.cookies = JSON.parse(fs.readFileSync(file, 'utf8'));
+		} catch {
+			// nothing kept yet
+		}
+	}
+
+	/** One `Set-Cookie` line (or what a script assigns to `document.cookie`) for a request path. */
+	store(line: string, requestPath: string, fromScript = false): void {
+		const [pair, ...attributes] = line.split(';');
+		const at = pair.indexOf('=');
+		const name = (at < 0 ? '' : pair.slice(0, at)).trim();
+		const value = (at < 0 ? pair : pair.slice(at + 1)).trim();
+		if (!name && !value) {
+			return;
+		}
+		let cookiePath = requestPath.split('?')[0].replace(/\/[^/]*$/, '') || '/';
+		let expires: number | undefined;
+		let age: number | undefined;
+		let httpOnly = false;
+		for (const attribute of attributes) {
+			const [key, ...rest] = attribute.split('=');
+			const text = rest.join('=').trim();
+			switch (key.trim().toLowerCase()) {
+				case 'path': cookiePath = text.startsWith('/') ? text : cookiePath; break;
+				case 'expires': expires = Date.parse(text) || undefined; break;
+				case 'max-age': age = Number(text); break;
+				case 'httponly': httpOnly = !fromScript; break;
+			}
+		}
+		if (age !== undefined && !Number.isNaN(age)) {
+			expires = Date.now() + age * 1000;
+		}
+		const kept = this.cookies.find(cookie => cookie.name === name && cookie.path === cookiePath);
+		if (fromScript && kept?.httpOnly) {
+			return;
+		}
+		this.cookies = this.cookies.filter(cookie => cookie !== kept);
+		if (expires === undefined || expires > Date.now()) {
+			this.cookies.push({ name, value, path: cookiePath, expires, httpOnly });
+		}
+		this.save();
+	}
+
+	/** The `Cookie` header for a path; a script does not see the cookies kept from it. */
+	header(requestPath: string, forScript = false): string {
+		const now = Date.now();
+		const at = requestPath.split('?')[0] || '/';
+		return this.cookies
+			.filter(cookie => (cookie.expires === undefined || cookie.expires > now) && (!forScript || !cookie.httpOnly))
+			.filter(cookie => at === cookie.path || at.startsWith(cookie.path.endsWith('/') ? cookie.path : cookie.path + '/'))
+			.sort((a, b) => b.path.length - a.path.length)
+			.map(cookie => cookie.name ? cookie.name + '=' + cookie.value : cookie.value)
+			.join('; ');
+	}
+
+	private save(): void {
+		try {
+			fs.mkdirSync(path.dirname(this.file), { recursive: true });
+			fs.writeFileSync(this.file, JSON.stringify(this.cookies.filter(cookie => cookie.expires === undefined || cookie.expires > Date.now())));
+		} catch {
+			// kept for this session only
+		}
+	}
+}
+
+/** The jar of the application the view shows. */
+let jar: CookieJar | undefined;
+
 const ROUTE_FILES = '**/{app,pages,routes}/**/*.{tsx,jsx,ts,js,vue,svelte,astro,md,mdx}';
 const ROUTERS = ['react-router', 'react-router-dom', 'vue-router', '@tanstack/react-router', 'wouter'];
 
@@ -604,7 +685,28 @@ export class LivePreview implements vscode.Disposable {
 		}));
 		server.on('upgrade', (req, socket, head) => this.upgrade(req, socket as net.Socket, head));
 		this.server = server;
-		return new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve((server.address() as AddressInfo).port)));
+		// The same application always gets the same port. A browser keeps what a site stores
+		// (the signed-in session, the basket, the theme) per address, port included: on a port
+		// drawn at random, closing the view signed the user out of their own application.
+		const key = (this.target?.origin ?? this.target?.folder ?? '').toLowerCase();
+		const first = 47000 + [...key].reduce((sum, letter) => (sum * 31 + letter.charCodeAt(0)) % 1500, 7);
+		jar = new CookieJar(path.join(os.homedir(), '.orbit', 'preview', `cookies-${first}-${key.replace(/[^a-z0-9]+/g, '-').slice(-60)}.json`));
+		const listen = (port: number) => new Promise<boolean>(resolve => {
+			server.once('error', () => resolve(false));
+			server.listen(port, '127.0.0.1', () => resolve(true));
+		});
+		return (async () => {
+			// The port may still be closing behind the previous view: it is asked for a few times
+			// before settling for a neighbour, then for any free one.
+			for (const port of [first, first, first, first + 1, first + 2, first + 3, 0]) {
+				if (await listen(port)) {
+					server.removeAllListeners('error');
+					break;
+				}
+				await new Promise(resolve => setTimeout(resolve, 150));
+			}
+			return (server.address() as AddressInfo).port;
+		})();
 	}
 
 	private stopServer(): void {
@@ -622,6 +724,24 @@ export class LivePreview implements vscode.Disposable {
 		if (url === '/__orbit/inspector.js') {
 			res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });
 			res.end(await fs.promises.readFile(vscode.Uri.joinPath(this.extensionUri, 'media', 'inspector.js').fsPath));
+			return;
+		}
+		if (url.startsWith('/__orbit/cookie')) {
+			// `document.cookie` of the page, read and written through the relay's jar.
+			if (req.method === 'POST') {
+				const chunks: Buffer[] = [];
+				for await (const chunk of req) {
+					chunks.push(chunk as Buffer);
+				}
+				try {
+					const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as { cookie: string; path: string };
+					jar?.store(String(body.cookie), String(body.path || '/'), true);
+				} catch {
+					// not ours
+				}
+			}
+			const at = new URL(url, 'http://localhost').searchParams.get('path') ?? '/';
+			res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }).end(jar?.header(at, true) ?? '');
 			return;
 		}
 		if (url === '/__orbit/external' && req.method === 'POST') {
@@ -703,7 +823,13 @@ export class LivePreview implements vscode.Disposable {
 			const lines = [`${req.method} ${req.url} HTTP/1.1`];
 			for (let i = 0; i < req.rawHeaders.length; i += 2) {
 				const name = req.rawHeaders[i];
-				lines.push(`${name}: ${name.toLowerCase() === 'host' ? upstream.host : name.toLowerCase() === 'origin' ? upstream.origin : req.rawHeaders[i + 1]}`);
+				if (name.toLowerCase() !== 'cookie') {
+					lines.push(`${name}: ${name.toLowerCase() === 'host' ? upstream.host : name.toLowerCase() === 'origin' ? upstream.origin : req.rawHeaders[i + 1]}`);
+				}
+			}
+			const cookies = jar?.header(req.url ?? '/');
+			if (cookies) {
+				lines.push(`Cookie: ${cookies}`);
 			}
 			remote.write(lines.join('\r\n') + '\r\n\r\n');
 			remote.write(head);
@@ -742,6 +868,10 @@ function proxy(origin: string, req: http.IncomingMessage, res: http.ServerRespon
 			headers['sec-ch-ua-mobile'] = emulated.mobile ? '?1' : '?0';
 			headers['sec-ch-ua-platform'] = /^iP/.test(emulated.name) ? '"iOS"' : '"Android"';
 		}
+		const cookies = jar?.header(req.url ?? '/');
+		if (cookies) {
+			headers.cookie = cookies;
+		}
 		if (headers.origin) {
 			headers.origin = upstream.origin;
 		}
@@ -754,6 +884,11 @@ function proxy(origin: string, req: http.IncomingMessage, res: http.ServerRespon
 		const request: typeof https.request = secure ? https.request : http.request;
 		const outgoing = request(options, incoming => {
 			const out: http.OutgoingHttpHeaders = { ...incoming.headers };
+			// The browser would refuse them in this frame: the relay keeps the application's cookies.
+			for (const line of incoming.headers['set-cookie'] ?? []) {
+				jar?.store(line, req.url ?? '/');
+			}
+			delete out['set-cookie'];
 			// The page lives in an IDE frame and runs Orbit's inspector: frame and script restrictions would block both.
 			delete out['content-security-policy'];
 			delete out['content-security-policy-report-only'];
