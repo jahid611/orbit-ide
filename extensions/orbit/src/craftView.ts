@@ -7,59 +7,22 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
-import { execFile, spawn } from 'child_process';
+import { spawn } from 'child_process';
 import { CraftApp, craftGui, craftIcon, craftPort, craftTokenFile } from './craft';
 import { Page } from './page';
 
-/** Where the application's window is kept while Orbit shows it: far to the left of every screen. */
-const AWAY = -20000;
-
 /**
- * Moves the application's window: away from the screens (it keeps drawing there, which a
- * minimized window does not) and out of the taskbar, or back in front of the user.
- */
-const PLACE = `
-param([int]$ProcessId, [string]$Name, [string]$Where)
-Add-Type @"
-using System; using System.Runtime.InteropServices;
-public class OrbitWindow {
-	[DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int w, int hh, uint flags);
-	[DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr h, int index);
-	[DllImport("user32.dll")] public static extern int SetWindowLong(IntPtr h, int index, int value);
-	[DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int command);
-	[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
-}
-"@
-$window = [IntPtr]::Zero
-for ($i = 0; $i -lt 40 -and $window -eq [IntPtr]::Zero; $i++) {
-	$process = if ($ProcessId) { Get-Process -Id $ProcessId -ErrorAction SilentlyContinue } else { Get-Process -Name $Name -ErrorAction SilentlyContinue | Select-Object -First 1 }
-	if (-not $process) { exit 1 }
-	$window = $process.MainWindowHandle
-	if ($window -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 250 }
-}
-if ($window -eq [IntPtr]::Zero) { exit 1 }
-$style = [OrbitWindow]::GetWindowLong($window, -20)
-[void][OrbitWindow]::ShowWindow($window, 0)
-if ($Where -eq 'away') {
-	[void][OrbitWindow]::SetWindowLong($window, -20, ($style -bor 0x80) -band (-bnot 0x40000))
-	[void][OrbitWindow]::SetWindowPos($window, [IntPtr]::Zero, ${AWAY}, 80, 0, 0, 0x0001 -bor 0x0004 -bor 0x0010)
-	[void][OrbitWindow]::ShowWindow($window, 4)
-} else {
-	[void][OrbitWindow]::SetWindowLong($window, -20, ($style -band (-bnot 0x80)) -bor 0x40000)
-	[void][OrbitWindow]::SetWindowPos($window, [IntPtr]::Zero, 120, 90, 1440, 900, 0x0004)
-	[void][OrbitWindow]::ShowWindow($window, 5)
-	[void][OrbitWindow]::SetForegroundWindow($window)
-}
-'ok'`;
-
-/**
- * A Crafting App shown inside Orbit. The real application runs with its control channel, its
- * window kept away from the screens; this page shows what it draws, twice a second, and sends
- * it clicks and keys. The agents of the project drive that same running application (their
- * `<app>_live` tools, see `craft.ts`), so the user watches them work, here.
+ * A Crafting App shown inside Orbit. The real application runs with its control channel, and
+ * the agents of the project drive that same running application (their `<app>_live` tools,
+ * see `craft.ts`), so the user watches them work, here.
  *
- * It is a view of a window, not the window: no dragging (painting, sliders), no wheel. The
- * application's own window is one button away for that.
+ * Two ways of showing it, one after the other:
+ * - its pictures: the window is kept away from the screens and the page shows what it draws.
+ *   The application hands out two or three pictures a second, no more (it waits for its own
+ *   animations before each one): enough to see where things are, far too slow to work.
+ * - its window: as soon as the mouse rests on the page, the real window is laid exactly over
+ *   it (`media/dock.ps1`) and follows the Orbit window. Full speed, every gesture. A window
+ *   laid over Orbit hides what Orbit opens there (the command palette): it steps aside for those.
  */
 export class CraftView extends Page {
 
@@ -72,16 +35,51 @@ export class CraftView extends Page {
 	private problem = '';
 	private looping = false;
 	private size = { width: 1280, height: 800 };
+	/** The helper that holds the application's window (see `media/dock.ps1`), and what it last said. */
+	private helper: ReturnType<typeof spawn> | undefined;
+	private helperSaid: ((word: string) => void) | undefined;
+	/** Whether the real window is laid over the page. */
+	private docked = false;
 
 	constructor(context: vscode.ExtensionContext, private readonly app: CraftApp, private readonly root: () => string | undefined) {
 		super(context, 'craft', app.name);
 		this.disposables.push(vscode.commands.registerCommand(`orbit.craft.show.${app.id}`, () => this.show()));
+		// What Orbit opens over the page would be hidden by the window: it steps aside first.
+		for (const [id, command] of [['palette', 'workbench.action.showCommands'], ['files', 'workbench.action.quickOpen']]) {
+			this.disposables.push(vscode.commands.registerCommand(`orbit.craft.${id}`, async () => {
+				await this.undock();
+				await vscode.commands.executeCommand(command);
+			}));
+		}
+	}
+
+	/** The window laid over the page: only while this is true do Orbit's shortcuts step it aside. */
+	private setDocked(on: boolean): void {
+		this.docked = on;
+		vscode.commands.executeCommand('setContext', 'orbit.craftDocked', on);
+		this.post({ type: 'docked', on });
+	}
+
+	private async undock(): Promise<void> {
+		if (this.docked) {
+			this.setDocked(false);
+			await this.place('away');
+			this.loop();
+		}
+	}
+
+	/** The page went behind another tab, or came back. */
+	protected override viewChanged(visible: boolean): void {
+		if (!visible) {
+			this.undock();
+		}
 	}
 
 	override dispose(): void {
 		// The application may hold unsaved work: it is handed back to the user, never killed.
 		this.place('front');
 		this.socket?.destroy();
+		setTimeout(() => this.helper?.kill(), 1500);
 		super.dispose();
 	}
 
@@ -90,6 +88,8 @@ export class CraftView extends Page {
 		if (this.state === 'live') {
 			this.place('front');
 		}
+		this.docked = false;
+		vscode.commands.executeCommand('setContext', 'orbit.craftDocked', false);
 		this.state = this.socket ? 'out' : 'idle';
 	}
 
@@ -122,7 +122,19 @@ export class CraftView extends Page {
 				const height = Math.max(520, Math.min(1600, Math.round(Number(msg.height) || 0)));
 				if (width !== this.size.width || height !== this.size.height) {
 					this.size = { width, height };
+					// The page changed shape: the window no longer fits it, back to pictures until the mouse rests again.
+					await this.undock();
 					await this.call('ui.resize', this.size);
+				}
+				break;
+			}
+			case 'anchor': {
+				// The mouse rests on the page: the real window is laid over it, at the pointer.
+				if (this.state === 'live' && !this.docked) {
+					const said = await this.place(`dock ${Math.round(msg.dx)} ${Math.round(msg.dy)} ${Math.round(msg.width)} ${Math.round(msg.height)}`);
+					if (said === 'docked') {
+						this.setDocked(true);
+					}
 				}
 				break;
 			}
@@ -143,6 +155,7 @@ export class CraftView extends Page {
 				break;
 			case 'out':
 				this.state = 'out';
+				this.setDocked(false);
 				this.send();
 				await this.place('front');
 				break;
@@ -185,6 +198,8 @@ export class CraftView extends Page {
 					this.socket?.destroy();
 				}
 			});
+			this.helper?.kill();
+			this.helper = undefined;
 			await this.place('away');
 			for (let i = 0; i < 40 && !await this.connect(port, token); i++) {
 				await new Promise(resolve => setTimeout(resolve, 500));
@@ -278,7 +293,7 @@ export class CraftView extends Page {
 		}
 		this.looping = true;
 		try {
-			while (this.visible && this.state === 'live' && this.socket) {
+			while (this.visible && this.state === 'live' && this.socket && !this.docked) {
 				const shot = await this.call('ui.screenshot', { focus: false });
 				const picture = (shot.result as { base64?: string } | undefined)?.base64;
 				if (picture) {
@@ -292,13 +307,52 @@ export class CraftView extends Page {
 		}
 	}
 
-	private place(where: 'away' | 'front'): Promise<void> {
-		// An application found already running was not started here: it is looked up by its name.
-		const pid = this.process?.pid ?? 0;
-		if (process.platform !== 'win32' || (!pid && !this.socket)) {
-			return Promise.resolve();
+	/**
+	 * Tells the helper where the application's window goes, and resolves with its answer
+	 * (`away`, `front`, `docked`, or `missed` when the pointer was not over Orbit).
+	 */
+	private place(order: string): Promise<string> {
+		const root = this.root();
+		if (process.platform !== 'win32' || !root || (!this.process?.pid && !this.socket)) {
+			return Promise.resolve('');
 		}
-		return new Promise(resolve => execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `& { ${PLACE} } -ProcessId ${pid} -Name ${this.app.id} -Where ${where}`], { windowsHide: true, timeout: 30000 }, () => resolve()));
+		if (!this.helper || this.helper.exitCode !== null) {
+			const helper = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(this.context.extensionPath, 'media', 'dock.ps1'), '-Port', String(craftPort(root))], { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] });
+			this.helper = helper;
+			let pending = '';
+			helper.stdout?.on('data', chunk => {
+				pending += String(chunk);
+				let end: number;
+				while ((end = pending.indexOf('\n')) >= 0) {
+					const word = pending.slice(0, end).trim();
+					pending = pending.slice(end + 1);
+					if (word === 'gone' || word === 'lost') {
+						this.setDocked(false);
+					} else if (word && word !== 'ready') {
+						this.helperSaid?.(word);
+					}
+				}
+			});
+			helper.on('exit', () => {
+				if (this.helper === helper) {
+					this.helper = undefined;
+					this.helperSaid?.('');
+				}
+			});
+		}
+		const helper = this.helper;
+		return new Promise(resolve => {
+			const timer = setTimeout(() => done(''), 30000);
+			const done = (word: string) => {
+				clearTimeout(timer);
+				if (this.helperSaid === done) {
+					this.helperSaid = undefined;
+				}
+				resolve(word);
+			};
+			this.helperSaid = done;
+			helper.stdin?.write(`${order}\n`);
+		});
 	}
 
 	/** A picture of the project, opened in the application. */

@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 // @ts-check
 
-// A Crafting App shown inside Orbit: the pictures of its real window, away from the screens,
-// and the clicks and keys sent back to it. See `craftView.ts`.
+// A Crafting App shown inside Orbit. First the pictures of its window (two or three a second);
+// then, as soon as the mouse rests here, the real window laid over this page. See `craftView.ts`.
 (function () {
 	// @ts-ignore
 	const vscode = acquireVsCodeApi();
@@ -21,7 +21,7 @@
 			<span class="note" id="note"></span>
 			<span class="grow"></span>
 			<button class="btn" id="open">${icon('plus')}Ouvrir une image</button>
-			<button class="btn" id="out" title="Pour peindre, faire glisser ou travailler vite : la vraie fenêtre de l'application">${icon('expand')}Sa propre fenêtre</button>
+			<button class="btn" id="out" title="Sortir l'application d'Orbit, dans une fenêtre à elle">${icon('expand')}Sa propre fenêtre</button>
 		</header>
 		<main id="stage" tabindex="0"><img id="frame" alt="" draggable="false" /><div class="wait" id="wait"></div></main>`;
 	const $ = (/** @type {string} */ id) => /** @type {any} */ (document.getElementById(id));
@@ -30,13 +30,17 @@
 	/** The size of the application's window, in its own points: what a click is measured in. */
 	let window_ = { width: 0, height: 0 };
 	let state = 'idle';
+	/** Whether the application's real window is laid over this page. */
+	let docked = false;
+	const NOTE = 'Pose la souris sur l\'image : la vraie fenêtre vient se placer ici, à pleine vitesse. Tes agents agissent dessus.';
+	const NOTE_DOCKED = 'C\'est la vraie fenêtre de l\'application. Tes agents agissent dessus.';
 
 	function draw(/** @type {any} */ data) {
 		state = data.state;
 		$('name').textContent = data.name;
 		$('mark').innerHTML = data.icon ? `<img src="${data.icon}" alt="" />` : '';
 		$('live').hidden = state !== 'live';
-		$('note').textContent = state === 'live' ? 'Tes agents agissent sur cette fenêtre. Clics et clavier passent ; pour peindre ou faire glisser, ouvre sa propre fenêtre.' : '';
+		$('note').textContent = state === 'live' ? (docked ? NOTE_DOCKED : NOTE) : '';
 		$('open').hidden = state !== 'live';
 		$('out').hidden = state !== 'live';
 		frame.hidden = state !== 'live';
@@ -63,12 +67,24 @@
 	frame.addEventListener('contextmenu', e => { e.preventDefault(); vscode.postMessage({ type: 'click', ...at(e), button: 'right' }); });
 	// The pointer is followed at the pace the pictures come, not at every pixel.
 	let moved = 0;
+	let resting;
 	frame.addEventListener('mousemove', e => {
 		if (Date.now() - moved > 250) {
 			moved = Date.now();
 			vscode.postMessage({ type: 'move', ...at(e) });
 		}
+		// Resting on the picture calls the real window: Orbit lays it over this page, measured
+		// from where the pointer is (in real pixels of the screen, hence the pixel ratio).
+		clearTimeout(resting);
+		if (!docked && state === 'live') {
+			resting = setTimeout(() => {
+				const box = stage.getBoundingClientRect();
+				const ratio = window.devicePixelRatio || 1;
+				vscode.postMessage({ type: 'anchor', dx: (e.clientX - box.left) * ratio, dy: (e.clientY - box.top) * ratio, width: box.width * ratio, height: box.height * ratio });
+			}, 140);
+		}
 	});
+	frame.addEventListener('mouseleave', () => clearTimeout(resting));
 	const KEYS = ['Enter', 'Escape', 'Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Space'];
 	stage.addEventListener('keydown', (/** @type {KeyboardEvent} */ e) => {
 		if (state !== 'live') {
@@ -98,6 +114,9 @@
 		if (msg?.type === 'state') {
 			draw(msg);
 			size();
+		} else if (msg?.type === 'docked') {
+			docked = !!msg.on;
+			$('note').textContent = state === 'live' ? (docked ? NOTE_DOCKED : NOTE) : '';
 		} else if (msg?.type === 'frame') {
 			window_ = { width: msg.width, height: msg.height };
 			frame.src = `data:image/png;base64,${msg.picture}`;

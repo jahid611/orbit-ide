@@ -43,13 +43,21 @@ export abstract class Page implements vscode.Disposable {
 			vscode.window.showErrorMessage(`${this.title} : ${err instanceof Error ? err.message : String(err)}`);
 			this.send();
 		}));
-		this.panel.onDidChangeViewState(e => e.webviewPanel.visible && this.refresh());
+		this.panel.onDidChangeViewState(e => {
+			this.viewChanged(e.webviewPanel.visible);
+			if (e.webviewPanel.visible) {
+				this.refresh();
+			}
+		});
 		this.panel.onDidDispose(() => {
 			listener.dispose();
 			this.panel = undefined;
 			this.closed();
 		});
 	}
+
+	/** The page went behind another tab, or came back in front. */
+	protected viewChanged(_visible: boolean): void { }
 
 	/** The user closed the page. */
 	protected closed(): void { }

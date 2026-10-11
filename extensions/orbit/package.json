@@ -1177,6 +1177,21 @@
         "when": "!terminalFocus"
       },
       {
+        "command": "orbit.craft.palette",
+        "key": "ctrl+shift+p",
+        "when": "orbit.craftDocked"
+      },
+      {
+        "command": "orbit.craft.palette",
+        "key": "f1",
+        "when": "orbit.craftDocked"
+      },
+      {
+        "command": "orbit.craft.files",
+        "key": "ctrl+p",
+        "when": "orbit.craftDocked"
+      },
+      {
         "command": "orbit.store.show",
         "key": "ctrl+alt+b",
         "mac": "cmd+alt+b"
@@ -1535,6 +1550,8 @@
         "orbit.team.start",
         "orbit.recipes.pick",
         "orbit.higgsfield.show",
+        "orbit.craft.palette",
+        "orbit.craft.files",
         "orbit.store.show",
         "orbit.queue.show",
         "orbit.vercel.show",

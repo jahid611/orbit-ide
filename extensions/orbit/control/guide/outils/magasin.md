@@ -65,15 +65,19 @@ PhotoCraft est un logiciel libre de retouche d'images, du projet ArtCraft, qui s
 
 ### PhotoCraft dans Orbit, en direct
 
-« PhotoCraft » dans **Outils du projet** ouvre l'application dans un onglet d'Orbit. C'est la vraie application : elle tourne sur ta machine, sa fenêtre est tenue hors de l'écran, et l'onglet montre ce qu'elle affiche.
+« PhotoCraft » dans **Outils du projet** ouvre l'application dans un onglet d'Orbit. C'est la vraie application, qui tourne sur ta machine.
 
 - **Tes agents agissent dessus sous tes yeux.** Dis à l'agent « ouvre le logo dans PhotoCraft et détoure-le » : tu vois l'image s'ouvrir, les menus et les calques changer.
-- **Tu peux cliquer et taper** : menus, boutons, panneaux, raccourcis clavier, clic droit.
 - **Ouvrir une image** propose les images du projet.
 - **Sa propre fenêtre** sort l'application sur ton écran, à pleine vitesse ; **Le ramener dans Orbit** la remet dans l'onglet. Tes agents continuent d'agir dessus dans les deux cas.
 - Fermer l'onglet ne ferme pas l'application : elle revient devant toi, pour que tu enregistres ce que tu veux garder.
 
-Ce n'est pas la fenêtre elle-même mais son image, rafraîchie environ deux fois par seconde. On ne peut donc pas y peindre, faire glisser un curseur ou une sélection, ni utiliser la molette : pour ces gestes, passe par « Sa propre fenêtre ». Cette vue n'existe que sous Windows pour l'instant.
+L'onglet a deux façons de montrer l'application, l'une après l'autre :
+
+- **Son image**, tant que ta souris n'est pas dessus : rafraîchie deux à trois fois par seconde (PhotoCraft n'en fournit pas plus). Elle suffit pour regarder un agent travailler.
+- **Sa vraie fenêtre**, dès que tu poses la souris sur l'image : Orbit vient la coller exactement sur l'onglet. Tu travailles alors à pleine vitesse, avec tous les gestes (peindre, faire glisser, molette). Elle suit la fenêtre d'Orbit quand tu la déplaces, et se retire quand tu changes d'onglet ou redimensionnes la page.
+
+Une fenêtre collée par-dessus Orbit cache ce qu'Orbit ouvre à cet endroit. Pour la palette de commandes (`Ctrl+Maj+P`, `F1`) et l'ouverture rapide (`Ctrl+P`), Orbit la retire d'abord ; pour le reste (une notification, un menu), change d'onglet ou clique « Sa propre fenêtre ». Cette vue n'existe que sous Windows pour l'instant.
 
 PhotoCraft est en alpha : son éditeur dit lui-même qu'il ne remplace pas encore Photoshop au quotidien. Des commandes peuvent manquer ou échouer ; l'agent a pour consigne de le dire et de passer par un autre moyen. Les autres applications du même projet (vectoriel, montage, PDF…) ne sont pas encore branchées.
 
