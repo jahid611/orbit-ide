@@ -65,7 +65,7 @@ PhotoCraft est un logiciel libre de retouche d'images, du projet ArtCraft, qui s
 
 ### PhotoCraft dans Orbit, en direct
 
-« PhotoCraft » dans **Outils du projet** ouvre l'application dans un onglet d'Orbit. C'est la vraie application, qui tourne sur ta machine.
+« PhotoCraft » dans **Outils du projet** ouvre l'application dans un onglet d'Orbit. Demander à l'agent d'ouvrir un fichier dans PhotoCraft l'ouvre dans ce même onglet, jamais une seconde fenêtre. C'est la vraie application, qui tourne sur ta machine.
 
 - **Tes agents agissent dessus sous tes yeux.** Dis à l'agent « ouvre le logo dans PhotoCraft et détoure-le » : tu vois l'image s'ouvrir, les menus et les calques changer.
 - **Ouvrir une image** propose les images du projet.

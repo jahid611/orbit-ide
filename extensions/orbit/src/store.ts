@@ -306,6 +306,8 @@ export class Store extends Page {
 			this.working = undefined;
 			this.send();
 			// Shown at once: the application opens, where its window came with the download.
+			// The agents already open do not have its tools: the user is offered to start them again.
+			vscode.commands.executeCommand('orbit.claude.checkOutdated').then(undefined, () => undefined);
 			const shown = await vscode.commands.executeCommand(`orbit.craft.show.${app.id}`).then(() => true, () => openCraft(app));
 			vscode.window.showInformationMessage(`${connector.name} ${version} est installé${shown ? ' et ouvert' : ''}. Il est dans « Outils du projet », et tout nouvel agent aura ses outils pour retoucher les images du projet.`);
 			return true;

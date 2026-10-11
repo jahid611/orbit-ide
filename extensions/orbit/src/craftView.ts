@@ -43,7 +43,12 @@ export class CraftView extends Page {
 
 	constructor(context: vscode.ExtensionContext, private readonly app: CraftApp, private readonly root: () => string | undefined) {
 		super(context, 'craft', app.name);
-		this.disposables.push(vscode.commands.registerCommand(`orbit.craft.show.${app.id}`, () => this.show()));
+		// With a file, the page opens it: in the application shown here, never in another window.
+		this.disposables.push(vscode.commands.registerCommand(`orbit.craft.show.${app.id}`, (file?: vscode.Uri | string) => {
+			const wanted = file instanceof vscode.Uri ? file.fsPath : typeof file === 'string' ? file : undefined;
+			this.show();
+			return wanted ? this.openFile(wanted) : undefined;
+		}));
 		// What Orbit opens over the page would be hidden by the window: it steps aside first.
 		for (const [id, command] of [['palette', 'workbench.action.showCommands'], ['files', 'workbench.action.quickOpen']]) {
 			this.disposables.push(vscode.commands.registerCommand(`orbit.craft.${id}`, async () => {
@@ -112,6 +117,25 @@ export class CraftView extends Page {
 			await this.start();
 		}
 		this.loop();
+	}
+
+	/**
+	 * Opens a file of the project in the application shown here. The application only reads
+	 * under the project's folder, by a path written with forward slashes from that folder.
+	 */
+	private async openFile(file: string): Promise<string> {
+		const root = this.root();
+		for (let i = 0; i < 80 && (this.state === 'idle' || this.state === 'starting'); i++) {
+			await new Promise(resolve => setTimeout(resolve, 500));
+		}
+		const relative = root ? path.relative(root, path.isAbsolute(file) ? file : path.join(root, file)).split(path.sep).join('/') : '';
+		if (!this.socket || !relative || relative.startsWith('..')) {
+			const why = !this.socket ? `${this.app.name} ne répond pas.` : `${this.app.name} n'ouvre que les fichiers du projet.`;
+			vscode.window.showWarningMessage(why);
+			return why;
+		}
+		const opened = await this.call('app.open', { path: relative });
+		return opened.ok === false ? `${this.app.name} : ${opened.error ?? 'ouverture impossible'}` : `${relative} est ouvert dans ${this.app.name}, dans Orbit.`;
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any

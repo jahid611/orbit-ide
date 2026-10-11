@@ -27,6 +27,12 @@ Le titre vient du titre donné par l'agent, sinon du début de ton premier messa
 
 Quand tu ouvres un projet, Orbit reprend sa dernière discussion au lieu de commencer un agent neuf. Une notification annonce « Discussion reprise : <titre> » avec un bouton **Nouvelle discussion** si tu préfères repartir de zéro.
 
+### Agents lancés avant une mise à jour
+
+Un agent garde les outils et les consignes du jour où il a démarré. Recharger la fenêtre met Orbit à jour, pas un agent déjà en marche : son terminal continue de tourner tel quel.
+
+Après une mise à jour d'Orbit, ou après l'installation d'une application du magasin, Orbit te le signale : une notification, et un bouton orange « agents à relancer » dans la barre du bas tant qu'il en reste. **Relancer** ferme le terminal et en rouvre un sur la même discussion, avec les outils d'aujourd'hui ; le chef d'équipe revient en chef d'équipe. Un agent en plein travail, ou qui attend ton accord, n'est pas touché : relance-le quand il a fini.
+
 ### Retrouver ton espace de travail
 
 Tu peux fermer Orbit, éteindre l'ordinateur et revenir le lendemain : le projet se rouvre là où tu l'as laissé.

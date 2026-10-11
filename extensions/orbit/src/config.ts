@@ -11,7 +11,7 @@ import { HOOK_SETTINGS, ORBIT_DIR, TERMINAL_ID_ENV } from './agentTracker';
 import { AssistantMode, AssistantModel, assistant, assistantId } from './assistant';
 import { controlMcpConfig } from './orbitControl';
 import { unityMcpConfig } from './unity';
-import { craftMcpConfigs } from './craft';
+import { CRAFT_APPS, craftMcpConfigs, findCraft } from './craft';
 
 /** Models and permission modes of the assistant in use: read when needed, the choice can change. */
 export function models(): AssistantModel[] {
@@ -210,6 +210,23 @@ function writeCodexProfile(config: ReturnType<typeof readConfig>, launch: Claude
 		console.error('[orbit] could not write the Codex configuration', err);
 	}
 	return name;
+}
+
+/**
+ * What an agent started now would receive that one started earlier may not have: this copy of
+ * Orbit (its tools and its instructions travel with it) and the applications installed since.
+ * An agent keeps what it was given when it started, whatever is reloaded around it.
+ */
+export function launchStamp(extensionUri: vscode.Uri | undefined): string {
+	const parts: string[] = [];
+	for (const file of ['dist/extension.js', 'out/extension.js', 'control/control-mcp.js']) {
+		try {
+			parts.push(String(Math.round(fs.statSync(path.join(extensionUri?.fsPath ?? '', file)).mtimeMs)));
+		} catch {
+			// not this build's layout
+		}
+	}
+	return [...parts, ...CRAFT_APPS.filter(app => findCraft(app)).map(app => app.id)].join('|');
 }
 
 /** MCP configurations that Orbit's built-in extensions registered for every Claude. */

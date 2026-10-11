@@ -283,13 +283,20 @@ export function activate(context: vscode.ExtensionContext): void {
 		// The agents' reference follows the installed version (written once, a few seconds after starting).
 		setTimeout(() => writeCraftGuide(app).catch(() => undefined), 8000);
 		context.subscriptions.push(new CraftView(context, app, () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath));
-		context.subscriptions.push(vscode.commands.registerCommand(`orbit.craft.open.${app.id}`, async () => {
-			// The picture in front, if there is one, opens with the application.
+		context.subscriptions.push(vscode.commands.registerCommand(`orbit.craft.open.${app.id}`, async (given?: vscode.Uri | string) => {
+			// The file handed over, else the picture in front, opens with the application.
 			const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
-			const file = input instanceof vscode.TabInputCustom || input instanceof vscode.TabInputText ? input.uri.fsPath : undefined;
-			if (!openCraft(app, file && /\.(png|jpe?g|gif|webp|bmp|tiff?|psd|psb|avif|heic|svg)$/i.test(file) ? file : undefined)) {
+			const front = input instanceof vscode.TabInputCustom || input instanceof vscode.TabInputText ? input.uri.fsPath : undefined;
+			const file = given instanceof vscode.Uri ? given.fsPath : typeof given === 'string' ? given : front && /\.(png|jpe?g|gif|webp|bmp|tiff?|psd|psb|pcraft|avif|heic|svg)$/i.test(front) ? front : undefined;
+			// Where Orbit shows the application, it is that one: a second window of it, beside,
+			// would hold another copy of the work (agents asked for this command again and again).
+			if (craftGui(app)) {
+				return vscode.commands.executeCommand(`orbit.craft.show.${app.id}`, file);
+			}
+			if (!openCraft(app, file)) {
 				await vscode.commands.executeCommand('orbit.store.show');
 			}
+			return undefined;
 		}));
 	}
 	// The whole list with its search field (Ctrl+Alt+K).
@@ -600,6 +607,56 @@ export function activate(context: vscode.ExtensionContext): void {
 		inspectGhosts,
 	);
 	claude.autoStart();
+	// An agent keeps the tools and the instructions it was started with: after an update of
+	// Orbit, or once an application is installed, those already open are behind. The user is
+	// told, and one click starts them again on their own discussion.
+	const behind = vscode.window.createStatusBarItem('orbit.outdated', vscode.StatusBarAlignment.Left, 997);
+	behind.name = 'Agents à relancer';
+	behind.command = 'orbit.claude.relaunchOutdated';
+	behind.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+	let toldBehind = '';
+	const checkOutdated = async (announce: boolean) => {
+		const old = claude.outdated();
+		behind.text = `$(warning) ${old.length} agent${old.length > 1 ? 's' : ''} à relancer`;
+		behind.tooltip = `Lancé${old.length > 1 ? 's' : ''} avant la dernière mise à jour d'Orbit : ${old.map(t => t.name).join(', ')}. Sans les nouveaux outils ni les nouvelles consignes. Clic : les relancer sur leur discussion.`;
+		if (!old.length) {
+			behind.hide();
+			return;
+		}
+		behind.show();
+		const names = old.map(t => t.name).join(', ');
+		if (announce && names !== toldBehind) {
+			toldBehind = names;
+			// The whole explanation is in the message: a notification shows nothing else.
+			const choice = await vscode.window.showWarningMessage(
+				`${old.length > 1 ? `${old.length} agents ont été lancés avant la dernière mise à jour d'Orbit (${names}) : ils n'ont` : `« ${names} » a été lancé avant la dernière mise à jour d'Orbit : il n'a`} ni les nouveaux outils ni les nouvelles consignes, et recharger la fenêtre n'y change rien. Relancer reprend ${old.length > 1 ? 'leur discussion' : 'sa discussion'} là où elle en est.`,
+				'Relancer', 'Plus tard',
+			);
+			if (choice === 'Relancer') {
+				await vscode.commands.executeCommand('orbit.claude.relaunchOutdated');
+			}
+		}
+	};
+	context.subscriptions.push(behind,
+		vscode.commands.registerCommand('orbit.claude.checkOutdated', () => checkOutdated(true)),
+		vscode.commands.registerCommand('orbit.claude.relaunchOutdated', async () => {
+			const old = claude.outdated();
+			// An agent at work, or waiting for an answer, is left alone: starting it again would cut it short.
+			const busy = old.filter(t => ['running', 'waiting'].includes(tracker.get(claude.keyOf(t))?.status ?? ''));
+			const idle = old.filter(t => !busy.includes(t));
+			if (!old.length) {
+				vscode.window.showInformationMessage('Tous tes agents sont à jour.');
+				return;
+			}
+			await claude.relaunch(idle);
+			if (busy.length) {
+				vscode.window.showInformationMessage(`${busy.map(t => t.name).join(', ')} ${busy.length > 1 ? 'travaillent' : 'travaille'} encore : relance-${busy.length > 1 ? 'les' : 'le'} quand ${busy.length > 1 ? 'ils auront' : 'il aura'} fini (bouton « à relancer » de la barre du bas).`);
+			}
+			setTimeout(() => checkOutdated(false), 4000);
+		}),
+		claude.onDidChange(() => checkOutdated(false)),
+	);
+	setTimeout(() => checkOutdated(true), 9000);
 	// Whatever the start-up settings, agents of another assistant than the one in use do not stay.
 	setTimeout(() => claude.closeOtherAssistants(), 3200);
 
