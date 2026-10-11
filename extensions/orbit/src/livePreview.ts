@@ -498,7 +498,7 @@ export class LivePreview implements vscode.Disposable {
 			const stack = e.stack ? `\n  ${e.stack.split('\n').slice(0, 5).map(l => l.replace(/https?:\/\/127\.0\.0\.1:\d+/g, '').trim()).join('\n  ')}` : '';
 			return `- ${kinds[e.kind] ?? e.kind} : ${e.message}${where}${stack}`;
 		});
-		const text = `La page affichée dans la vue vivante d'Orbit (${this.target?.origin ?? 'fichiers du projet'}${pagePath}) lève ${errors.length > 1 ? `ces ${errors.length} erreurs` : 'cette erreur'} à l'exécution. Trouve la cause dans le code et corrige-la ; la vue se rechargera toute seule.\n\n${lines.join('\n')}`;
+		const text = `La page affichée dans la vue vivante d'Orbit (${this.target?.origin ?? 'fichiers du projet'}${pagePath}) lève ${errors.length > 1 ? `ces ${errors.length} erreurs` : 'cette erreur'} à l'exécution. Trouve la cause dans le code et corrige-la ; la vue se rechargera toute seule.${emulated ? ` La page était affichée comme sur ${emulated.kind === 'mobile' ? 'un téléphone' : 'une tablette'} (${emulated.name}, ${emulated.width} × ${emulated.height} px, tactile) : l'erreur peut ne se produire que là.` : ''}\n\n${lines.join('\n')}`;
 		const terminal = this.claude.current();
 		if (terminal && this.tracker.get(this.claude.keyOf(terminal))?.status === 'waiting') {
 			vscode.window.showWarningMessage(`${terminal.name} attend une autorisation : réponds-lui d'abord, puis renvoie les erreurs.`);
