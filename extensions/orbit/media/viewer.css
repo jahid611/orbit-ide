@@ -82,3 +82,35 @@ body.page-viewer { overflow: hidden; background: var(--vscode-editor-background)
 @media (max-width: 560px) {
 	.find, #zoom { display: none; }
 }
+
+/* 3D model */
+.view3d { position: relative; overflow: hidden; background: #1b1b22; }
+.view3d canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+.view3d .status { position: absolute; top: 42%; left: 50%; transform: translateX(-50%); margin: 0; width: max-content; max-width: 80%; }
+.anim { display: inline-flex; align-items: center; gap: 4px; }
+#clip { height: 28px; max-width: 220px; }
+.info { position: absolute; top: 12px; right: 12px; width: 268px; padding: 12px 14px; font-size: 12px; color: var(--fg); border-radius: 12px; background: color-mix(in srgb, var(--vscode-editor-background) 82%, transparent); border: 1px solid var(--line); backdrop-filter: blur(14px); box-shadow: 0 8px 28px rgba(0, 0, 0, .3); }
+.infoName { margin-bottom: 8px; font-weight: 600; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.info dl { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; margin: 0; }
+.info dt { color: var(--muted); }
+.info dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: break-word; }
+.hint { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 5px 11px; font-size: 11.5px; color: var(--muted); border-radius: 9px; background: color-mix(in srgb, var(--vscode-editor-background) 70%, transparent); white-space: nowrap; pointer-events: none; opacity: .85; }
+.bright .view3d .hint { color: #555; background: rgba(255, 255, 255, .7); }
+.bright .info { color: #1d1d24; background: rgba(255, 255, 255, .82); border-color: rgba(0, 0, 0, .1); }
+.bright .info dt { color: #6b6b76; }
+
+/* Word document: pages laid out by docx-preview */
+.kind-docx .sheets { gap: 0; }
+.kind-docx .frame { position: relative; flex: none; }
+.kind-docx .zoomed { position: absolute; left: 0; top: 0; width: max-content; transform-origin: 0 0; }
+.kind-docx .docx-wrapper { background: none !important; padding: 0 !important; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.kind-docx .docx-wrapper > section.docx { margin: 0 !important; box-shadow: 0 6px 30px rgba(0, 0, 0, .45), 0 0 0 1px rgba(0, 0, 0, .25) !important; border-radius: 3px; }
+.kind-docx .docx a { cursor: pointer; }
+::highlight(orbit-find) { background-color: rgba(255, 214, 10, .55); color: inherit; }
+::highlight(orbit-find-current) { background-color: rgba(255, 120, 0, .75); color: inherit; }
+
+@media (max-width: 860px) {
+	.info { display: none; }
+	.hint { display: none; }
+	#capture span { display: none; }
+}

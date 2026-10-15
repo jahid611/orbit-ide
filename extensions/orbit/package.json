@@ -1948,6 +1948,26 @@
         ]
       },
       {
+        "viewType": "orbit.docx",
+        "displayName": "Lecteur Word d'Orbit",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.{docx,docm,dotx}"
+          }
+        ]
+      },
+      {
+        "viewType": "orbit.model",
+        "displayName": "Visionneuse 3D d'Orbit",
+        "priority": "default",
+        "selector": [
+          {
+            "filenamePattern": "*.{glb,gltf}"
+          }
+        ]
+      },
+      {
         "viewType": "orbit.font",
         "displayName": "Lecteur de polices d'Orbit",
         "priority": "default",

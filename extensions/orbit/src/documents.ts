@@ -11,7 +11,7 @@ import { createHash, randomBytes } from 'crypto';
 import { execFile } from 'child_process';
 import { assistant } from './assistant';
 
-type Kind = 'pdf' | 'pptx';
+type Kind = 'pdf' | 'pptx' | 'docx' | 'model';
 
 const OFFICE = ['C:\\Program Files\\LibreOffice\\program\\soffice.exe', 'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe', '/Applications/LibreOffice.app/Contents/MacOS/soffice', '/usr/bin/soffice', '/usr/bin/libreoffice', '/snap/bin/libreoffice'];
 
@@ -20,19 +20,21 @@ function libreOffice(): string | undefined {
 	return OFFICE.find(candidate => fs.existsSync(candidate));
 }
 
-/** PowerPoint itself, on Windows, does the same through its automation interface. */
-function powerPoint(): Promise<boolean> {
+/** PowerPoint or Word itself, on Windows, does the same through its automation interface. */
+function office(app: 'PowerPoint' | 'Word'): Promise<boolean> {
 	if (process.platform !== 'win32') {
 		return Promise.resolve(false);
 	}
-	return new Promise(resolve => execFile('reg.exe', ['query', 'HKCR\\PowerPoint.Application\\CLSID'], { windowsHide: true, timeout: 8000 }, err => resolve(!err)));
+	return new Promise(resolve => execFile('reg.exe', ['query', `HKCR\\${app}.Application\\CLSID`], { windowsHide: true, timeout: 8000 }, err => resolve(!err)));
 }
 
 /**
- * PDF and PowerPoint files open in Orbit, in their own viewer (they used to open as unreadable
- * binary). PDFs are drawn by pdf.js (Mozilla, Apache 2.0): sharp at every zoom, selectable text,
- * search, thumbnails, links. Presentations are drawn in the page by pptx-preview; when PowerPoint
+ * PDF, PowerPoint, Word and 3D model files open in Orbit, in their own viewer (they used to open
+ * as unreadable binary). PDFs are drawn by pdf.js (Mozilla, Apache 2.0): sharp at every zoom,
+ * selectable text, search, thumbnails, links. Presentations are drawn in the page by PptxViewJS,
+ * Word documents laid out as pages by docx-preview (Apache 2.0); when the matching Office program
  * or LibreOffice is installed, « Rendu exact » converts the file to a PDF that is shown instead.
+ * glTF models (`.glb`, `.gltf`) are drawn by three.js (MIT), Draco and meshopt compression included.
  * The file is never modified.
  */
 class DocumentViewer implements vscode.CustomReadonlyEditorProvider {
@@ -57,7 +59,8 @@ class DocumentViewer implements vscode.CustomReadonlyEditorProvider {
 			`img-src ${source} data: blob:`,
 			`style-src ${source} 'unsafe-inline'`,
 			`font-src ${source} data: blob:`,
-			`script-src 'nonce-${nonce}' blob:`,
+			// The Draco and meshopt decoders of 3D models are WebAssembly.
+			`script-src 'nonce-${nonce}' blob:${this.kind === 'model' ? ` 'wasm-unsafe-eval'` : ''}`,
 			`worker-src blob:`,
 			`connect-src ${source} blob: data:`,
 			`media-src ${source} blob: data:`,
@@ -70,7 +73,14 @@ class DocumentViewer implements vscode.CustomReadonlyEditorProvider {
 			cmaps: file('pdfjs/cmaps/'),
 			fonts: file('pdfjs/standard_fonts/'),
 			assistant: assistant().name,
-			exact: this.kind === 'pptx' && (!!libreOffice() || await powerPoint()),
+			draco: file('three/'),
+			exact: (this.kind === 'pptx' || this.kind === 'docx') && (!!libreOffice() || await office(this.kind === 'pptx' ? 'PowerPoint' : 'Word')),
+		};
+		const scripts: Record<Kind, string[]> = {
+			pdf: ['pdfjs/pdf.min.js', 'viewer.js'],
+			pptx: ['pdfjs/pdf.min.js', 'pptx/jszip.min.js', 'pptx/chart.umd.js', 'pptx/PptxViewJS.min.js', 'viewer.js'],
+			docx: ['pptx/jszip.min.js', 'docx/docx-preview.min.js', 'docx.js'],
+			model: ['three/three.min.js', 'model.js'],
 		};
 		panel.webview.html = `<!DOCTYPE html>
 <html lang="fr">
@@ -85,17 +95,30 @@ class DocumentViewer implements vscode.CustomReadonlyEditorProvider {
 	<div id="app"></div>
 	<script nonce="${nonce}">window.OrbitViewer = ${JSON.stringify(setup)};</script>
 	<script nonce="${nonce}" src="${file('icons.js')}"></script>
-	<script nonce="${nonce}" src="${file('pdfjs/pdf.min.js')}"></script>
-${this.kind === 'pptx' ? ['pptx/jszip.min.js', 'pptx/chart.umd.js', 'pptx/PptxViewJS.min.js'].map(name => `	<script nonce="${nonce}" src="${file(name)}"></script>\n`).join('') : ''}	<script nonce="${nonce}" src="${file('viewer.js')}"></script>
-</body>
+${scripts[this.kind].map(name => `	<script nonce="${nonce}" src="${file(name)}"></script>\n`).join('')}</body>
 </html>`;
 		let presenting = false;
 		const listener = panel.webview.onDidReceiveMessage(async msg => {
 			switch (msg?.type) {
 				case 'agent': {
-					const where = typeof msg.page === 'number' ? ` (${this.kind === 'pdf' ? 'page' : 'diapositive'} ${msg.page})` : '';
+					if (this.kind === 'model') {
+						this.tellAgent(`Regarde ce modèle 3D et dis-moi ce qu'il contient : maillages, matériaux, textures, animations, et ce qui pourrait poser problème (taille, nombre de triangles, échelle).\nFichier : ${document.uri.fsPath}${typeof msg.facts === 'string' && msg.facts ? `\n\nCe qu'Orbit en a lu :\n${msg.facts}` : ''}`);
+						break;
+					}
+					const where = typeof msg.page === 'number' ? ` (${this.kind === 'pptx' ? 'diapositive' : 'page'} ${msg.page})` : '';
 					const ask = String(msg.ask ?? '').trim();
 					this.tellAgent(`${ask || 'Lis ce document et dis-moi ce qu\'il contient d\'important.'}\nFichier : ${document.uri.fsPath}${where}${typeof msg.text === 'string' && msg.text.trim() ? `\n\nPassage sélectionné :\n${msg.text.trim().slice(0, 4000)}` : ''}`);
+					break;
+				}
+				case 'capture': {
+					// The view of the model as a PNG, where the user chooses (next to the model by default).
+					const data = String(msg.data ?? '').replace(/^data:image\/png;base64,/, '');
+					const base = path.join(path.dirname(document.uri.fsPath), `${path.basename(document.uri.fsPath, path.extname(document.uri.fsPath))}.png`);
+					const target = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(base), filters: { 'Image PNG': ['png'] } });
+					if (target && data) {
+						await vscode.workspace.fs.writeFile(target, Buffer.from(data, 'base64'));
+						vscode.window.showInformationMessage(`Capture enregistrée : ${target.fsPath}`, 'Ouvrir').then(choice => choice && vscode.commands.executeCommand('vscode.open', target));
+					}
 					break;
 				}
 				case 'present':
@@ -118,6 +141,12 @@ ${this.kind === 'pptx' ? ['pptx/jszip.min.js', 'pptx/chart.umd.js', 'pptx/PptxVi
 					break;
 				case 'exact': {
 					const pdf = await this.convert(document.uri.fsPath, cache.fsPath);
+					if (pdf && this.kind === 'docx') {
+						// A Word document becomes the pages of a PDF, shown in the PDF viewer.
+						panel.webview.postMessage({ type: 'exactDone' });
+						await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(pdf), 'orbit.pdf', { preview: false });
+						break;
+					}
 					panel.webview.postMessage(pdf ? { type: 'exact', url: panel.webview.asWebviewUri(vscode.Uri.file(pdf)).toString() } : { type: 'exactFailed' });
 					break;
 				}
@@ -141,7 +170,7 @@ ${this.kind === 'pptx' ? ['pptx/jszip.min.js', 'pptx/chart.umd.js', 'pptx/PptxVi
 		});
 	}
 
-	/** The presentation as a PDF, made by LibreOffice or PowerPoint; kept until the file changes. */
+	/** The presentation or document as a PDF, made by LibreOffice, PowerPoint or Word; kept until the file changes. */
 	private async convert(file: string, cache: string): Promise<string | undefined> {
 		const stat = fs.statSync(file);
 		const folder = path.join(cache, createHash('sha1').update(`${file}|${stat.mtimeMs}|${stat.size}`).digest('hex').slice(0, 16));
@@ -150,14 +179,17 @@ ${this.kind === 'pptx' ? ['pptx/jszip.min.js', 'pptx/chart.umd.js', 'pptx/PptxVi
 			return out;
 		}
 		fs.mkdirSync(folder, { recursive: true });
-		const office = libreOffice();
-		if (office) {
+		const libre = libreOffice();
+		if (libre) {
 			const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'orbit-office-'));
-			await new Promise<void>(resolve => execFile(office, [`-env:UserInstallation=${vscode.Uri.file(profile).toString()}`, '--headless', '--convert-to', 'pdf', '--outdir', folder, file], { windowsHide: true, timeout: 120000 }, () => resolve()));
+			await new Promise<void>(resolve => execFile(libre, [`-env:UserInstallation=${vscode.Uri.file(profile).toString()}`, '--headless', '--convert-to', 'pdf', '--outdir', folder, file], { windowsHide: true, timeout: 120000 }, () => resolve()));
 			fs.promises.rm(profile, { recursive: true, force: true }).catch(() => undefined);
-		} else if (await powerPoint()) {
+		} else if (await office(this.kind === 'docx' ? 'Word' : 'PowerPoint')) {
 			const quote = (value: string) => `'${value.replace(/'/g, `''`)}'`;
-			const script = `$app = New-Object -ComObject PowerPoint.Application; try { $deck = $app.Presentations.Open(${quote(file)}, -1, 0, 0); $deck.SaveAs(${quote(out)}, 32); $deck.Close() } finally { $app.Quit() }`;
+			// Opened read only, never saved over: SaveAs writes the PDF (17 for Word, 32 for PowerPoint).
+			const script = this.kind === 'docx'
+				? `$app = New-Object -ComObject Word.Application; $app.Visible = $false; try { $doc = $app.Documents.Open(${quote(file)}, $false, $true); $doc.SaveAs2(${quote(out)}, 17); $doc.Close($false) } finally { $app.Quit() }`
+				: `$app = New-Object -ComObject PowerPoint.Application; try { $deck = $app.Presentations.Open(${quote(file)}, -1, 0, 0); $deck.SaveAs(${quote(out)}, 32); $deck.Close() } finally { $app.Quit() }`;
 			await new Promise<void>(resolve => execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, timeout: 120000 }, () => resolve()));
 		}
 		return fs.existsSync(out) ? out : undefined;
@@ -169,5 +201,7 @@ export function registerDocumentViewers(context: vscode.ExtensionContext, tellAg
 	return [
 		vscode.window.registerCustomEditorProvider('orbit.pdf', new DocumentViewer(context, 'pdf', tellAgent), options),
 		vscode.window.registerCustomEditorProvider('orbit.pptx', new DocumentViewer(context, 'pptx', tellAgent), options),
+		vscode.window.registerCustomEditorProvider('orbit.docx', new DocumentViewer(context, 'docx', tellAgent), options),
+		vscode.window.registerCustomEditorProvider('orbit.model', new DocumentViewer(context, 'model', tellAgent), options),
 	];
 }

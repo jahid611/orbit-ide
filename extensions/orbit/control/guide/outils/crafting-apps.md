@@ -78,4 +78,4 @@ La ligne de l'application dans **Outils du projet** l'ouvre dans un onglet d'Orb
 
 - [PhotoCraft](/docs/outils/photocraft)
 - [Magasin de compétences](/docs/outils/magasin)
-- [Lecteurs de documents](/docs/outils/lecteurs)
+- [Documents, modèles 3D et polices](/docs/outils/lecteurs)

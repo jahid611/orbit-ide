@@ -339,7 +339,7 @@ export class OrbitControl implements vscode.Disposable {
 		const end = Math.max(line ?? 0, endLine ?? line ?? 0);
 		// A document, a picture, a video, a montage: opened the way a click in the explorer would,
 		// in the viewer made for it. As text, it would be pages of unreadable characters.
-		if (/\.(pdf|pptx|ppsx|potx|png|jpe?g|gif|webp|avif|bmp|ico|mp4|mov|m4v|webm|mkv|avi|mp3|wav|ogg|flac|starcapture|ttf|otf|ttc|woff2?)$/i.test(file)) {
+		if (/\.(pdf|pptx|ppsx|potx|png|jpe?g|gif|webp|avif|bmp|ico|mp4|mov|m4v|webm|mkv|avi|mp3|wav|ogg|flac|starcapture|ttf|otf|ttc|woff2?|docx|docm|dotx|glb|gltf)$/i.test(file)) {
 			await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(file), { preview: false, preserveFocus: true, viewColumn: q.side === 'true' ? vscode.ViewColumn.Beside : vscode.ViewColumn.One });
 			await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(file)).then(undefined, () => undefined);
 			return { ok: true };
